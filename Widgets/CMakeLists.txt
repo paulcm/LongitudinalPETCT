@@ -8,22 +8,21 @@ set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
+  qSlicerLongPETCTReportTree.cxx
+  qSlicerLongPETCTReportTree.h
   qSlicerLongPETCTReportSelectionWidget.cxx
   qSlicerLongPETCTReportSelectionWidget.h
   qSlicerLongPETCTStudySelectionWidget.cxx
   qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.cxx
   qSlicerLongPETCTStudySliderWidget.h
-  qSlicerLongPETCTReportTree.cxx
-  qSlicerLongPETCTReportTree.h
   )
 
 set(${KIT}_MOC_SRCS
+  qSlicerLongPETCTReportTree.h
   qSlicerLongPETCTReportSelectionWidget.h
   qSlicerLongPETCTStudySelectionWidget.h
-  qSlicerLongPETCTStudySliderWidget.h
-  qSlicerLongPETCTReportTree.h
-  
+  qSlicerLongPETCTStudySliderWidget.h  
   )
 
 # UI files

@@ -29,23 +29,21 @@
 
 class qSlicerLongPETCTReportSelectionWidgetPrivate;
 
-#include <qMRMLNodeComboBox.h>
 
-
-/// \ingroup Slicer_QtModules_LongitudinalPETCT
+/// \ingroup Slicer_QtModules_LongPETCT
 class Q_SLICER_MODULE_LONGPETCT_WIDGETS_EXPORT qSlicerLongPETCTReportSelectionWidget
   : public QWidget
 {
   Q_OBJECT
-  Q_PROPERTY(qMRMLNodeComboBox* mrmlNodeComboboxReports READ mrmlNodeComboboxReports WRITE setMrmlNodeComboboxReports)
+  Q_PROPERTY(QWidget* mrmlNodeComboboxReports READ mrmlNodeComboboxReports WRITE setMrmlNodeComboboxReports)
 
 public:
   typedef QWidget Superclass;
-  qSlicerLongPETCTReportSelectionWidget(qMRMLNodeComboBox* mrmlNodeComboboxReports, QWidget *parent=0);
+  qSlicerLongPETCTReportSelectionWidget(QWidget* mrmlNodeComboboxReports, QWidget *parent=0);
   virtual ~qSlicerLongPETCTReportSelectionWidget();
 
-  qMRMLNodeComboBox* mrmlNodeComboboxReports();
-  void setMrmlNodeComboboxReports(qMRMLNodeComboBox* mrmlNodeComboboxReports);
+  QWidget* mrmlNodeComboboxReports();
+  void setMrmlNodeComboboxReports(QWidget* mrmlNodeComboboxReports);
 
 protected slots:
 

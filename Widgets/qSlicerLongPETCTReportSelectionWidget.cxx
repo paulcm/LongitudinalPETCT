@@ -22,11 +22,11 @@
 #include "qSlicerLongPETCTReportSelectionWidget.h"
 
 
-#include <QHBoxLayout>
+#include <QFormLayout>
 #include <QLabel>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_LongitudinalPETCT
+/// \ingroup Slicer_QtModules_LongPETCT
 class qSlicerLongPETCTReportSelectionWidgetPrivate
   : public QWidget
 {
@@ -37,11 +37,11 @@ protected:
 public:
   qSlicerLongPETCTReportSelectionWidgetPrivate(
     qSlicerLongPETCTReportSelectionWidget& object);
-  virtual void setupUi(qMRMLNodeComboBox* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget*);
+  virtual void setupUi(QWidget* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget* widget);
 
-  QHBoxLayout* Layout;
+  QFormLayout* Layout;
   QLabel* LabelSelectReport;
-  qMRMLNodeComboBox* MRMLNodeComboboxReport;
+  QWidget* MRMLNodeComboboxReports;
 
 };
 
@@ -55,21 +55,19 @@ qSlicerLongPETCTReportSelectionWidgetPrivate
 
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTReportSelectionWidgetPrivate
-::setupUi(qMRMLNodeComboBox* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget* widget)
+::setupUi(QWidget* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget* widget)
 {
   Q_Q(qSlicerLongPETCTReportSelectionWidget);
 
-  this->Layout = new QHBoxLayout(widget);
-  this->Layout->setContentsMargins(8,0,8,26);
+  this->Layout = new QFormLayout(widget);
+  this->Layout->setSpacing(10);
+
 
   this->LabelSelectReport = new QLabel("Select Report:",widget);
 
-  this->MRMLNodeComboboxReport = mrmlNodeComboboxReports;
+  this->MRMLNodeComboboxReports = mrmlNodeComboboxReports;
 
-
-  this->Layout->addWidget(this->LabelSelectReport,0,Qt::AlignLeft);
-  this->Layout->addWidget(this->MRMLNodeComboboxReport,2,Qt::AlignLeft);
-  //this->Ui_qSlicerLongPETCTReportSelectionWidget::setupUi(widget);
+  this->Layout->addRow(this->LabelSelectReport,this->MRMLNodeComboboxReports);
 }
 
 //-----------------------------------------------------------------------------
@@ -77,7 +75,7 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
 
 //-----------------------------------------------------------------------------
 qSlicerLongPETCTReportSelectionWidget
-::qSlicerLongPETCTReportSelectionWidget(qMRMLNodeComboBox* mrmlNodeComboboxReports, QWidget* parentWidget)
+::qSlicerLongPETCTReportSelectionWidget(QWidget* mrmlNodeComboboxReports, QWidget* parentWidget)
   : Superclass( parentWidget )
   , d_ptr( new qSlicerLongPETCTReportSelectionWidgetPrivate(*this) )
 {
@@ -91,16 +89,16 @@ qSlicerLongPETCTReportSelectionWidget
 {
 }
 
-qMRMLNodeComboBox* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboboxReports()
+QWidget* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboboxReports()
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
-  return d->MRMLNodeComboboxReport;
+  return d->MRMLNodeComboboxReports;
 }
 
-void qSlicerLongPETCTReportSelectionWidget::setMrmlNodeComboboxReports(qMRMLNodeComboBox* mrmlNodeComboboxReports)
+void qSlicerLongPETCTReportSelectionWidget::setMrmlNodeComboboxReports(QWidget* mrmlNodeComboboxReports)
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
-  Q_ASSERT(d->MRMLNodeComboboxReport);
+  Q_ASSERT(d->MRMLNodeComboboxReports);
 
-  d->MRMLNodeComboboxReport = mrmlNodeComboboxReports;
+  d->MRMLNodeComboboxReports = mrmlNodeComboboxReports;
 }
