@@ -9,7 +9,7 @@ class qSlicerLongPETCTModuleWidget:
   def __init__(self, parent = None):
     if not parent:
       self.parent = slicer.qMRMLWidget()
-      self.parent.setLayout(qt.QGridLayout())
+      self.parent.setLayout(qt.QVBoxLayout())
       self.parent.setMRMLScene(slicer.mrmlScene)
     else:
       self.parent = parent
@@ -18,11 +18,9 @@ class qSlicerLongPETCTModuleWidget:
       self.setup()
       self.parent.show()
       
-
-      
       
 
-  def setup(self):
+  def setup(self): 
     # Instantiate and connect widgets ...
 
     # reload button
@@ -36,26 +34,32 @@ class qSlicerLongPETCTModuleWidget:
 
 
     # Collapsible button
-    dummyCollapsibleButton = ctk.ctkCollapsibleButton()
-    dummyCollapsibleButton.text = "Report Selection"
-    self.layout.addWidget(dummyCollapsibleButton)
+    reportsCollapsibleButton = ctk.ctkCollapsibleButton()
+    reportsCollapsibleButton.text = "Report Selection"
+    self.layout.addWidget(reportsCollapsibleButton)
 
     # Layout within the dummy collapsible button
-    dummyFormLayout = qt.QFormLayout(dummyCollapsibleButton)
+    reportsLayout = qt.QVBoxLayout(reportsCollapsibleButton)
 
-    # HelloWorld button
-    helloWorldButton = qt.QPushButton("No Hello Mars")
-    helloWorldButton.toolTip = "Print 'Hello world' in standard ouput."
-    dummyFormLayout.addWidget(helloWorldButton)
-    helloWorldButton.connect('clicked(bool)', self.onHelloWorldButtonClicked)
+    self.reportSelector = slicer.qMRMLNodeComboBox()
+    self.reportSelector.nodeTypes = ['vtkMRMLLongPETCTReportNode']
+    self.reportSelector.setMRMLScene(slicer.mrmlScene)
+    self.reportSelector.addEnabled = 1
 
-    # Add vertical spacer
-    spacer = qt.QSpacerItem(1,20,qt.QSizePolicy.Minimum,QSizePolicy.Expanding)
-    self.layout.addWidget(spacer)
+    self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget(self.reportSelector)    
+    
+    reportsLayout.addWidget(self.reportSelectionWidget)
     
 
-    # Set local var as instance attribute
-    self.helloWorldButton = helloWorldButton
+    #helloWorldButton.connect('clicked(bool)', self.onHelloWorldButtonClicked)
+
+    # Add vertical spacer
+    self.layout.addStretch()
+    
+    
+    # Add Study Slider
+    self.studySlider = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
+    self.layout.addWidget(self.studySlider)
 
   def onHelloWorldButtonClicked(self):
     print "Hello World !"
@@ -73,6 +77,9 @@ class qSlicerLongPETCTModuleWidget:
     # - load the module to the global space
     filePath = eval('slicer.modules.%s.path' % moduleName.lower())
     p = os.path.dirname(filePath)
+    
+    print p
+    
     if not sys.path.__contains__(p):
       sys.path.insert(0,p)
     fp = open(filePath, "r")
@@ -80,7 +87,7 @@ class qSlicerLongPETCTModuleWidget:
         moduleName, fp, filePath, ('.py', 'r', imp.PY_SOURCE))
     fp.close()
     
-    print filePath
+    print moduleName
 
     # rebuild the widget
     # - find and hide the existing widget
