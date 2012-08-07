@@ -47,7 +47,6 @@ class qSlicerLongPETCTModuleWidget:
     self.reportSelector.addEnabled = 1
 
     self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget(self.reportSelector)    
-    
     reportsLayout.addWidget(self.reportSelectionWidget)
     
 
