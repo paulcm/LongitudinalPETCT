@@ -46,13 +46,13 @@ public:
   qSlicerLongPETCTStudySliderWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySliderWidget();
 
-  int maximumValue();
-  int currentValue();
-  QString selectedStudy();
+  Q_INVOKABLE int maximumValue();
+  Q_INVOKABLE int currentValue();
+  Q_INVOKABLE QString selectedStudy();
 
-  void setMaximumValue(int value);
-  void setCurrentValue(int value);
-  void setSelectedStudy(const QString& selectedStudy);
+  Q_INVOKABLE void setMaximumValue(int value);
+  Q_INVOKABLE void setCurrentValue(int value);
+  Q_INVOKABLE void setSelectedStudy(const QString& selectedStudy);
 
 protected slots:
 
