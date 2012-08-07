@@ -95,10 +95,3 @@ QWidget* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboboxReports()
   return d->MRMLNodeComboboxReports;
 }
 
-void qSlicerLongPETCTReportSelectionWidget::setMrmlNodeComboboxReports(QWidget* mrmlNodeComboboxReports)
-{
-  Q_D(qSlicerLongPETCTReportSelectionWidget);
-  Q_ASSERT(d->MRMLNodeComboboxReports);
-
-  d->MRMLNodeComboboxReports = mrmlNodeComboboxReports;
-}
