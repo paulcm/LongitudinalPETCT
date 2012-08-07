@@ -35,7 +35,7 @@ class Q_SLICER_MODULE_LONGPETCT_WIDGETS_EXPORT qSlicerLongPETCTReportSelectionWi
   : public QWidget
 {
   Q_OBJECT
-  Q_PROPERTY(QWidget* mrmlNodeComboboxReports READ mrmlNodeComboboxReports WRITE setMrmlNodeComboboxReports)
+//Q_PROPERTY(QWidget* mrmlNodeComboboxReports READ mrmlNodeComboboxReports WRITE setMrmlNodeComboboxReports)
 
 public:
   typedef QWidget Superclass;
@@ -43,7 +43,6 @@ public:
   virtual ~qSlicerLongPETCTReportSelectionWidget();
 
   QWidget* mrmlNodeComboboxReports();
-  void setMrmlNodeComboboxReports(QWidget* mrmlNodeComboboxReports);
 
 protected slots:
 
