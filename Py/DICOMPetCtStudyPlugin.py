@@ -60,14 +60,15 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     corresponding to ways of interpreting the
     fileLists parameter.
     """
-    
-    print "FileLists Size: " + str(len(fileLists))
+
     loadables = []
     
     self.pts = []
     self.cts = []
+
     
     for files in fileLists:
+ 
       if self.isSpecificSeries(files, 'PT'):
         loadablePT = self.examineFiles(files,'PET')
         if loadablePT:
@@ -176,40 +177,64 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     """
 
     # get the series description to use as base for volume name
-
-    name = type
-    
     loadables = []
+    name = type
+
+    scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
+    loadables = scalarVolumePlugin.examineFiles(files)
+
+    for loadable in loadables:
+      if loadable.selected:
+        loadable.name = name + ' ' + self.studyDate(files)
+        loadable.selected = True
+        loadable.tooltip = "Appears to be " + type
+        loadable.confidence = .75
+        loadables = [loadable]   
+        break 
     
-    loadable = DICOMLib.DICOMLoadable()
-    loadable.files = files
-    loadable.name = name + ' ' + self.studyDate(files)
-    loadable.selected = True
-    loadable.tooltip = "Appears to be " + type
-    loadables = [loadable] 
-          
-               
+    #if loadables:
+      #loadables[0].name = name + ' ' + self.studyDate(files)
+      
+    #loadable = DICOMLib.DICOMLoadable()
+    
+    #if svLoadables:
+     # loadable = svLoadables[0]
+      #loadable.files = files
+      #loadable.name = name + ' ' + self.studyDate(files)
+      #loadable.selected = True
+      #loadable.tooltip = "Appears to be " + type
+      #loadables = [loadable]
+                
     return loadables
       
-
-  def loadFilesWithArchetype(self,files,name):
-    """Load files in the traditional Slicer manner
-    using the volume logic helper class
-    and the vtkITK archetype helper code
-    """
-    fileList = vtk.vtkStringArray()
-    for f in files:
-      fileList.InsertNextValue(f)
-    volumesLogic = slicer.modules.volumes.logic()
-    return (volumesLogic.AddArchetypeVolume( files[0], name, 0, fileList ))
 
 
   def load(self,loadable):
     """Load the select as a scalar volume
-    """              
+    """               
+    scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
     
+    count = 0
+    
+    volumesLogic = slicer.modules.volumes.logic()
+    
+    for loadablePET in self.pts:
+      if(loadablePET is loadable):
+        ctNode = scalarVolumePlugin.load(self.cts[count])
+        #volumesLogic.SetActiveNode(ctNode)
+        
+      count = count + 1
+      
+    petNode = scalarVolumePlugin.load(loadable)
+
+
+    return petNode
+
+
+  def oldLoad(self,loadable):    
     
     volumeNode = self.loadFilesWithArchetype(loadable.files, loadable.name)
+    
     if volumeNode:
       #
       # add list of DICOM instance UIDs to the volume node
