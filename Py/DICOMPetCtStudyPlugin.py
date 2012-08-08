@@ -1,7 +1,11 @@
 import os
+import sys as SYS
 from __main__ import vtk, qt, ctk, slicer
 from DICOMLib import DICOMPlugin
 from DICOMLib import DICOMLoadable
+from decimal import *
+
+
 import DICOMLib
 
 #
@@ -16,7 +20,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
   def __init__(self):
     super(DICOMPetCtStudyPluginClass,self).__init__()
-    self.loadType = "PET/CT Study"
+    self.loadType = "Longitudinal PET/CT Analysis"
     #self.tags['patientName'] = "0010,0010"
     #self.tags['patientBirthDate'] = "0010,0030"
     #self.tags['patientSex'] = "0010,0040"
@@ -38,11 +42,15 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     self.tags['seriesModality'] = "0008,0060"
     self.tags['instanceUID'] = "0008,0018"
   
+    self.tags['studyInstanceUID'] = "0020,000D"
     self.tags['studyDate'] = "0008,0020"
     self.tags['studyTime'] = "0008,0030"
     
-    self.tags['smallestPixelVal'] = "0028,0108"
-    self.tags['largestPixelVal'] = "0028,0109"
+    self.tags['rows'] = "0028,0010"
+    self.tags['columns'] = "0028,0011"
+    self.tags['spacing'] = "0028,0030"
+    self.tags['orientation'] = "0020,0037"
+    self.tags['pixelData'] = "7fe0,0010"
   
     #self.tags['seriesTime'] = "0008,0031"
     
@@ -56,45 +64,107 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     print "FileLists Size: " + str(len(fileLists))
     loadables = []
     
+    self.pts = []
+    self.cts = []
     
     for files in fileLists:
       if self.isSpecificSeries(files, 'PT'):
-          print "IS PET"
-      elif self.isSpecificSeries(files, 'CT'):
-          print "IS CT"
-      else:
-          print "IS NEITHER PET NOR CT"
-          break
+        loadablePT = self.examineFiles(files,'PET')
+        if loadablePT:
+          loadables += loadablePT
+          studyDate = self.studyDate(files)
+          studyUID = self.studyInstanceUID(files)
           
-      loadables += self.examineFiles(files)
+          for cFiles in fileLists:
+            if self.isSpecificSeries(cFiles, 'CT') & (studyDate == self.studyDate(cFiles)) & (studyUID == self.studyInstanceUID(cFiles)):
+              loadableCT = self.examineFiles(cFiles,'CT')
+              if loadableCT:
+                self.pts += loadablePT
+                self.cts += loadableCT                
+          
     return loadables
 
 #TODO PixelData and Orientation
 
-  def isSpecificSeries(self,files,type):
-      """ ___ """
-      isSpecificSeries = True
+  def studyDate(self,files):
+    """___"""
+    studyDate = slicer.dicomDatabase.fileValue(files[0], self.tags['studyDate'])
+    
+    for file in files:
+      tempStudyDate = slicer.dicomDatabase.fileValue(file, self.tags['studyDate'])
       
-      smallestVal = 999999999
-      
-      for file in files:
-        if slicer.dicomDatabase.fileValue(file,self.tags['seriesModality']) != type:
-          isSpecificSeries = False
-        
-        val = slicer.dicomDatabase.fileValue(file,self.tags['smallestPixelVal'])
-        if val != "":
-          tempVal = Decimal(val)
-          if tempVal < smallestVal:
-            smallestVal = tempVal
-          
-      
-      print "Smallest Pixel Value: " + str(smallestVal)
-          
-      return isSpecificSeries
+      if tempStudyDate != studyDate:
+        studyDate = ""
+    
+    return studyDate
   
+  
+  def studyInstanceUID(self,files):
+    """___"""
+    studyInstanceUID = slicer.dicomDatabase.fileValue(files[0], self.tags['studyInstanceUID'])
+    
+    for file in files:
+      tempStudyInstanceUID = slicer.dicomDatabase.fileValue(file, self.tags['studyInstanceUID'])
+      
+      if tempStudyInstanceUID != studyInstanceUID:
+        studyInstanceUID = ""
+    
+    return studyInstanceUID 
   
 
-  def examineFiles(self,files):
+  def isSpecificSeries(self,files,type):
+    """ ___ """
+    isSpecificSeries = True
+      
+    for file in files:
+      if slicer.dicomDatabase.fileValue(file,self.tags['seriesModality']) != type:
+        isSpecificSeries = False 
+                            
+    return isSpecificSeries
+  
+  
+  def maxDimensions(self,files):
+    """ ___ """
+    global SYS
+    maxW = SYS.float_info.min
+    maxH = SYS.float_info.min
+      
+    for file in files:
+      
+      width = self.dimensions(file)[0]
+      height = self.dimensions(file)[1]
+        
+      if width > maxW:
+        maxW = width
+      if height > maxH:
+        maxH = height
+        
+    result = []
+    result.append(maxW)
+    result.append(maxH)
+      
+    return result
+    
+  
+  def dimensions(self,file):
+        
+    rows = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['rows']))
+    cols = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['columns']))
+    spacingRows = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).partition('\\')[0])
+    spacingCols = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).partition('\\')[2])
+      
+    width = cols * spacingCols
+    height = rows * spacingRows
+    
+    result = []
+    
+    result.append(width)
+    result.append(height)
+    
+    return result
+            
+
+  def examineFiles(self,files,type):
     """ Returns a list of DICOMLoadable instances
     corresponding to ways of interpreting the
     files parameter.
@@ -104,31 +174,19 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     in the series since all should be the same with respect
     to this check.
     """
-    
-    patients = slicer.dicomDatabase.patients()
+
     # get the series description to use as base for volume name
 
-    name = slicer.dicomDatabase.fileValue(files[0], self.tags['seriesDescription'])
-    if name == "":
-      name = "Unknown"
-
-    isPET = False
-    hasRelated = False
+    name = type
     
-    modality = slicer.dicomDatabase.fileValue(files[0], self.tags['seriesModality'])
-    related = slicer.dicomDatabase.fileValue(files[0], self.tags['relatedSeriesSequence'])
-    isPET = modality == "PT"
-    hasRelated = related != ""
-
     loadables = []
     
-    if isPET:
-      loadable = DICOMLib.DICOMLoadable()
-      loadable.files = files
-      loadable.name = name + ' ' + slicer.dicomDatabase.fileValue(files[0],self.tags['studyDate'])
-      loadable.selected = False
-      loadable.tooltip = "Appears to be PET"
-      loadables = [loadable] 
+    loadable = DICOMLib.DICOMLoadable()
+    loadable.files = files
+    loadable.name = name + ' ' + self.studyDate(files)
+    loadable.selected = True
+    loadable.tooltip = "Appears to be " + type
+    loadables = [loadable] 
           
                
     return loadables
@@ -148,7 +206,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
   def load(self,loadable):
     """Load the select as a scalar volume
-    """
+    """              
     
     
     volumeNode = self.loadFilesWithArchetype(loadable.files, loadable.name)
@@ -173,6 +231,27 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
       selNode = appLogic.GetSelectionNode()
       selNode.SetReferenceActiveVolumeID(volumeNode.GetID())
       appLogic.PropagateVolumeSelection()
+      
+      
+      count = 0
+    
+    for loadablePET in self.pts:
+      if(loadablePET is loadable):
+        ctVolumeNode = self.loadFilesWithArchetype(self.cts[count].files, self.cts[count].name)
+        
+        if(ctVolumeNode):
+          instanceUIDs = ""
+          for file in loadable.files:
+            uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
+            if uid == "":
+              uid = "Unknown"
+            instanceUIDs += uid + " "
+          instanceUIDs = instanceUIDs[:-1]  # strip last space
+          ctVolumeNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
+      
+      count = count + 1
+      
+      
     return volumeNode
 
 
