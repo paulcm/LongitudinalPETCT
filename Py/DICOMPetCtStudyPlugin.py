@@ -66,16 +66,15 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
     loadables = []
     
-    self.pts = []
-    self.cts = []
-
+    self.allSeriesLoadables = []
     
+    studyCounter = 0
+   
     for files in fileLists:
  
       if self.isSpecificSeries(files, 'PT'):
         loadablePT = self.examineFiles(files,'PET')
         if loadablePT:
-          loadables += loadablePT
           studyDate = self.studyDate(files)
           studyUID = self.studyInstanceUID(files)
           
@@ -83,12 +82,64 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
             if self.isSpecificSeries(cFiles, 'CT') & (studyDate == self.studyDate(cFiles)) & (studyUID == self.studyInstanceUID(cFiles)):
               loadableCT = self.examineFiles(cFiles,'CT')
               if loadableCT:
-                self.pts += loadablePT
-                self.cts += loadableCT                
+                self.allSeriesLoadables += loadablePT
+                self.allSeriesLoadables += loadableCT   
+                studyCounter += 1             
+    
+    
+    loadable = DICOMLib.DICOMLoadable()
+    
+    allFiles = []
+    
+    for petCtLoadable in self.allSeriesLoadables:
+      allFiles += petCtLoadable.files
+    
+    loadable.files = allFiles
+    loadable.name = "PET/CT: "+str(studyCounter) + " "
+    if(studyCounter == 1):
+      loadable.name += "study "
+    else:
+      loadable.name += "studies " 
+    
+    loadable.name += self.studiesTimeframeStr()  
+       
+    loadable.selected = True
+    loadable.confidence = 1.0
+    
+    loadables = [loadable]
           
     return loadables
 
 #TODO PixelData and Orientation
+
+  def studiesTimeframeStr(self):
+    
+    studydates = self.allSelectedStudyDates()
+    resultStr = ""
+    
+    if studydates:
+      resultStr = "from "+studydates[0]+" "
+      
+      length = len(studydates)
+      
+      if length > 1:
+        resultStr += "to "+studydates[length-1]
+        
+    return resultStr
+  
+
+  def allSelectedStudyDates(self):
+    
+    dates = []
+    
+    for loadablePetCt in self.allSeriesLoadables:
+      studyDate = self.studyDate(loadablePetCt.files)
+      
+      if (studyDate in dates) == False:
+        dates.append(studyDate)
+    
+    return sorted(dates)
+      
 
   def studyDate(self,files):
     """___"""
@@ -191,22 +242,9 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
         loadable.name = name + ' ' + self.studyDate(files)
         loadable.selected = True
         loadable.tooltip = "Appears to be " + type
-        loadable.confidence = .75
+        loadable.confidence = .1
         loadables = [loadable]   
         break 
-    
-    #if loadables:
-      #loadables[0].name = name + ' ' + self.studyDate(files)
-      
-    #loadable = DICOMLib.DICOMLoadable()
-    
-    #if svLoadables:
-     # loadable = svLoadables[0]
-      #loadable.files = files
-      #loadable.name = name + ' ' + self.studyDate(files)
-      #loadable.selected = True
-      #loadable.tooltip = "Appears to be " + type
-      #loadables = [loadable]
                 
     return loadables
       
@@ -215,46 +253,46 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     """ ___ """
     a = datetime.now()
     
-    
     vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
-    vaStorageNode.SetFileName(loadable.files[0])
-    vaStorageNode.ResetFileNameList()
     
-    for file in loadable.files:
-      vaStorageNode.AddFileName(file)
+    for petCtLoadable in self.allSeriesLoadables:
+      vaStorageNode.SetFileName(petCtLoadable.files[0])
+      vaStorageNode.ResetFileNameList()
     
-    vaStorageNode.SetSingleFile(0)
+      for file in petCtLoadable.files:
+        vaStorageNode.AddFileName(file)
     
-    svNode = slicer.vtkMRMLScalarVolumeNode()
-    svNode.SetScene(slicer.mrmlScene)
+      vaStorageNode.SetSingleFile(0)
     
-    vaStorageNode.ReadData(svNode)  
+      svNode = slicer.vtkMRMLScalarVolumeNode()
+      svNode.SetScene(slicer.mrmlScene)
     
-    if svNode:
-      svNode.SetName(loadable.name)
-      #
-      # add list of DICOM instance UIDs to the volume node
-      # corresponding to the loaded files
-      #
-      instanceUIDs = ""
-      for file in loadable.files:
-        uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
-        if uid == "":
-          uid = "Unknown"
-        instanceUIDs += uid + " "
-      instanceUIDs = instanceUIDs[:-1]  # strip last space
-      svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
-
+      vaStorageNode.ReadData(svNode)  
+    
+      if svNode:
+        svNode.SetName(petCtLoadable.name)
+        #
+        # add list of DICOM instance UIDs to the volume node
+        # corresponding to the loaded files
+        #
+        instanceUIDs = ""
+        for file in loadable.files:
+          uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
+          if uid == "":
+            uid = "Unknown"
+          instanceUIDs += uid + " "
+        instanceUIDs = instanceUIDs[:-1]  # strip last space
+        svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
       
-      slicer.mrmlScene.AddNode(svNode)
+        slicer.mrmlScene.AddNode(svNode)
       
-      #
-      # automatically select the volume to display
-      #
-      appLogic = slicer.app.applicationLogic()
-      selNode = appLogic.GetSelectionNode()
-      selNode.SetReferenceActiveVolumeID(svNode.GetID())
-      appLogic.PropagateVolumeSelection()
+        #
+        # automatically select the volume to display
+        #
+        #appLogic = slicer.app.applicationLogic()
+        #selNode = appLogic.GetSelectionNode()
+        #selNode.SetReferenceActiveVolumeID(svNode.GetID())
+        #appLogic.PropagateVolumeSelection()
     
     
     b = datetime.now()
