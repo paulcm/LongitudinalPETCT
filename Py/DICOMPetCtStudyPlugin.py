@@ -3,6 +3,9 @@ import sys as SYS
 from __main__ import vtk, qt, ctk, slicer
 from DICOMLib import DICOMPlugin
 from DICOMLib import DICOMLoadable
+
+from datetime import datetime
+
 from decimal import *
 
 
@@ -208,34 +211,27 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     return loadables
       
 
-
   def load(self,loadable):
-    """Load the select as a scalar volume
-    """               
-    scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
+    """ ___ """
+    a = datetime.now()
     
-    count = 0
     
-    volumesLogic = slicer.modules.volumes.logic()
+    vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
+    vaStorageNode.SetFileName(loadable.files[0])
+    vaStorageNode.ResetFileNameList()
     
-    for loadablePET in self.pts:
-      if(loadablePET is loadable):
-        ctNode = scalarVolumePlugin.load(self.cts[count])
-        #volumesLogic.SetActiveNode(ctNode)
-        
-      count = count + 1
-      
-    petNode = scalarVolumePlugin.load(loadable)
-
-
-    return petNode
-
-
-  def oldLoad(self,loadable):    
+    for file in loadable.files:
+      vaStorageNode.AddFileName(file)
     
-    volumeNode = self.loadFilesWithArchetype(loadable.files, loadable.name)
+    vaStorageNode.SetSingleFile(0)
     
-    if volumeNode:
+    svNode = slicer.vtkMRMLScalarVolumeNode()
+    svNode.SetScene(slicer.mrmlScene)
+    
+    vaStorageNode.ReadData(svNode)  
+    
+    if svNode:
+      svNode.SetName(loadable.name)
       #
       # add list of DICOM instance UIDs to the volume node
       # corresponding to the loaded files
@@ -247,37 +243,26 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           uid = "Unknown"
         instanceUIDs += uid + " "
       instanceUIDs = instanceUIDs[:-1]  # strip last space
-      volumeNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
+      svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
 
+      
+      slicer.mrmlScene.AddNode(svNode)
+      
       #
       # automatically select the volume to display
       #
       appLogic = slicer.app.applicationLogic()
       selNode = appLogic.GetSelectionNode()
-      selNode.SetReferenceActiveVolumeID(volumeNode.GetID())
+      selNode.SetReferenceActiveVolumeID(svNode.GetID())
       appLogic.PropagateVolumeSelection()
-      
-      
-      count = 0
     
-    for loadablePET in self.pts:
-      if(loadablePET is loadable):
-        ctVolumeNode = self.loadFilesWithArchetype(self.cts[count].files, self.cts[count].name)
+    
+    b = datetime.now()
         
-        if(ctVolumeNode):
-          instanceUIDs = ""
-          for file in loadable.files:
-            uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
-            if uid == "":
-              uid = "Unknown"
-            instanceUIDs += uid + " "
-          instanceUIDs = instanceUIDs[:-1]  # strip last space
-          ctVolumeNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
-      
-      count = count + 1
-      
-      
-    return volumeNode
+    print "TIME TO LOAD: " + str(b-a) + " ms"
+    
+    return svNode
+  
 
 
 #
