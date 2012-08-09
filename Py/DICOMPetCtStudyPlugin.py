@@ -57,56 +57,118 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
   
     #self.tags['seriesTime'] = "0008,0031"
     
+    self.ctTag = "CT"
+    self.petTag = "PT"
+    
 
   def examine(self,fileLists):
     """ Returns a list of DICOMLoadable instances
     corresponding to ways of interpreting the
     fileLists parameter.
     """
-
+    time = datetime.now()
+        
     loadables = []
     
     self.allSeriesLoadables = []
     
     studyCounter = 0
    
+    petFileLists = []
+    ctFileLists = []
+   
+    studyUIDs = []
+    # Filling lists of pet and ct filelists        
     for files in fileLists:
- 
-      if self.isSpecificSeries(files, 'PT'):
-        loadablePT = self.examineFiles(files,'PET')
-        if loadablePT:
-          studyDate = self.studyDate(files)
-          studyUID = self.studyInstanceUID(files)
-          
-          for cFiles in fileLists:
-            if self.isSpecificSeries(cFiles, 'CT') & (studyDate == self.studyDate(cFiles)) & (studyUID == self.studyInstanceUID(cFiles)):
-              loadableCT = self.examineFiles(cFiles,'CT')
-              if loadableCT:
-                self.allSeriesLoadables += loadablePT
-                self.allSeriesLoadables += loadableCT   
-                studyCounter += 1             
+      
+      if self.isSpecificSeries(files, self.petTag):
+        petFileLists.append(files)
+        tempStudyUID = self.studyInstanceUID(files)
+        if (tempStudyUID in studyUIDs) == False:
+          studyUIDs.append(tempStudyUID) 
+      
+      elif self.isSpecificSeries(files, self.ctTag):
+          ctFileLists.append(files)
+
+    print "TIME TO LOAD PET AND CT's: " + str(datetime.now()-time) + " ms"
+    time = datetime.now()
+     
+    #cleaning ct list
+    i = 0
+    while i < len(ctFileLists):
+      if (self.studyInstanceUID(ctFileLists[i]) in studyUIDs) == False:
+        ctFileLists.pop(i)
+      else:
+        i += 1  
+        
+    print "TIME TO CLEAR CT's: " + str(datetime.now()-time) + " ms"
+    time = datetime.now() 
     
+    for petFiles in petFileLists:
+      loadablePT = self.examineFiles(petFiles,self.petTag)
+      if(loadablePT):
+        studyUID = self.studyInstanceUID(petFiles) 
+        
+        i = 0
+        sim = -1
+        mostSimilarIdx = -1
+                
+        for ctFiles in ctFileLists:          
+          
+          if self.studyInstanceUID(ctFiles) == studyUID:
+             ptSurface = self.surface(petFiles)
+             ctSurface = self.surface(ctFiles)
+                
+             diff = min(ptSurface,ctSurface) / max(ptSurface,ctSurface)
+             if diff > sim:
+               sim = diff
+               mostSimilarIdx = i
+          i += 1
+        
+        if mostSimilarIdx != -1:
+          loadableCT = self.examineFiles(ctFileLists[mostSimilarIdx], self.ctTag)
+          
+          if loadableCT:
+            self.allSeriesLoadables += loadablePT
+            self.allSeriesLoadables += loadableCT  
+            studyCounter += 1 
+    
+    
+    print "TIME TO GET ALL STUDIES: " + str(datetime.now()-time) + " ms"
+    time = datetime.now() 
     
     loadable = DICOMLib.DICOMLoadable()
     
     allFiles = []
-    
+    warning = ""
+
     for petCtLoadable in self.allSeriesLoadables:
       allFiles += petCtLoadable.files
+      if petCtLoadable.warning:
+        warning += petCtLoadable.name + ": "+petCtLoadable.warning+" "
     
-    loadable.files = allFiles
-    loadable.name = "PET/CT: "+str(studyCounter) + " "
-    if(studyCounter == 1):
-      loadable.name += "study "
-    else:
-      loadable.name += "studies " 
+    print "FILES SIZE: "+ str(len(allFiles))
+    if allFiles:
     
-    loadable.name += self.studiesTimeframeStr()  
+      print "CAME HERE"
+    
+      loadable.files = allFiles
+      loadable.name = "PET/CT: "+str(studyCounter) + " "
+      if(studyCounter == 1):
+        loadable.name += "study "
+      else:
+        loadable.name += "studies " 
+    
+      loadable.name += self.studiesTimeframeStr()  
+      loadable.warning = warning
        
-    loadable.selected = True
-    loadable.confidence = 1.0
+      loadable.selected = True
+      loadable.confidence = 1.0
     
-    loadables = [loadable]
+      loadables = [loadable]
+    
+    print "TIME TO CREATE LOADABLE: " + str(datetime.now()-time) + " ms"
+    time = datetime.now() 
           
     return loadables
 
@@ -177,6 +239,12 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
                             
     return isSpecificSeries
   
+  
+  def surface(self,files):
+    """___"""
+    maxDim = self.maxDimensions(files)
+    
+    return maxDim[0]*maxDim[1]  
   
   def maxDimensions(self,files):
     """ ___ """
