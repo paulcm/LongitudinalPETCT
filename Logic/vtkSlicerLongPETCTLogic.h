@@ -40,8 +40,9 @@
 // CTK forward declarations
 class ctkDICOMDatabase;
 
-#include <vtkSlicerLongPETCTModuleLogicExport.h>
+#include "vtkSlicerLongPETCTModuleLogicExport.h"
 
+class vtkMRMLLongPETCTReportNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_LONGPETCT_MODULE_LOGIC_EXPORT vtkSlicerLongPETCTLogic :
@@ -85,6 +86,8 @@ public:
   bool IsRequiredDataInDICOMDatabase(const QString& patientUID, const QStringList& studyUIDs, const QStringList& seriesUIDs);
 
 
+  void AddReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+
 protected:
 
   static const QString DATABASEDIRECTORY; // for DatabaseDirectory path
@@ -95,6 +98,7 @@ protected:
   virtual ~vtkSlicerLongPETCTLogic();
 
   ctkDICOMDatabase* GetDICOMDatabase();
+  vtkSetMacro(DICOMDatabase,ctkDICOMDatabase*);
 
   /**
    * Returns whether a study contains of at least one PET and one CT image series.
@@ -117,6 +121,8 @@ private:
   void operator=(const vtkSlicerLongPETCTLogic&);               // Not implemented
 
   ctkDICOMDatabase *DICOMDatabase;
+
+  std::vector<vtkMRMLLongPETCTReportNode*> ReportNodes;
 };
 
 #endif

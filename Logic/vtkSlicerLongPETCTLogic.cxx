@@ -18,10 +18,15 @@
 // LongPETCT Logic includes
 #include "vtkSlicerLongPETCTLogic.h"
 
+
+
 // MRML includes
 
 // VTK includes
 #include <vtkNew.h>
+
+#include <vtkMRMLLongPETCTReportNode.h>
+#include <vtkMRMLLongPETCTStudyNode.h>
 
 // STD includes
 #include <cassert>
@@ -81,7 +86,19 @@ void vtkSlicerLongPETCTLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)
 //-----------------------------------------------------------------------------
 void vtkSlicerLongPETCTLogic::RegisterNodes()
 {
-  assert(this->GetMRMLScene() != 0);
+
+  if(!this->GetMRMLScene())
+    return;
+
+  vtkMRMLLongPETCTReportNode *reportNode = vtkMRMLLongPETCTReportNode::New();
+  this->GetMRMLScene()->RegisterNodeClass(reportNode);
+  reportNode->Delete();
+
+  vtkMRMLLongPETCTStudyNode *studyNode = vtkMRMLLongPETCTStudyNode::New();
+  this->GetMRMLScene()->RegisterNodeClass(studyNode);
+  studyNode->Delete();
+
+ // assert(this->GetMRMLScene() != 0);
 }
 
 //---------------------------------------------------------------------------
@@ -105,12 +122,7 @@ void vtkSlicerLongPETCTLogic
 //---------------------------------------------------------------------------
 bool vtkSlicerLongPETCTLogic::IsDICOMDataBaseAvailable()
 {
-   bool isAvailable = false;
-
-   if(this->GetDICOMDatabase())
-     isAvailable = true;
-
-   return isAvailable;
+   return (this->GetDICOMDatabase());
 }
 
 //---------------------------------------------------------------------------
@@ -331,4 +343,14 @@ bool vtkSlicerLongPETCTLogic::IsPETCTStudy(const QString& studyUID)
 
 
   return isPETCTStudy;
+}
+
+//---------------------------------------------------------------------------
+void vtkSlicerLongPETCTLogic::AddReportNode(vtkMRMLLongPETCTReportNode* reportNode)
+{
+  if(reportNode)
+    ReportNodes.push_back(reportNode);
+
+  std::cout << "//////////// ReportNode added to logic" << std::endl;
+//  std::cout << "Report Node Name: " << reportNode->GetName() << " Studies Count: " << reportNode->GetStudyCount() << std::endl;
 }
