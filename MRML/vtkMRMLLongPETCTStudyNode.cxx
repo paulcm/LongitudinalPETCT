@@ -6,7 +6,7 @@ See COPYRIGHT.txt
 or http://www.slicer.org/copyright/copyright.txt for details.
 
 Program:   3D Slicer
-Module:    $RCSfile: vtkMRMLReprtingReportNode.cxx,v $
+Module:    $RCSfile: vtkMRMLReprtingStudyNode.cxx,v $
 Date:      $Date: 2006/03/17 15:10:10 $
 Version:   $Revision: 1.2 $
 
@@ -19,29 +19,31 @@ Version:   $Revision: 1.2 $
 
 
 // MRML includes
-#include "vtkMRMLLongPETCTReportNode.h"
+#include "vtkMRMLLongPETCTStudyNode.h"
 
+#include <vtkMRMLScalarVolumeNode.h>
 
 // STD includes
 
 
 //----------------------------------------------------------------------------
-vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
+vtkMRMLNodeNewMacro(vtkMRMLLongPETCTStudyNode);
 
 //----------------------------------------------------------------------------
-vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
+vtkMRMLLongPETCTStudyNode::vtkMRMLLongPETCTStudyNode()
 {
-  this->SetHideFromEditors(false);
+  this->SetHideFromEditors(true);
+  this->Selected = false;
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLLongPETCTReportNode::~vtkMRMLLongPETCTReportNode()
+vtkMRMLLongPETCTStudyNode::~vtkMRMLLongPETCTStudyNode()
 {
 
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::ReadXMLAttributes(const char** atts)
+void vtkMRMLLongPETCTStudyNode::ReadXMLAttributes(const char** atts)
 {
   int disabledModify = this->StartModify();
 
@@ -52,7 +54,7 @@ void vtkMRMLLongPETCTReportNode::ReadXMLAttributes(const char** atts)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::WriteXML(ostream& of, int nIndent)
+void vtkMRMLLongPETCTStudyNode::WriteXML(ostream& of, int nIndent)
 {
   Superclass::WriteXML(of, nIndent);
 }
@@ -60,7 +62,7 @@ void vtkMRMLLongPETCTReportNode::WriteXML(ostream& of, int nIndent)
 //----------------------------------------------------------------------------
 // Copy the node\"s attributes to this object.
 // Does NOT copy: ID, FilePrefix, Name, SliceID
-void vtkMRMLLongPETCTReportNode::Copy(vtkMRMLNode *anode)
+void vtkMRMLLongPETCTStudyNode::Copy(vtkMRMLNode *anode)
 {
   int disabledModify = this->StartModify();
   
@@ -70,22 +72,10 @@ void vtkMRMLLongPETCTReportNode::Copy(vtkMRMLNode *anode)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::PrintSelf(ostream& os, vtkIndent indent)
+void vtkMRMLLongPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os,indent);
 }
 
 
-//----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetStudiesCount() const
-{
-  return Studies.size();
-}
 
-
-//----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
-{
-  if(study)
-    Studies.push_back(study);
-}

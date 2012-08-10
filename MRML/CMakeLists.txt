@@ -5,11 +5,14 @@ set(KIT ${PROJECT_NAME})
 set(${KIT}_EXPORT_DIRECTIVE "VTK_SLICER_${MODULE_NAME_UPPER}_MODULE_MRML_EXPORT")
 
 set(${KIT}_INCLUDE_DIRECTORIES
+	${CMAKE_BIN_DIR}/MRML
   )
 
 set(${KIT}_SRCS
-  vtkMRMLLongPETCTReportNode.cxx
-  vtkMRMLLongPETCTReportNode.h
+  vtkMRML${MODULE_NAME}StudyNode.cxx
+  vtkMRML${MODULE_NAME}StudyNode.h
+  vtkMRML${MODULE_NAME}ReportNode.cxx
+  vtkMRML${MODULE_NAME}ReportNode.h
   )
 
 set(${KIT}_TARGET_LIBRARIES

@@ -11,24 +11,24 @@
   Version:   $Revision: 1.3 $
 
 =========================================================================auto=*/
-// .NAME vtkMRMLLongPETCTReportNode
-// This node keeps pointers to the two elements of the report: annotation
+// .NAME vtkMRMLLongPETCTStudyNode
+// This node keeps pointers to the two elements of the Study: annotation
 // and markup.
 //
-// Annotation element will (eventually) contain the report template and the
+// Annotation element will (eventually) contain the Study template and the
 // user-initialized fields of the template.
 //
 // Markup element will point to the hierarchy of the markup elements.
 //
 // On export/import, this node will be used by the IO logic to determine how
-// to code the formatted report.
+// to code the formatted Study.
 // .SECTION Description
-// This node keeps pointers to the two elements of the report: annotation
+// This node keeps pointers to the two elements of the Study: annotation
 // and markup.
 //
 
-#ifndef __vtkMRMLLongPETCTReportNode_h
-#define __vtkMRMLLongPETCTReportNode_h
+#ifndef __vtkMRMLLongPETCTStudyNode_h
+#define __vtkMRMLLongPETCTStudyNode_h
 
 // MRML includes
 //#include "vtkDoubleArray.h"
@@ -36,19 +36,22 @@
 #include "vtkMRMLNode.h"
 #include "vtkMRMLScene.h"
 
+#include <vtkSmartPointer.h>
+
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
 
 
-class vtkMRMLLongPETCTStudyNode;
+class vtkMRMLScalarVolumeNode;
 
 
-/// \ingroup Slicer_QtModules_LongPETCTReportNode
-class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : public vtkMRMLNode
+
+/// \ingroup Slicer_QtModules_LongPETCTStudyNode
+class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public vtkMRMLNode
 {
   public:   
 
-  static vtkMRMLLongPETCTReportNode *New();
-  vtkTypeMacro(vtkMRMLLongPETCTReportNode,vtkMRMLNode);
+  static vtkMRMLLongPETCTStudyNode *New();
+  vtkTypeMacro(vtkMRMLLongPETCTStudyNode,vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   virtual vtkMRMLNode* CreateNodeInstance();
@@ -63,22 +66,26 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   virtual void Copy(vtkMRMLNode *node);
 
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() {return "Report";};
+  virtual const char* GetNodeTagName() {return "Study";};
 
-  bool AddStudy(vtkMRMLLongPETCTStudyNode* study);
-  //bool RemoveStudy(vtkMRMLLongPETCTStudyNode study);
+  vtkSetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkSetMacro(Selected, bool);
 
-  int GetStudiesCount() const;
+  vtkGetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkGetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkGetMacro(Selected, int);
 
 protected:
-  vtkMRMLLongPETCTReportNode();
-  ~vtkMRMLLongPETCTReportNode();
-  vtkMRMLLongPETCTReportNode(const vtkMRMLLongPETCTReportNode&);
-  void operator=(const vtkMRMLLongPETCTReportNode&);
+  vtkMRMLLongPETCTStudyNode();
+  ~vtkMRMLLongPETCTStudyNode();
+  vtkMRMLLongPETCTStudyNode(const vtkMRMLLongPETCTStudyNode&);
+  void operator=(const vtkMRMLLongPETCTStudyNode&);
 
+  bool Selected;
 
-  std::vector<vtkMRMLLongPETCTStudyNode*> Studies;
-
+  vtkMRMLScalarVolumeNode* PETVolumeNode;
+  vtkMRMLScalarVolumeNode* CTVolumeNode;
 
 };
 
