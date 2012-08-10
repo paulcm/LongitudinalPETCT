@@ -36,8 +36,10 @@
 #include "vtkMRMLNode.h"
 #include "vtkMRMLScene.h"
 
-
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
+
+
+class vtkMRMLScalarVolumeNode;
 
 
 /// \ingroup Slicer_QtModules_LongPETCTReportNode
@@ -64,12 +66,48 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   virtual const char* GetNodeTagName() {return "Report";};
 
 
+  struct Patient
+  {
+    std::string Name;
+    std::string BirthDate;
+    std::string Sex;
+  };
+
+  struct Study
+  {
+    std::string StudyInstanceUID;
+    std::string StudyDate;
+    vtkMRMLScalarVolumeNode* PETVolume;
+    vtkMRMLScalarVolumeNode* CTVolume;
+  };
   
+
+  void SetPatientInformation(const std::string& name, const std::string& birthDate, const std::string& sex);
+
+  const Patient* GetPatient();
+
+  bool AddStudy(const std::string& uid, const std::string& date, vtkMRMLScalarVolumeNode* petVolume, vtkMRMLScalarVolumeNode* ctVolume);
+  bool RemoveStudy(const std::string& uid);
+
+
+  const Study* GetStudy(const std::string& uid);
+  const Study* GetStudy(int index) const;
+
+
 protected:
   vtkMRMLLongPETCTReportNode();
   ~vtkMRMLLongPETCTReportNode();
   vtkMRMLLongPETCTReportNode(const vtkMRMLLongPETCTReportNode&);
   void operator=(const vtkMRMLLongPETCTReportNode&);
+
+
+  int GetIndexOfStudy(const std::string& uid);
+
+
+  Patient PatientOfReport;
+  std::vector<Study> Studies;
+
+
 
 
 };
