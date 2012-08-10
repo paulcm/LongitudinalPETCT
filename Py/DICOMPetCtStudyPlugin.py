@@ -24,9 +24,9 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
   def __init__(self):
     super(DICOMPetCtStudyPluginClass,self).__init__()
     self.loadType = "Longitudinal PET/CT Analysis"
-    #self.tags['patientName'] = "0010,0010"
-    #self.tags['patientBirthDate'] = "0010,0030"
-    #self.tags['patientSex'] = "0010,0040"
+    self.tags['patientName'] = "0010,0010"
+    self.tags['patientBirthDate'] = "0010,0030"
+    self.tags['patientSex'] = "0010,0040"
     #self.tags['patientSize'] = "0010,1020"
     #self.tags['patientWeight'] = "0010,1030"
     
@@ -57,109 +57,80 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
   
     #self.tags['seriesTime'] = "0008,0031"
     
-    self.ctTag = "CT"
-    self.petTag = "PT"
+    self.fileLists = []
+    self.patientName = ""
+    self.patientBirthDate = ""
+    self.patientSex = ""
     
+    self.ctTerm = "CT"
+    self.petTerm = "PT"
 
   def examine(self,fileLists):
     """ Returns a list of DICOMLoadable instances
     corresponding to ways of interpreting the
     fileLists parameter.
     """
-    time = datetime.now()
+    del self.fileLists[:]
+    self.fileLists += fileLists
         
     loadables = []
     
-    self.allSeriesLoadables = []
+    self.petFileLoadables = []
+    self.ctFileLoadables = []
     
-    studyCounter = 0
-   
-    petFileLists = []
-    ctFileLists = []
-   
-    studyUIDs = []
-    # Filling lists of pet and ct filelists        
-    for files in fileLists:
-      
-      if self.isSpecificSeries(files, self.petTag):
-        petFileLists.append(files)
-        tempStudyUID = self.studyInstanceUID(files)
-        if (tempStudyUID in studyUIDs) == False:
-          studyUIDs.append(tempStudyUID) 
-      
-      elif self.isSpecificSeries(files, self.ctTag):
-          ctFileLists.append(files)
-
-    print "TIME TO LOAD PET AND CT's: " + str(datetime.now()-time) + " ms"
+    validStudyCounter = 0
+  
+    time = datetime.now()  
+    petFileLists = self.findPetSeriesImageFiles()
+    print "TIME TO FIND ALL PET FILES: " + str(datetime.now() - time)
     time = datetime.now()
-     
-    #cleaning ct list
-    i = 0
-    while i < len(ctFileLists):
-      if (self.studyInstanceUID(ctFileLists[i]) in studyUIDs) == False:
-        ctFileLists.pop(i)
-      else:
-        i += 1  
-        
-    print "TIME TO CLEAR CT's: " + str(datetime.now()-time) + " ms"
-    time = datetime.now() 
+    ctFileLists = map(self.findCtSeriesFilesForPetSeries, petFileLists)
+    print "TIME TO FIND ALL CT FILES: " + str(datetime.now() - time)
+    time = datetime.now()
     
-    for petFiles in petFileLists:
-      loadablePT = self.examineFiles(petFiles,self.petTag)
-      if(loadablePT):
-        studyUID = self.studyInstanceUID(petFiles) 
-        
-        i = 0
-        sim = -1
-        mostSimilarIdx = -1
-                
-        for ctFiles in ctFileLists:          
-          
-          if self.studyInstanceUID(ctFiles) == studyUID:
-             ptSurface = self.surface(petFiles)
-             ctSurface = self.surface(ctFiles)
-                
-             diff = min(ptSurface,ctSurface) / max(ptSurface,ctSurface)
-             if diff > sim:
-               sim = diff
-               mostSimilarIdx = i
-          i += 1
-        
-        if mostSimilarIdx != -1:
-          loadableCT = self.examineFiles(ctFileLists[mostSimilarIdx], self.ctTag)
-          
-          if loadableCT:
-            self.allSeriesLoadables += loadablePT
-            self.allSeriesLoadables += loadableCT  
-            studyCounter += 1 
-    
-    
-    print "TIME TO GET ALL STUDIES: " + str(datetime.now()-time) + " ms"
-    time = datetime.now() 
-    
-    loadable = DICOMLib.DICOMLoadable()
+    counter = 0
     
     allFiles = []
     warning = ""
-
-    for petCtLoadable in self.allSeriesLoadables:
-      allFiles += petCtLoadable.files
-      if petCtLoadable.warning:
-        warning += petCtLoadable.name + ": "+petCtLoadable.warning+" "
     
-    print "FILES SIZE: "+ str(len(allFiles))
-    if allFiles:
+    if len(petFileLists) == len(ctFileLists):
+      i = 0
+      for petFiles in petFileLists:
+        if petFiles:
+          if ctFileLists[i]:
+            loadablePTs = self.examineFiles(petFiles, self.petTerm)
+            loadableCTs = self.examineFiles(ctFileLists[i], self.ctTerm)
+          
+            if loadablePTs:
+              loadablePT = loadablePTs[0]
+              if loadableCTs:
+                loadableCT = loadableCTs[0]
+                self.petFileLoadables.append(loadablePT)
+                allFiles += loadablePT.files
+                if loadablePT.warning:
+                  warning += loadablePT.name + ": "+loadablePT.warning+" "
+            
+                self.ctFileLoadables.append(loadableCT)
+                allFiles += loadableCT.files
+                if loadableCT.warning:
+                  warning += loadableCT.name + ": "+loadablePT.warning+" "
+            
+                counter += 1
+        i += 1           
+              
+    print "TIME TO GENERATE ALL LOADABLES: " + str(datetime.now() - time)
+    time = datetime.now()
     
-      print "CAME HERE"
-    
+    if counter > 0:
+      loadable = DICOMLib.DICOMLoadable()
       loadable.files = allFiles
-      loadable.name = "PET/CT: "+str(studyCounter) + " "
-      if(studyCounter == 1):
+      loadable.name = "PET/CT: "+str(counter) + " "
+      if(counter == 1):
         loadable.name += "study "
       else:
-        loadable.name += "studies " 
+        loadable.name += "studies "
     
-      loadable.name += self.studiesTimeframeStr()  
+      loadable.name += self.studiesTimeframeStr()
       loadable.warning = warning
        
       loadable.selected = True
@@ -167,9 +138,9 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
       loadables = [loadable]
     
-    print "TIME TO CREATE LOADABLE: " + str(datetime.now()-time) + " ms"
-    time = datetime.now() 
-          
+    print "TIME TO CREATE MAIN LOADABLE: " + str(datetime.now() - time)
+    time = datetime.now()      
+    
     return loadables
 
 #TODO PixelData and Orientation
@@ -194,8 +165,8 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
     dates = []
     
-    for loadablePetCt in self.allSeriesLoadables:
-      studyDate = self.studyDate(loadablePetCt.files)
+    for loadablePet in self.petFileLoadables:
+      studyDate = self.studyDate(loadablePet.files)
       
       if (studyDate in dates) == False:
         dates.append(studyDate)
@@ -203,12 +174,17 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     return sorted(dates)
       
 
+  def studyDateImageFile(self,file):
+    """___"""
+    return slicer.dicomDatabase.fileValue(file, self.tags['studyDate'])
+    
   def studyDate(self,files):
     """___"""
-    studyDate = slicer.dicomDatabase.fileValue(files[0], self.tags['studyDate'])
+    
+    studyDate = self.studyDateImageFile(files[0])
     
     for file in files:
-      tempStudyDate = slicer.dicomDatabase.fileValue(file, self.tags['studyDate'])
+      tempStudyDate = self.studyDateImageFile(file)
       
       if tempStudyDate != studyDate:
         studyDate = ""
@@ -216,25 +192,90 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     return studyDate
   
   
+  
+  def findPetSeriesImageFiles(self):
+    """___"""
+    petSeriesFiles = []
+    
+    for files in self.fileLists:
+      if self.isSpecificSeries(files, self.petTerm):
+        petSeriesFiles.append(files)
+
+    return petSeriesFiles
+  
+  
+  def findMostSimilarCtSeriesFiles(self, ctFilesList, petFiles):
+    """___"""
+    ctSeriesFiles = []
+    
+    if petFiles:
+      petSurface = self.surface(petFiles)
+      i = 0
+      similarity = -1
+      mostSimilarIdx = -1
+    
+      for ctFiles in ctFilesList:
+        ctSurface = self.surface(ctFiles)       
+        ratio = min(petSurface,ctSurface) / max(petSurface,ctSurface)
+        if ratio > similarity:
+          similarity = ratio
+          mostSimilarIdx = i
+    
+        i += 1
+      
+      if mostSimilarIdx >= 0 & mostSimilarIdx < len(ctFilesList):
+        ctSeriesFiles = ctFilesList[mostSimilarIdx]
+    
+    return ctSeriesFiles      
+    
+  
+  def findCtSeriesFilesForPetSeries(self, petFiles):
+    """___"""
+    
+    if petFiles:
+      studyUID = self.studyInstanceUID(petFiles)
+      ctSeriesFilesList = []
+    
+      for files in self.fileLists:
+        if self.isSpecificModalityImage(files[0],self.ctTerm): # for performance: check only first file
+          if self.isSpecificSeries(files, self.ctTerm):
+            if self.studyInstanceUIDForImage(files[0]) == studyUID: # for performace: check only first file
+              if self.studyInstanceUID(files) == studyUID:
+                ctSeriesFilesList.append(files)
+              
+    
+    return self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
+    
+    
+  def studyInstanceUIDForImage(self, file):
+    """___"""
+    return slicer.dicomDatabase.fileValue(file, self.tags['studyInstanceUID'])
+        
+  
   def studyInstanceUID(self,files):
     """___"""
-    studyInstanceUID = slicer.dicomDatabase.fileValue(files[0], self.tags['studyInstanceUID'])
+    studyInstanceUID = self.studyInstanceUIDForImage(files[0])
     
     for file in files:
-      tempStudyInstanceUID = slicer.dicomDatabase.fileValue(file, self.tags['studyInstanceUID'])
+      tempStudyInstanceUID = self.studyInstanceUIDForImage(file)
       
       if tempStudyInstanceUID != studyInstanceUID:
         studyInstanceUID = ""
     
     return studyInstanceUID 
   
+  
+  def isSpecificModalityImage(self, file, modality):
+    """___"""
+    return slicer.dicomDatabase.fileValue(file,self.tags['seriesModality']) == modality
 
-  def isSpecificSeries(self,files,type):
+
+  def isSpecificSeries(self,files,modality):
     """ ___ """
     isSpecificSeries = True
       
     for file in files:
-      if slicer.dicomDatabase.fileValue(file,self.tags['seriesModality']) != type:
+      if self.isSpecificModalityImage(file, modality) == False:
         isSpecificSeries = False 
                             
     return isSpecificSeries
@@ -315,62 +356,91 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
         break 
                 
     return loadables
-      
+  
+  def createScalarVolumeNode(self, vaStorageNode, loadable):
+    vaStorageNode.SetFileName(loadable.files[0])
+    vaStorageNode.ResetFileNameList()
+    
+    for file in loadable.files:
+      vaStorageNode.AddFileName(file)
+    
+    vaStorageNode.SetSingleFile(0)
+    
+    svNode = slicer.vtkMRMLScalarVolumeNode()
+    svNode.SetScene(slicer.mrmlScene)
+    
+    vaStorageNode.ReadData(svNode)
+    
+    if svNode:
+      svNode.SetName(loadable.name)
+      svNode.SetScene(slicer.mrmlScene)
+      slicer.mrmlScene.AddNode(svNode)
+    
+    return svNode
+           
 
   def load(self,loadable):
     """ ___ """
-    a = datetime.now()
     
+    if self.petFileLoadables:
+      files = self.petFileLoadables[0].files
+        
+    patientName = slicer.dicomDatabase.fileValue(files[0], self.tags['patientName'])
+    patientBirthDate = slicer.dicomDatabase.fileValue(files[0], self.tags['patientBirthDate'])
+    patientSex = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSex'])
+    
+    studyUID = self.studyInstanceUIDForImage(files[0])
+    studyDate = self.studyDateImageFile(files[0])
+    studyTime = slicer.dicomDatabase.fileValue(files[0], self.tags['studyTime'])
+    
+    #Report Node
+    reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTReportNode')
+    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1)    
+    
+    reportNode.SetName('Report for '+patientName)
+    reportNode.SetAttribute('DICOM.PatientName',patientName)
+    reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
+    reportNode.SetAttribute('DICOM.PatientSex',patientSex)
+    reportNode.SetScene(slicer.mrmlScene)
+    
+  
     vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
-    for petCtLoadable in self.allSeriesLoadables:
-      vaStorageNode.SetFileName(petCtLoadable.files[0])
-      vaStorageNode.ResetFileNameList()
-    
-      for file in petCtLoadable.files:
-        vaStorageNode.AddFileName(file)
-    
-      vaStorageNode.SetSingleFile(0)
-    
-      svNode = slicer.vtkMRMLScalarVolumeNode()
-      svNode.SetScene(slicer.mrmlScene)
-    
-      vaStorageNode.ReadData(svNode)  
-    
-      if svNode:
-        svNode.SetName(petCtLoadable.name)
-        #
-        # add list of DICOM instance UIDs to the volume node
-        # corresponding to the loaded files
-        #
-        instanceUIDs = ""
-        for file in loadable.files:
-          uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
-          if uid == "":
-            uid = "Unknown"
-          instanceUIDs += uid + " "
-        instanceUIDs = instanceUIDs[:-1]  # strip last space
-        svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
-      
-        slicer.mrmlScene.AddNode(svNode)
-      
-        #
-        # automatically select the volume to display
-        #
-        #appLogic = slicer.app.applicationLogic()
-        #selNode = appLogic.GetSelectionNode()
-        #selNode.SetReferenceActiveVolumeID(svNode.GetID())
-        #appLogic.PropagateVolumeSelection()
-    
-    
-    b = datetime.now()
+
+    if len(self.petFileLoadables) == len(self.ctFileLoadables):
+      i = 0
+      while i < len(self.petFileLoadables):
+        petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
+        ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
         
-    print "TIME TO LOAD: " + str(b-a) + " ms"
+        #Study Node
+        studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTStudyNode')
+        studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
+        
+        studyNode.SetName('Study_'+str(i))
+        studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
+        studyNode.SetAttribute('DICOM.StudyDate',studyDate)
+        studyNode.SetAttribute('DICOM.StudyTime',studyTime)
+        studyNode.SetPETVolumeNode(petScalarVolume)
+        studyNode.SetCTVolumeNode(ctScalarVolume)
+        studyNode.SetScene(slicer.mrmlScene) 
+        
+        slicer.mrmlScene.AddNode(studyNode)
+        reportNode.AddStudy(studyNode)
+        
+        i += 1 
+        
+        
+       
     
-    return svNode
+    
   
-
-
+    slicer.mrmlScene.AddNode(reportNode)
+    
+    print "STUDIES IN REPORT: " + str(reportNode.GetStudiesCount())
+    
+    return reportNode
+  
 #
 # DICOMPetCtStudyPlugin
 #
