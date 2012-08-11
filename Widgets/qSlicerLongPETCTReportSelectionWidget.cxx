@@ -133,6 +133,11 @@ void qSlicerLongPETCTReportSelectionWidget::setMRMLNodeComboBoxReports(qMRMLNode
   QLayoutItem* fieldItem = d->Layout->itemAt(0,QFormLayout::FieldRole);
   d->Layout->removeItem(fieldItem);
 
+  qMRMLNodeComboBox* currentWidget = qobject_cast<qMRMLNodeComboBox*>(d->MRMLNodeComboboxReports);
+  if(currentWidget)
+    disconnect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(updateReportInformation(vtkMRMLNode*)) );
+
+
   d->MRMLNodeComboboxReports = reportsComboBox;
 
   if(d->MRMLNodeComboboxReports)
@@ -166,7 +171,7 @@ void qSlicerLongPETCTReportSelectionWidget
     {
         d->LabelNameInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientName"));
 
-        QDate dob = QDate::fromString(selectedReportNode->GetAttribute("DICOM.PatientBirthDate"),"yyyyMMdd");
+        QDate dob = QDate::fromString(QString(selectedReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
         d->LabelBirthDateInfo->setText(dob.toString(Qt::SystemLocaleLongDate));
         d->LabelSexInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientSex"));
     }
