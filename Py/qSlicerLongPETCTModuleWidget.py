@@ -29,7 +29,7 @@ class qSlicerLongPETCTModuleWidget:
     self.reloadButton = qt.QPushButton("Reload")
     self.reloadButton.toolTip = "Reload this module."
     self.reloadButton.name = "LongPETCT Reload"
-    self.layout.addWidget(self.reloadButton)
+    #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
 
@@ -44,9 +44,14 @@ class qSlicerLongPETCTModuleWidget:
     self.reportSelector = slicer.qMRMLNodeComboBox()
     self.reportSelector.nodeTypes = ['vtkMRMLLongPETCTReportNode']
     self.reportSelector.setMRMLScene(slicer.mrmlScene)
-    self.reportSelector.addEnabled = 1
+    self.reportSelector.setProperty('addEnabled',0)
+    self.reportSelector.setProperty('removeEnabled',0)
+    self.reportSelector.setProperty('renameEnabled',1)
 
-    self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget(self.reportSelector)    
+    
+    self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget()    
+    self.reportSelectionWidget.setMRMLNodeComboBoxReports(self.reportSelector)
+    #self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget(self.reportSelector)    
     reportsLayout.addWidget(self.reportSelectionWidget)
     
 
