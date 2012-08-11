@@ -24,6 +24,12 @@
 
 #include <QFormLayout>
 #include <QLabel>
+#include <QDate>
+
+#include <qMRMLNodeComboBox.h>
+
+#include <vtkMRMLLongPETCTReportNode.h>
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -37,11 +43,21 @@ protected:
 public:
   qSlicerLongPETCTReportSelectionWidgetPrivate(
     qSlicerLongPETCTReportSelectionWidget& object);
-  virtual void setupUi(QWidget* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget* widget);
+  virtual void setupUi(qSlicerLongPETCTReportSelectionWidget* widget);
 
   QFormLayout* Layout;
   QLabel* LabelSelectReport;
-  QWidget* MRMLNodeComboboxReports;
+  QLabel* LabelName;
+  QLabel* LabelNameInfo;
+  QLabel* LabelBirthDate;
+  QLabel* LabelBirthDateInfo;
+  QLabel* LabelSex;
+  QLabel* LabelSexInfo;
+  QFrame* Separator;
+
+
+  QWidget* Placeholder;
+  qMRMLNodeComboBox* MRMLNodeComboboxReports;
 
 };
 
@@ -55,19 +71,38 @@ qSlicerLongPETCTReportSelectionWidgetPrivate
 
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTReportSelectionWidgetPrivate
-::setupUi(QWidget* mrmlNodeComboboxReports, qSlicerLongPETCTReportSelectionWidget* widget)
+::setupUi(qSlicerLongPETCTReportSelectionWidget* widget)
 {
   Q_Q(qSlicerLongPETCTReportSelectionWidget);
 
   this->Layout = new QFormLayout(widget);
+  this->Layout->setLabelAlignment(Qt::AlignRight);
   this->Layout->setSpacing(10);
-
 
   this->LabelSelectReport = new QLabel("Select Report:",widget);
 
-  this->MRMLNodeComboboxReports = mrmlNodeComboboxReports;
+  this->Separator = new QFrame(widget);
+  this->Separator->setFrameStyle(QFrame::HLine | QFrame::Sunken);
 
-  this->Layout->addRow(this->LabelSelectReport,this->MRMLNodeComboboxReports);
+  this->LabelName = new QLabel("Patient Name:",widget);
+  this->LabelNameInfo = new QLabel(widget);
+
+  this->LabelBirthDate = new QLabel("Date of Birth:",widget);
+  this->LabelBirthDateInfo = new QLabel(widget);
+
+  this->LabelSex = new QLabel("Sex:",widget);
+  this->LabelSexInfo = new QLabel(widget);
+
+  this->Placeholder = new QWidget(widget);
+
+  this->MRMLNodeComboboxReports = NULL;
+
+
+  this->Layout->addRow(this->LabelSelectReport, this->Placeholder);//this->MRMLNodeComboboxReports);
+  this->Layout->addRow(this->Separator);
+  this->Layout->addRow(this->LabelName, this->LabelNameInfo);
+  this->Layout->addRow(this->LabelBirthDate, this->LabelBirthDateInfo);
+  this->Layout->addRow(this->LabelSex, this->LabelSexInfo);
 }
 
 //-----------------------------------------------------------------------------
@@ -75,12 +110,12 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
 
 //-----------------------------------------------------------------------------
 qSlicerLongPETCTReportSelectionWidget
-::qSlicerLongPETCTReportSelectionWidget(QWidget* mrmlNodeComboboxReports, QWidget* parentWidget)
+::qSlicerLongPETCTReportSelectionWidget(QWidget* parentWidget)
   : Superclass( parentWidget )
   , d_ptr( new qSlicerLongPETCTReportSelectionWidgetPrivate(*this) )
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
-  d->setupUi(mrmlNodeComboboxReports, this);
+  d->setupUi(this);
 }
 
 //-----------------------------------------------------------------------------
@@ -89,9 +124,57 @@ qSlicerLongPETCTReportSelectionWidget
 {
 }
 
-QWidget* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboboxReports()
+void qSlicerLongPETCTReportSelectionWidget::setMRMLNodeComboBoxReports(qMRMLNodeComboBox* reportsComboBox)
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
-  return d->MRMLNodeComboboxReports;
+  Q_ASSERT(d->Layout);
+  Q_ASSERT(d->Placeholder);
+
+  QLayoutItem* fieldItem = d->Layout->itemAt(0,QFormLayout::FieldRole);
+  d->Layout->removeItem(fieldItem);
+
+  d->MRMLNodeComboboxReports = reportsComboBox;
+
+  if(d->MRMLNodeComboboxReports)
+    {
+      d->Layout->setWidget(0,QFormLayout::FieldRole, d->MRMLNodeComboboxReports);
+      this->updateReportInformation(d->MRMLNodeComboboxReports->currentNode());
+      connect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(updateReportInformation(vtkMRMLNode*)) );
+    }
+  else
+    d->Layout->setWidget(0,QFormLayout::FieldRole, d->Placeholder);
 }
 
+//qMRMLNodeComboBox* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboboxReports()
+//{
+//  Q_D(qSlicerLongPETCTReportSelectionWidget);
+//  return d->MRMLNodeComboboxReports;
+//}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportSelectionWidget
+::updateReportInformation(vtkMRMLNode* node)
+{
+  Q_D(qSlicerLongPETCTReportSelectionWidget);
+  Q_ASSERT(d->LabelNameInfo);
+  Q_ASSERT(d->LabelBirthDateInfo);
+  Q_ASSERT(d->LabelSexInfo);
+
+  vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+
+  if(selectedReportNode)
+    {
+        d->LabelNameInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientName"));
+
+        QDate dob = QDate::fromString(selectedReportNode->GetAttribute("DICOM.PatientBirthDate"),"yyyyMMdd");
+        d->LabelBirthDateInfo->setText(dob.toString(Qt::SystemLocaleLongDate));
+        d->LabelSexInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientSex"));
+    }
+  else
+    {
+        QString noText;
+        d->LabelNameInfo->setText(noText);
+        d->LabelBirthDateInfo->setText(noText);
+        d->LabelSexInfo->setText(noText);
+    }
+}
