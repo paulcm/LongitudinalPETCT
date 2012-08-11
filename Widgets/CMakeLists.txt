@@ -10,12 +10,15 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   qSlicerLongPETCTReportSelectionWidget.cxx
   qSlicerLongPETCTReportSelectionWidget.h
+  qSlicerLongPETCTStudySelectionWidget.cxx
+  qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.cxx
   qSlicerLongPETCTStudySliderWidget.h
   )
 
 set(${KIT}_MOC_SRCS
   qSlicerLongPETCTReportSelectionWidget.h
+  qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.h  
   )
 
@@ -27,7 +30,6 @@ set(${KIT}_UI_SRCS
 set(${KIT}_RESOURCES
   )
   
-
 set(${KIT}_TARGET_LIBRARIES
   vtkSlicer${MODULE_NAME}ModuleLogic
   )
