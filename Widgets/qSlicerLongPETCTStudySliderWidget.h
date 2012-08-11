@@ -33,7 +33,7 @@ class qSlicerLongPETCTStudySliderWidgetPrivate;
 
 
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
-class Q_SLICER_MODULE_LONGPETCT_WIDGETS_EXPORT qSlicerLongPETCTStudySliderWidget
+class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySliderWidget
   : public QWidget
 {
   Q_OBJECT
