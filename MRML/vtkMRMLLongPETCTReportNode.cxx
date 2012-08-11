@@ -88,4 +88,6 @@ bool vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 {
   if(study)
     Studies.push_back(study);
+
+  return true;
 }
