@@ -33,7 +33,7 @@ class qSlicerLongPETCTModuleWidget:
     self.reloadButton.connect('clicked()', self.onReload)
 
 
-    # Collapsible button
+    # Reports Collapsible button
     reportsCollapsibleButton = ctk.ctkCollapsibleButton()
     reportsCollapsibleButton.text = "Report Selection"
     self.layout.addWidget(reportsCollapsibleButton)
@@ -51,11 +51,24 @@ class qSlicerLongPETCTModuleWidget:
     
     self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget()    
     self.reportSelectionWidget.setMRMLNodeComboBoxReports(self.reportSelector)
-    #self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget(self.reportSelector)    
     reportsLayout.addWidget(self.reportSelectionWidget)
     
+    
+    # Studies Collapsible button
+    studiesCollapsibleButton = ctk.ctkCollapsibleButton()
+    studiesCollapsibleButton.text = "Study Selection"
+    self.layout.addWidget(studiesCollapsibleButton)
 
-    #helloWorldButton.connect('clicked(bool)', self.onHelloWorldButtonClicked)
+    studiesLayout = qt.QVBoxLayout(studiesCollapsibleButton)
+
+    self.studySelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySelectionWidget()    
+    self.studySelectionWidget.updateStudyInformation(self.reportSelector.currentNode())
+    self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.studySelectionWidget.updateStudyInformation)
+    studiesLayout.addWidget(self.studySelectionWidget)
+
+    self.studySelectionWidget.connect('studySelected(int)',self.studySelected)
+    self.studySelectionWidget.connect('studyDeselected(int)',self.studyDeselected)    
+    
 
     # Add vertical spacer
     self.layout.addStretch()
@@ -65,8 +78,13 @@ class qSlicerLongPETCTModuleWidget:
     self.studySlider = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
     self.layout.addWidget(self.studySlider)
 
-  def onHelloWorldButtonClicked(self):
-    print "Hello World !"
+  def studySelected(self, idx):
+    currentReport = self.reportSelector.currentNode()
+    currentReport.GetStudy(idx).SetSelected(True)
+    
+  def studyDeselected(self, idx):
+    currentReport = self.reportSelector.currentNode()
+    currentReport.GetStudy(idx).SetSelected(False)
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
