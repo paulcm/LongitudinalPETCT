@@ -381,63 +381,56 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
   def load(self,loadable):
     """ ___ """
-    
+    reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTReportNode')
+    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1) 
+      
     if self.petFileLoadables:
       files = self.petFileLoadables[0].files
         
-    patientName = slicer.dicomDatabase.fileValue(files[0], self.tags['patientName'])
-    patientBirthDate = slicer.dicomDatabase.fileValue(files[0], self.tags['patientBirthDate'])
-    patientSex = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSex'])
+      patientName = slicer.dicomDatabase.fileValue(files[0], self.tags['patientName'])
+      patientBirthDate = slicer.dicomDatabase.fileValue(files[0], self.tags['patientBirthDate'])
+      patientSex = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSex'])
     
-    studyUID = self.studyInstanceUIDForImage(files[0])
-    studyDate = self.studyDateImageFile(files[0])
-    studyTime = slicer.dicomDatabase.fileValue(files[0], self.tags['studyTime'])
-    
-    #Report Node
-    reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTReportNode')
-    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1)    
-    
-    reportNode.SetName('Report for '+patientName)
-    reportNode.SetAttribute('DICOM.PatientName',patientName)
-    reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
-    reportNode.SetAttribute('DICOM.PatientSex',patientSex)
-    reportNode.SetScene(slicer.mrmlScene)
+      #Report Node    
+      reportNode.SetName('Report for '+patientName)
+      reportNode.SetAttribute('DICOM.PatientName',patientName)
+      reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
+      reportNode.SetAttribute('DICOM.PatientSex',patientSex)
+      reportNode.SetScene(slicer.mrmlScene)
     
   
-    vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
+      vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
 
-    if len(self.petFileLoadables) == len(self.ctFileLoadables):
-      i = 0
-      while i < len(self.petFileLoadables):
-        petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
-        ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
+      if len(self.petFileLoadables) == len(self.ctFileLoadables):
+        i = 0
+        while i < len(self.petFileLoadables):
+          petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
+          ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
         
-        #Study Node
-        studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTStudyNode')
-        studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
-        
-        studyNode.SetName('Study_'+str(i))
-        studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
-        studyNode.SetAttribute('DICOM.StudyDate',studyDate)
-        studyNode.SetAttribute('DICOM.StudyTime',studyTime)
-        studyNode.SetPETVolumeNode(petScalarVolume)
-        studyNode.SetCTVolumeNode(ctScalarVolume)
-        studyNode.SetScene(slicer.mrmlScene) 
-        
-        slicer.mrmlScene.AddNode(studyNode)
-        reportNode.AddStudy(studyNode)
-        
-        i += 1 
-        
-        
-       
+          studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
+          studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
+          studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
     
-    
-  
-    slicer.mrmlScene.AddNode(reportNode)
-    
-    print "STUDIES IN REPORT: " + str(reportNode.GetStudiesCount())
+        
+          #Study Node
+          studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTStudyNode')
+          studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
+        
+          studyNode.SetName('Study_'+str(i))
+          studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
+          studyNode.SetAttribute('DICOM.StudyDate',studyDate)
+          studyNode.SetAttribute('DICOM.StudyTime',studyTime)
+          studyNode.SetPETVolumeNode(petScalarVolume)
+          studyNode.SetCTVolumeNode(ctScalarVolume)
+          studyNode.SetScene(slicer.mrmlScene) 
+        
+          slicer.mrmlScene.AddNode(studyNode)
+          reportNode.AddStudy(studyNode)
+        
+          i += 1 
+        
+      slicer.mrmlScene.AddNode(reportNode)
     
     return reportNode
   
