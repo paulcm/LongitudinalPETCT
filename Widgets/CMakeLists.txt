@@ -2,26 +2,20 @@ project(qSlicer${MODULE_NAME}ModuleWidgets)
 
 set(KIT ${PROJECT_NAME})
 
-set(${KIT}_EXPORT_DIRECTIVE "Q_SLICER_MODULE_${MODULE_NAME_UPPER}_WIDGETS_EXPORT")
+set(${KIT}_EXPORT_DIRECTIVE "Q_SLICER_${MODULE_NAME_UPPER}_MODULE_WIDGETS_EXPORT")
 
 set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
-  qSlicerLongPETCTReportTree.cxx
-  qSlicerLongPETCTReportTree.h
   qSlicerLongPETCTReportSelectionWidget.cxx
   qSlicerLongPETCTReportSelectionWidget.h
-  qSlicerLongPETCTStudySelectionWidget.cxx
-  qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.cxx
   qSlicerLongPETCTStudySliderWidget.h
   )
 
 set(${KIT}_MOC_SRCS
-  qSlicerLongPETCTReportTree.h
   qSlicerLongPETCTReportSelectionWidget.h
-  qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.h  
   )
 
