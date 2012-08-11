@@ -20,10 +20,9 @@ Version:   $Revision: 1.2 $
 
 // MRML includes
 #include "vtkMRMLLongPETCTReportNode.h"
-
+#include "vtkMRMLLongPETCTStudyNode.h"
 
 // STD includes
-
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
@@ -84,10 +83,39 @@ int vtkMRMLLongPETCTReportNode::GetStudiesCount() const
 
 
 //----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
+int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 {
-  if(study)
-    Studies.push_back(study);
+  std::string studyDate = study->GetAttribute("DICOM.StudyDate");
+  std::string studyTime = study->GetAttribute("DICOM.StudyTime");
 
-  return true;
+  int i=0;
+  for(; i < this->Studies.size(); ++i)
+    {
+      std::string listStudyDate = this->Studies.at(i)->GetAttribute("DICOM.StudyDate");
+      std::string listStudyTime = this->Studies.at(i)->GetAttribute("DICOM.StudyTime");
+
+      if(studyDate.compare(listStudyDate) < 0)
+        break;
+
+      else if(studyDate.compare(listStudyDate) == 0)
+        if(studyTime.compare(listStudyTime) < 0)
+          break;
+    }
+
+  Studies.insert(Studies.begin()+i, study);
+
+  return i;
 }
+
+
+//----------------------------------------------------------------------------
+const vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index)
+{
+  if(index >= 0 && index < this->Studies.size())
+    return Studies.at(index);
+
+  else
+    return NULL;
+}
+
+

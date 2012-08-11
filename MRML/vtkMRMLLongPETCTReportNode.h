@@ -65,10 +65,12 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Report";};
 
-  bool AddStudy(vtkMRMLLongPETCTStudyNode* study);
+  int AddStudy(vtkMRMLLongPETCTStudyNode* study);
   //bool RemoveStudy(vtkMRMLLongPETCTStudyNode study);
 
   int GetStudiesCount() const;
+
+  const vtkMRMLLongPETCTStudyNode* GetStudy(int index);
 
 protected:
   vtkMRMLLongPETCTReportNode();
