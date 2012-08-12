@@ -84,7 +84,7 @@ void vtkMRMLLongPETCTStudyNode::SetSelected(bool selected)
 }
 
 //----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTStudyNode::IsSelected()
+bool vtkMRMLLongPETCTStudyNode::IsSelected() const
 {
   return this->Selected;
 }
