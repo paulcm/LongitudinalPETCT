@@ -55,19 +55,27 @@ class qSlicerLongPETCTModuleWidget:
     
     
     # Studies Collapsible button
-    studiesCollapsibleButton = ctk.ctkCollapsibleButton()
-    studiesCollapsibleButton.text = "Study Selection"
-    self.layout.addWidget(studiesCollapsibleButton)
+    self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
+    self.studiesCollapsibleButton.text = "Study Selection"
+    self.studiesCollapsibleButton.setProperty('collapsed',True)
+    
+    if self.reportSelector.currentNode():
+      self.studiesCollapsibleButton.setProperty('enabled',True)
+    else:
+      self.studiesCollapsibleButton.setProperty('enabled',False)
+    
+    self.layout.addWidget(self.studiesCollapsibleButton)
 
-    studiesLayout = qt.QVBoxLayout(studiesCollapsibleButton)
+    studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
 
     self.studySelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySelectionWidget()    
     self.studySelectionWidget.updateStudyInformation(self.reportSelector.currentNode())
-    self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.studySelectionWidget.updateStudyInformation)
+    self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
+    
     studiesLayout.addWidget(self.studySelectionWidget)
 
-    self.studySelectionWidget.connect('studySelected(int)',self.studySelected)
-    self.studySelectionWidget.connect('studyDeselected(int)',self.studyDeselected)    
+    self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
+    self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
     
 
     # Add vertical spacer
@@ -75,16 +83,39 @@ class qSlicerLongPETCTModuleWidget:
     
     
     # Add Study Slider
-    self.studySlider = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
-    self.layout.addWidget(self.studySlider)
+    self.studySliderWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
+    self.layout.addWidget(self.studySliderWidget)
 
-  def studySelected(self, idx):
+  def onStudySelected(self, idx):
     currentReport = self.reportSelector.currentNode()
-    currentReport.GetStudy(idx).SetSelected(True)
+    if currentReport:
+      currentReport.GetStudy(idx).SetSelected(True)
+      self.studySliderWidget.updateSliderValues(currentReport)
+      
+      selectedStudy = currentReport.GetStudy(idx)
     
-  def studyDeselected(self, idx):
+      if selectedStudy:
+        selectedIdx = currentReport.GetIndexOfSelectedStudy(selectedStudy)
+        self.studySliderWidget.setSelectedValue(selectedIdx)
+        
+    
+  def onStudyDeselected(self, idx):
+    print "DESELECTED"
     currentReport = self.reportSelector.currentNode()
-    currentReport.GetStudy(idx).SetSelected(False)
+    if currentReport:
+      currentReport.GetStudy(idx).SetSelected(False)
+      print "UNSELECTED"
+      self.studySliderWidget.updateSliderValues(currentReport)
+    
+  def onCurrentReportChanged(self, reportNode):
+    if(reportNode):
+      self.studiesCollapsibleButton.setProperty('enabled',True)
+    self.studySelectionWidget.updateStudyInformation(reportNode)
+    self.studySliderWidget.updateSliderValues(reportNode)
+
+
+
+
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
