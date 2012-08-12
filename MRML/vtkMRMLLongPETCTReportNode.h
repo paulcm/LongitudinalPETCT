@@ -69,8 +69,14 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   //bool RemoveStudy(vtkMRMLLongPETCTStudyNode study);
 
   int GetStudiesCount() const;
+  int GetSelectedStudiesCount();
 
-  const vtkMRMLLongPETCTStudyNode* GetStudy(int index);
+  vtkMRMLLongPETCTStudyNode* GetStudy(int index);
+  vtkMRMLLongPETCTStudyNode* GetSelectedStudy(int index);
+
+  std::vector<vtkMRMLLongPETCTStudyNode*> GetSelectedStudies();
+
+  int GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study);
 
 protected:
   vtkMRMLLongPETCTReportNode();

@@ -78,7 +78,21 @@ void vtkMRMLLongPETCTReportNode::PrintSelf(ostream& os, vtkIndent indent)
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetStudiesCount() const
 {
-  return Studies.size();
+  return this->Studies.size();
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount()
+{
+  int count = 0;
+
+  for(int i=0; i < this->Studies.size(); ++i)
+    {
+      if(this->Studies.at(i)->IsSelected())
+        count++;
+    }
+
+  return count;
 }
 
 
@@ -109,13 +123,56 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 
 
 //----------------------------------------------------------------------------
-const vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index)
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index)
 {
   if(index >= 0 && index < this->Studies.size())
-    return Studies.at(index);
+    return Studies[index];
 
   else
     return NULL;
 }
 
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedStudies()
+{
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies;
+
+  for(int i=0; i < this->Studies.size();++i)
+    {
+      if(this->Studies.at(i)->IsSelected())
+        selectedStudies.push_back(this->Studies[i]);
+    }
+
+  return selectedStudies;
+}
+
+
+//----------------------------------------------------------------------------
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int index)
+{
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
+
+  if(index >= 0 && index < selectedStudies.size())
+    return selectedStudies[index];
+
+
+  return NULL;
+}
+
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study)
+{
+
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
+
+
+  for(int i=0; i < selectedStudies.size(); ++i)
+    {
+      if (selectedStudies[i] == study)
+        return i;
+    }
+
+  return -1;
+}
 
