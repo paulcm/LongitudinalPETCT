@@ -113,7 +113,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
                 self.ctFileLoadables.append(loadableCT)
                 allFiles += loadableCT.files
                 if loadableCT.warning:
-                  warning += loadableCT.name + ": "+loadablePT.warning+" "
+                  warning += loadableCT.name + ": "+loadableCT.warning+" "
             
                 counter += 1
         i += 1           
