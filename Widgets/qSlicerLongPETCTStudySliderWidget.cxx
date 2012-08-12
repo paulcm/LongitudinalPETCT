@@ -24,6 +24,14 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QSlider>
+#include <QDate>
+#include <QTime>
+
+#include <vtkMRMLLongPETCTReportNode.h>
+#include <vtkMRMLLongPETCTStudyNode.h>
+
+
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -45,6 +53,8 @@ public:
   QLabel* LabelSelectedTimepoint;
 
   QSlider* Slider;
+
+  QStringList StudyDates;
 
 };
 
@@ -75,10 +85,14 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
   this->Slider->setValue(0);
   this->Slider->setTickPosition(QSlider::TicksBothSides);
   this->Slider->setEnabled(false);
+  connect( this->Slider, SIGNAL(valueChanged(int)), widget, SLOT(setSelectedValue(int)) );
 
   this->Layout->addWidget(this->LabelDescription,0,0,1,1);
   this->Layout->addWidget(this->LabelSelectedTimepoint,0,1,1,1);
   this->Layout->addWidget(this->Slider,1,0,1,2);
+
+  this->Layout->setColumnStretch(0,0);
+  this->Layout->setColumnStretch(1,2);
 
 }
 
@@ -101,45 +115,92 @@ qSlicerLongPETCTStudySliderWidget
 {
 }
 
-int qSlicerLongPETCTStudySliderWidget::maximumValue()
-{
-  Q_D(qSlicerLongPETCTStudySliderWidget);
-  return d->Slider->maximum();
-}
 
-int qSlicerLongPETCTStudySliderWidget::currentValue()
-{
-  Q_D(qSlicerLongPETCTStudySliderWidget);
-  return d->Slider->value();
-}
 
-QString qSlicerLongPETCTStudySliderWidget::selectedStudy()
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySliderWidget
+::updateSliderValues(vtkMRMLNode* node)
 {
   Q_D(qSlicerLongPETCTStudySliderWidget);
-  return d->LabelSelectedTimepoint->text();
-}
-
-void qSlicerLongPETCTStudySliderWidget::setMaximumValue(int value)
-{
-  Q_D(qSlicerLongPETCTStudySliderWidget);
+  Q_ASSERT(d->StudyDates);
   Q_ASSERT(d->Slider);
+  Q_ASSERT(d->LabelSelectedTimepoint);
 
-  d->Slider->setMaximum(value);
+  d->LabelSelectedTimepoint->setText("");
+
+  vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+
+  if( ! selectedReportNode)
+      return;
+
+  int studiesCount = selectedReportNode->GetSelectedStudiesCount();
+  d->StudyDates.clear();
+
+  std::cout << "UPDATING STUDYDATES" << std::endl;
+  for(int i=0; i < studiesCount; ++i)
+    {
+      vtkMRMLLongPETCTStudyNode* study = selectedReportNode->GetSelectedStudy(i);
+      if(study != NULL)
+        std::cout << "GOT SELECTED STUDY " << i << std::endl;
+      else
+        std::cout << "NO SELECTED STUDY " << i << std::endl;
+      QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
+      QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
+
+      QStringList text;
+      text << date.toString(Qt::SystemLocaleLongDate);
+      text << time.toString(Qt::ISODate);
+
+      d->StudyDates.append(text.join("\t"));
+
+      std::cout << "APPENDED TO STUDYDATES: "<< text.join(" ").toStdString() << std::endl;
+    }
+
+  this->setSelectedValue(d->Slider->value());
+
+  if(d->StudyDates.size() != studiesCount)
+    return;
+
+  if(studiesCount < 2)
+    {
+      disconnect( d->Slider, SIGNAL(valueChanged(int)), this, SLOT(setSelectedValue(int)) );
+      d->Slider->setValue(0);
+      connect( d->Slider, SIGNAL(valueChanged(int)), this, SLOT(setSelectedValue(int)) );
+
+      d->Slider->setEnabled(false);
+      d->Slider->setMaximum(1);
+    }
+  else
+    {
+      d->Slider->setEnabled(true);
+      d->Slider->setMaximum(studiesCount-1);
+    }
+
+  this->setSelectedValue(d->Slider->value());
 }
 
-void qSlicerLongPETCTStudySliderWidget::setCurrentValue(int value)
-{
-  Q_D(qSlicerLongPETCTStudySliderWidget);
-  Q_ASSERT(d->Slider);
-
-  d->Slider->setValue(value);
-}
-
-void qSlicerLongPETCTStudySliderWidget::setSelectedStudy(const QString& selectedStudy)
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySliderWidget
+::setSelectedValue(int value)
 {
   Q_D(qSlicerLongPETCTStudySliderWidget);
   Q_ASSERT(d->LabelSelectedTimepoint);
+  Q_ASSERT(d->StudyDates);
+  Q_ASSERT(d->Slider);
 
-  d->LabelDescription->setText(selectedStudy);
+  if(value < 0 || value > d->Slider->maximum() || value >= d->StudyDates.size())
+    return;
+
+  disconnect( d->Slider, SIGNAL(valueChanged(int)), this, SLOT(setSelectedValue(int)) );
+  d->Slider->setValue(value);
+  connect( d->Slider, SIGNAL(valueChanged(int)), this, SLOT(setSelectedValue(int)) );
+
+  if(value < d->StudyDates.size())
+    d->LabelSelectedTimepoint->setText(d->StudyDates.at(value));
+  else
+    d->LabelSelectedTimepoint->setText("");
+
+  emit selectedValueChanged(value);
 }
+
 

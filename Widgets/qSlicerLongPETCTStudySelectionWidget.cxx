@@ -148,14 +148,14 @@ void qSlicerLongPETCTStudySelectionWidget
 
   for(int i=0; i < selectedReportNode->GetStudiesCount(); ++i)
     {
-      vtkMRMLLongPETCTStudyNode* study = const_cast<vtkMRMLLongPETCTStudyNode*>(selectedReportNode->GetStudy(i));
+      vtkMRMLLongPETCTStudyNode* study = selectedReportNode->GetStudy(i);
       QCheckBox* cB = new QCheckBox(); // has no parent but will be deleted by deconstructor
       cB->setChecked(study->IsSelected());
-      QStringList cBText;
 
       QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
       QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
 
+      QStringList cBText;
       cBText << "Study Date:" << date.toString(Qt::SystemLocaleLongDate) << "\t";
       cBText << "Time:" << time.toString(Qt::ISODate);
 

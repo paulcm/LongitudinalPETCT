@@ -25,9 +25,12 @@
 #include <QWidget>
 #include <QString>
 
+
+
 // LongPETCTStudySlider Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
 
+class vtkMRMLNode;
 
 class qSlicerLongPETCTStudySliderWidgetPrivate;
 
@@ -37,22 +40,18 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySliderWidget
   : public QWidget
 {
   Q_OBJECT
-  Q_PROPERTY(int maximum READ maximumValue WRITE setMaximumValue)
-  Q_PROPERTY(int current READ currentValue WRITE setCurrentValue)
-  Q_PROPERTY(QString selectedStudy READ selectedStudy WRITE setSelectedStudy)
 
 public:
   typedef QWidget Superclass;
   qSlicerLongPETCTStudySliderWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySliderWidget();
 
-  Q_INVOKABLE int maximumValue();
-  Q_INVOKABLE int currentValue();
-  Q_INVOKABLE QString selectedStudy();
+signals:
+  void selectedValueChanged(int value);
 
-  Q_INVOKABLE void setMaximumValue(int value);
-  Q_INVOKABLE void setCurrentValue(int value);
-  Q_INVOKABLE void setSelectedStudy(const QString& selectedStudy);
+public slots:
+  void updateSliderValues(vtkMRMLNode* node);
+  void setSelectedValue(int value);
 
 protected slots:
 
