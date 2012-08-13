@@ -45,7 +45,7 @@ public:
 
 
 public slots:
-  void updateStudyInformation(vtkMRMLNode* node);
+  void update(vtkMRMLNode* node);
 
 signals:
     void studySelected(int index);

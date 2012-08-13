@@ -33,7 +33,6 @@
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
 
-#include <iostream>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -52,8 +51,6 @@ public:
   virtual void setupUi(qSlicerLongPETCTStudySelectionWidget*);
 
   QVBoxLayout* Layout;
-  QLabel* LabelDescription;
-  QFrame* Separator;
 
   QList<QCheckBox*> ListStudyCheckBoxes;
 
@@ -87,15 +84,6 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 
   this->Layout = new QVBoxLayout(widget);
   this->Layout->setSpacing(8);
-
-  this->LabelDescription = new QLabel("Select studies in order to add them to the workflow!",widget);
-  this->LabelDescription->setWordWrap(true);
-
-  this->Separator = new QFrame(widget);
-  this->Separator->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-
-  this->Layout->addWidget(this->LabelDescription);
-  this->Layout->addWidget(this->Separator);
 }
 
 //-----------------------------------------------------------------------------
@@ -120,7 +108,7 @@ qSlicerLongPETCTStudySelectionWidget
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTStudySelectionWidget
-::updateStudyInformation(vtkMRMLNode* node)
+::update(vtkMRMLNode* node)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->ListStudyCheckBoxes);
