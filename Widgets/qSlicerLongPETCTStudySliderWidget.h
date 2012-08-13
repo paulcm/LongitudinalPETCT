@@ -46,12 +46,12 @@ public:
   qSlicerLongPETCTStudySliderWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySliderWidget();
 
+
 signals:
-  void selectedValueChanged(int value);
+  void sliderValueChanged(int value);
 
 public slots:
-  void updateSliderValues(vtkMRMLNode* node);
-  void setSelectedValue(int value);
+  void update(vtkMRMLNode* node);
 
 protected slots:
 
