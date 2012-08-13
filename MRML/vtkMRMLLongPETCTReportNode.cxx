@@ -15,7 +15,6 @@ Version:   $Revision: 1.2 $
 // VTK includes
 #include <vtkCommand.h>
 #include <vtkObjectFactory.h>
-#
 
 
 // MRML includes
@@ -31,6 +30,7 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
 vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
 {
   this->SetHideFromEditors(false);
+  this->UserSelectedStudy = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -159,13 +159,35 @@ vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int inde
   return NULL;
 }
 
+//----------------------------------------------------------------------------
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudyFirst()
+{
+  if(this->GetSelectedStudiesCount() > 0)
+    return this->GetSelectedStudy(0);
+
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudyLast()
+{
+  int selectedStudies = this->GetSelectedStudiesCount();
+
+  if(selectedStudies > 0)
+    return this->GetSelectedStudy(selectedStudies-1);
+
+  return NULL;
+}
+
 
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study)
 {
 
-  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
+  if(study == NULL)
+    return -1;
 
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
 
   for(int i=0; i < selectedStudies.size(); ++i)
     {

@@ -72,11 +72,18 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   int GetSelectedStudiesCount();
 
   vtkMRMLLongPETCTStudyNode* GetStudy(int index);
+
   vtkMRMLLongPETCTStudyNode* GetSelectedStudy(int index);
+  vtkMRMLLongPETCTStudyNode* GetSelectedStudyFirst();
+  vtkMRMLLongPETCTStudyNode* GetSelectedStudyLast();
+
 
   std::vector<vtkMRMLLongPETCTStudyNode*> GetSelectedStudies();
 
   int GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study);
+
+  vtkGetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);
+  vtkSetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);
 
 protected:
   vtkMRMLLongPETCTReportNode();
@@ -84,9 +91,8 @@ protected:
   vtkMRMLLongPETCTReportNode(const vtkMRMLLongPETCTReportNode&);
   void operator=(const vtkMRMLLongPETCTReportNode&);
 
-
   std::vector<vtkMRMLLongPETCTStudyNode*> Studies;
-
+  vtkMRMLLongPETCTStudyNode* UserSelectedStudy;
 
 };
 
