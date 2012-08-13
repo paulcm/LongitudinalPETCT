@@ -51,7 +51,7 @@ public:
   Q_INVOKABLE void setMRMLNodeComboBoxReports(qMRMLNodeComboBox* reportsComboBox);
 
 public slots:
-  void updateReportInformation(vtkMRMLNode* node);
+  void update(vtkMRMLNode* node);
 
 
 

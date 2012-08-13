@@ -135,7 +135,7 @@ void qSlicerLongPETCTReportSelectionWidget::setMRMLNodeComboBoxReports(qMRMLNode
 
   qMRMLNodeComboBox* currentWidget = qobject_cast<qMRMLNodeComboBox*>(d->MRMLNodeComboboxReports);
   if(currentWidget)
-    disconnect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(updateReportInformation(vtkMRMLNode*)) );
+    disconnect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(update(vtkMRMLNode*)) );
 
 
   d->MRMLNodeComboboxReports = reportsComboBox;
@@ -143,8 +143,8 @@ void qSlicerLongPETCTReportSelectionWidget::setMRMLNodeComboBoxReports(qMRMLNode
   if(d->MRMLNodeComboboxReports)
     {
       d->Layout->setWidget(0,QFormLayout::FieldRole, d->MRMLNodeComboboxReports);
-      this->updateReportInformation(d->MRMLNodeComboboxReports->currentNode());
-      connect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(updateReportInformation(vtkMRMLNode*)) );
+      this->update(d->MRMLNodeComboboxReports->currentNode());
+      connect( d->MRMLNodeComboboxReports, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(update(vtkMRMLNode*)) );
     }
   else
     d->Layout->setWidget(0,QFormLayout::FieldRole, d->Placeholder);
@@ -158,7 +158,7 @@ void qSlicerLongPETCTReportSelectionWidget::setMRMLNodeComboBoxReports(qMRMLNode
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportSelectionWidget
-::updateReportInformation(vtkMRMLNode* node)
+::update(vtkMRMLNode* node)
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
   Q_ASSERT(d->LabelNameInfo);
