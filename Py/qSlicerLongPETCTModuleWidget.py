@@ -69,7 +69,7 @@ class qSlicerLongPETCTModuleWidget:
     studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
 
     self.studySelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySelectionWidget()    
-    self.studySelectionWidget.updateStudyInformation(self.reportSelector.currentNode())
+    self.studySelectionWidget.update(self.reportSelector.currentNode())
     self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
     
     studiesLayout.addWidget(self.studySelectionWidget)
@@ -81,38 +81,65 @@ class qSlicerLongPETCTModuleWidget:
     # Add vertical spacer
     self.layout.addStretch()
     
+    self.separator = qt.QFrame()
+    self.separator.setFrameStyle(qt.QFrame.HLine | qt.QFrame.Sunken)
+    self.layout.addWidget(self.separator)
     
     # Add Study Slider
     self.studySliderWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
     self.layout.addWidget(self.studySliderWidget)
+    self.studySliderWidget.connect('sliderValueChanged(int)',self.onSliderWidgetValueChanged)
+    
+
+    # Add Report Table
+    self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
+    self.layout.addWidget(self.reportTableWidget) 
+
+
+  def onSliderWidgetValueChanged(self, value):
+    currentReport = self.reportSelector.currentNode()
+    if currentReport:
+      currentSelectedStudy = currentReport.GetSelectedStudy(value)
+      if currentSelectedStudy:
+        currentReport.SetUserSelectedStudy(currentSelectedStudy)
+        
+        self.reportTableWidget.update(currentReport)
+        self.studySliderWidget.update(currentReport)
+        
+        
 
   def onStudySelected(self, idx):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
-      currentReport.GetStudy(idx).SetSelected(True)
-      self.studySliderWidget.updateSliderValues(currentReport)
-      
       selectedStudy = currentReport.GetStudy(idx)
-    
       if selectedStudy:
-        selectedIdx = currentReport.GetIndexOfSelectedStudy(selectedStudy)
-        self.studySliderWidget.setSelectedValue(selectedIdx)
+        selectedStudy.SetSelected(True)
+        currentReport.SetUserSelectedStudy(selectedStudy)
         
+        self.onUpdateSliderAndTableWidgets(currentReport)
+      
     
   def onStudyDeselected(self, idx):
-    print "DESELECTED"
     currentReport = self.reportSelector.currentNode()
     if currentReport:
       currentReport.GetStudy(idx).SetSelected(False)
-      print "UNSELECTED"
-      self.studySliderWidget.updateSliderValues(currentReport)
-    
-  def onCurrentReportChanged(self, reportNode):
-    if(reportNode):
-      self.studiesCollapsibleButton.setProperty('enabled',True)
-    self.studySelectionWidget.updateStudyInformation(reportNode)
-    self.studySliderWidget.updateSliderValues(reportNode)
+      currentReport.SetUserSelectedStudy(currentReport.GetSelectedStudyLast())
+      
+      self.onUpdateSliderAndTableWidgets(currentReport)  
 
+      
+      
+  def onCurrentReportChanged(self, reportNode):
+    if reportNode:
+      self.studiesCollapsibleButton.setProperty('enabled',True)
+      self.studySelectionWidget.update(reportNode)
+      self.studySliderWidget.update(reportNode)
+      self.reportTableWidget.update(reportNode)
+
+
+  def onUpdateSliderAndTableWidgets(self, reportNode):
+    self.studySliderWidget.update(reportNode)
+    self.reportTableWidget.update(reportNode)
 
 
 
