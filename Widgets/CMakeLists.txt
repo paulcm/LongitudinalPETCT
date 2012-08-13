@@ -10,6 +10,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   qSlicerLongPETCTReportSelectionWidget.cxx
   qSlicerLongPETCTReportSelectionWidget.h
+  qSlicerLongPETCTReportTableWidget.cxx
+  qSlicerLongPETCTReportTableWidget.h
   qSlicerLongPETCTStudySelectionWidget.cxx
   qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.cxx
@@ -18,6 +20,7 @@ set(${KIT}_SRCS
 
 set(${KIT}_MOC_SRCS
   qSlicerLongPETCTReportSelectionWidget.h
+  qSlicerLongPETCTReportTableWidget.h
   qSlicerLongPETCTStudySelectionWidget.h
   qSlicerLongPETCTStudySliderWidget.h  
   )
