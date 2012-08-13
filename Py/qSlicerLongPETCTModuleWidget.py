@@ -100,11 +100,14 @@ class qSlicerLongPETCTModuleWidget:
     currentReport = self.reportSelector.currentNode()
     if currentReport:
       currentSelectedStudy = currentReport.GetSelectedStudy(value)
+      
+      self.updateBgFgToUserSelectedStudy(currentSelectedStudy)
       if currentSelectedStudy:
         currentReport.SetUserSelectedStudy(currentSelectedStudy)
         
         self.reportTableWidget.update(currentReport)
         self.studySliderWidget.update(currentReport)
+        
         
         
 
@@ -116,17 +119,45 @@ class qSlicerLongPETCTModuleWidget:
         selectedStudy.SetSelected(True)
         currentReport.SetUserSelectedStudy(selectedStudy)
         
-        self.onUpdateSliderAndTableWidgets(currentReport)
-      
-    
+        self.onUpdateSliderAndTableWidgets(currentReport)        
+        
+        petID = ""
+        ctID = ""
+        
+        firstDisplayPet = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode() == None
+        firstDisplayCt = selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode() == None
+        
+        if firstDisplayPet | firstDisplayCt:
+          self.updateBgFgToUserSelectedStudy(selectedStudy)
+
+        
+        if firstDisplayCt:
+          selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(0)
+          selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
+          selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetWindowLevel(350,40)
+        
+        if firstDisplayPet:
+          selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat");
+          compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
+          for compositeNode in compositeNodes.values():
+            compositeNode.SetForegroundVolumeID(petID)
+            compositeNode.SetForegroundOpacity(0.6)
+        
+      self.updateBgFgToUserSelectedStudy(selectedStudy)
+        
+
   def onStudyDeselected(self, idx):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
       currentReport.GetStudy(idx).SetSelected(False)
-      currentReport.SetUserSelectedStudy(currentReport.GetSelectedStudyLast())
+      lastSelectedStudy = currentReport.GetSelectedStudyLast()
+      currentReport.SetUserSelectedStudy(lastSelectedStudy)
+      
+      self.updateBgFgToUserSelectedStudy(lastSelectedStudy)
       
       self.onUpdateSliderAndTableWidgets(currentReport)  
 
+      
       
       
   def onCurrentReportChanged(self, reportNode):
@@ -135,6 +166,22 @@ class qSlicerLongPETCTModuleWidget:
       self.studySelectionWidget.update(reportNode)
       self.studySliderWidget.update(reportNode)
       self.reportTableWidget.update(reportNode)
+      
+      self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
+      
+  
+  def updateBgFgToUserSelectedStudy(self, userSelectedStudy):    
+    
+    petID = ""
+    ctID = ""
+      
+    if userSelectedStudy:
+      if userSelectedStudy.GetPETVolumeNode():
+        petID = userSelectedStudy.GetPETVolumeNode().GetID()
+      if userSelectedStudy.GetCTVolumeNode():
+        ctID = userSelectedStudy.GetCTVolumeNode().GetID()
+
+    self.SetBgFgVolumes(ctID, petID)
 
 
   def onUpdateSliderAndTableWidgets(self, reportNode):
@@ -142,6 +189,14 @@ class qSlicerLongPETCTModuleWidget:
     self.reportTableWidget.update(reportNode)
 
 
+
+  @staticmethod
+  def SetBgFgVolumes(bg, fg):
+    appLogic = slicer.app.applicationLogic()
+    selectionNode = appLogic.GetSelectionNode()
+    selectionNode.SetReferenceActiveVolumeID(bg)
+    selectionNode.SetReferenceSecondaryVolumeID(fg)
+    appLogic.PropagateVolumeSelection()
 
 
   def onReload(self,moduleName="LongPETCT"):
