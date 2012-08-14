@@ -32,6 +32,10 @@ class qSlicerLongPETCTModuleWidget:
     #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
+    
+    self.vrLogic = slicer.modules.volumerendering.logic()
+    self.vrDisplayNode = None
+    
 
     # Reports Collapsible button
     reportsCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -101,13 +105,18 @@ class qSlicerLongPETCTModuleWidget:
     if currentReport:
       currentSelectedStudy = currentReport.GetSelectedStudy(value)
       
+      
       self.updateBgFgToUserSelectedStudy(currentSelectedStudy)
+      
       if currentSelectedStudy:
         currentReport.SetUserSelectedStudy(currentSelectedStudy)
-        
+      
         self.reportTableWidget.update(currentReport)
         self.studySliderWidget.update(currentReport)
         
+        self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
+      else:
+        self.onUpdateVolumeRendering(None)
         
         
 
@@ -142,6 +151,25 @@ class qSlicerLongPETCTModuleWidget:
           for compositeNode in compositeNodes.values():
             compositeNode.SetForegroundVolumeID(petID)
             compositeNode.SetForegroundOpacity(0.6)
+      
+        # volume rendering
+        if self.vrDisplayNode == None:
+          self.vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
+          viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+          #self.vrDisplayNode.SetCurrentVolumeMapper(0)
+          self.vrDisplayNode.AddViewNodeID(viewNode.GetID())
+          
+          self.vrDisplayNode.SetCroppingEnabled(0)
+          self.vrDisplayNode.VisibilityOn()
+          
+        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
+          #self.vrColorMap = self.vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
+
+          # setup color transfer function once
+          #self.vrColorMap.RemoveAllPoints()
+          ##self.vrColorMap.AddRGBPoint(0, 0.8, 0.8, 0)
+          #self.vrColorMap.AddRGBPoint(500, 0.8, 0.8, 0)      
+          
         
       self.updateBgFgToUserSelectedStudy(selectedStudy)
         
@@ -153,11 +181,9 @@ class qSlicerLongPETCTModuleWidget:
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       currentReport.SetUserSelectedStudy(lastSelectedStudy)
       
+      self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
       self.updateBgFgToUserSelectedStudy(lastSelectedStudy)
-      
-      self.onUpdateSliderAndTableWidgets(currentReport)  
-
-      
+      self.onUpdateSliderAndTableWidgets(currentReport)       
       
       
   def onCurrentReportChanged(self, reportNode):
@@ -166,6 +192,13 @@ class qSlicerLongPETCTModuleWidget:
       self.studySelectionWidget.update(reportNode)
       self.studySliderWidget.update(reportNode)
       self.reportTableWidget.update(reportNode)
+      
+      if reportNode.GetUserSelectedStudy():
+        self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
+      else:
+        self.onUpdateVolumeRendering(None)
+    else:
+      self.onUpdateVolumeRendering(None)
       
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
       
@@ -189,6 +222,14 @@ class qSlicerLongPETCTModuleWidget:
     self.reportTableWidget.update(reportNode)
 
 
+  def onUpdateVolumeRendering(self, volumeNode):
+    if volumeNode:
+      self.vrDisplayNode.SetAndObserveVolumeNodeID(volumeNode.GetID())
+      self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
+      self.vrDisplayNode.Modified()
+      self.vrDisplayNode.VisibilityOn()
+    else:
+      self.vrDisplayNode.VisibilityOff()  
 
   @staticmethod
   def SetBgFgVolumes(bg, fg):
