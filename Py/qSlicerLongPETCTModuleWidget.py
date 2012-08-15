@@ -35,6 +35,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.vrDisplayNode = None
+    self.opacityFunction = None
     
 
     # Reports Collapsible button
@@ -135,6 +136,7 @@ class qSlicerLongPETCTModuleWidget:
         
         firstDisplayPet = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode() == None
         firstDisplayCt = selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode() == None
+                
         
         if firstDisplayPet | firstDisplayCt:
           self.updateBgFgToUserSelectedStudy(selectedStudy)
@@ -152,6 +154,7 @@ class qSlicerLongPETCTModuleWidget:
             compositeNode.SetForegroundVolumeID(petID)
             compositeNode.SetForegroundOpacity(0.6)
       
+        
         # volume rendering
         if self.vrDisplayNode == None:
           self.vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
@@ -162,15 +165,19 @@ class qSlicerLongPETCTModuleWidget:
           self.vrDisplayNode.SetCroppingEnabled(0)
           self.vrDisplayNode.VisibilityOn()
           
+          if self.opacityFunction == None:
+             self.opacityFunction = vtk.vtkPiecewiseFunction()
+          
         self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
+          
+        #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
           #self.vrColorMap = self.vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
 
           # setup color transfer function once
           #self.vrColorMap.RemoveAllPoints()
           ##self.vrColorMap.AddRGBPoint(0, 0.8, 0.8, 0)
           #self.vrColorMap.AddRGBPoint(500, 0.8, 0.8, 0)      
-          
-        
+
       self.updateBgFgToUserSelectedStudy(selectedStudy)
         
 
@@ -181,8 +188,12 @@ class qSlicerLongPETCTModuleWidget:
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       currentReport.SetUserSelectedStudy(lastSelectedStudy)
       
-      self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
-      self.updateBgFgToUserSelectedStudy(lastSelectedStudy)
+      if currentReport.GetUserSelectedStudy():
+        self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
+      else:
+        self.onUpdateVolumeRendering(None)
+      
+      self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())
       self.onUpdateSliderAndTableWidgets(currentReport)       
       
       
@@ -226,18 +237,41 @@ class qSlicerLongPETCTModuleWidget:
     if volumeNode:
       self.vrDisplayNode.SetAndObserveVolumeNodeID(volumeNode.GetID())
       self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
-      self.vrDisplayNode.Modified()
+      
+      window = None          
+      
+      if volumeNode.GetScalarVolumeDisplayNode():
+        window = volumeNode.GetScalarVolumeDisplayNode().GetWindow()
+        
+        if window != None:
+          self.opacityFunction.RemoveAllPoints()
+          i = 0
+          while i < 11:
+            m = i/10.0
+            self.opacityFunction.AddPoint((window*m),m**2,0.5,0.)  
+            i = i+1
+          self.vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
+
       self.vrDisplayNode.VisibilityOn()
-    else:
+    
+    elif self.vrDisplayNode:
       self.vrDisplayNode.VisibilityOff()  
+      
+    #viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    #red = slicer.util.getNode('vtkMRMLSliceNodeRed')
+    #yellow = slicer.util.getNode('vtkMRMLSliceNodeYellow')
+    #green = slicer.util.getNode('vtkMRMLSliceNodeGreen')
+    
+         
 
   @staticmethod
   def SetBgFgVolumes(bg, fg):
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceActiveVolumeID(bg)
     selectionNode.SetReferenceSecondaryVolumeID(fg)
+    selectionNode.SetReferenceActiveVolumeID(bg)
     appLogic.PropagateVolumeSelection()
+
 
 
   def onReload(self,moduleName="LongPETCT"):
