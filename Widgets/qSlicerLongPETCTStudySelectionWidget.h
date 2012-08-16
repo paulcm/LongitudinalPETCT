@@ -46,6 +46,7 @@ public:
 
 public slots:
   void update(vtkMRMLNode* node);
+  void selectStudyInRow(int row);
 
 signals:
     void studySelected(int index);
@@ -53,6 +54,7 @@ signals:
 
 protected slots:
     void studyCheckBoxClicked(bool selected);
+    void tableCellClicked(int row, int column);
 
 protected:
   QScopedPointer<qSlicerLongPETCTStudySelectionWidgetPrivate> d_ptr;

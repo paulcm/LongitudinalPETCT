@@ -21,14 +21,20 @@
 // LongPETCTStudySelection Widgets includes
 #include "qSlicerLongPETCTStudySelectionWidget.h"
 
+#include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QPushButton>
+
 #include <QLabel>
 #include <QFrame>
 #include <QList>
 #include <QCheckBox>
+#include <QTableWidget>
 
 #include <QDate>
 #include <QTime>
+
+#include <ctkExpandButton.h>
 
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
@@ -50,9 +56,14 @@ public:
   virtual ~qSlicerLongPETCTStudySelectionWidgetPrivate();
   virtual void setupUi(qSlicerLongPETCTStudySelectionWidget*);
 
-  QVBoxLayout* Layout;
+  void DeselectTableAll();
+  void SelectTableRow(int row, bool select);
+
+  QHBoxLayout* Layout;
+  QTableWidget* Table;
 
   QList<QCheckBox*> ListStudyCheckBoxes;
+
 
 };
 
@@ -75,6 +86,30 @@ qSlicerLongPETCTStudySelectionWidgetPrivate
     }
 }
 
+// --------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidgetPrivate
+::DeselectTableAll()
+{
+  Q_Q(qSlicerLongPETCTStudySelectionWidget);
+  QTableWidgetSelectionRange range(0,0,this->Table->rowCount()-1,this->Table->columnCount()-1);
+  this->Table->setRangeSelected(range,false);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidgetPrivate
+::SelectTableRow(int row, bool select)
+{
+  Q_Q(qSlicerLongPETCTStudySelectionWidget);
+
+  this->DeselectTableAll();
+
+  if(row >= 0 && row < this->Table->rowCount())
+    {
+      QTableWidgetSelectionRange range(row,0,row,this->Table->columnCount()-1);
+      this->Table->setRangeSelected(range,select);
+    }
+
+}
 
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTStudySelectionWidgetPrivate
@@ -82,8 +117,20 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 {
   Q_Q(qSlicerLongPETCTStudySelectionWidget);
 
-  this->Layout = new QVBoxLayout(widget);
-  this->Layout->setSpacing(8);
+  this->Layout = new QHBoxLayout(widget);
+  this->Layout->setSpacing(5);
+
+  this->Table = new QTableWidget(widget);
+  this->Table->setRowCount(0);
+  this->Table->setColumnCount(4);
+  //this->Table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+  this->Table->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+
+  connect(this->Table, SIGNAL(cellClicked(int,int)), widget, SLOT(tableCellClicked(int,int)) );
+
+  this->Layout->addWidget(this->Table);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -127,12 +174,22 @@ void qSlicerLongPETCTStudySelectionWidget
 
       disconnect(lastCheckBoxInList,SIGNAL(toggled(bool)), this, SLOT(studyCheckBoxClicked(bool)));
 
-      d->Layout->removeWidget(lastCheckBoxInList);
       d->ListStudyCheckBoxes.removeLast();
 
       lastCheckBoxInList->deleteLater();
     }
 
+  d->Table->clear();
+
+  while ( d->Table->rowCount() > 0)
+    {
+      d->Table->removeRow(d->Table->rowCount()-1);
+    }
+
+  d->Table->setHorizontalHeaderItem(0,new QTableWidgetItem("Name"));
+  d->Table->setHorizontalHeaderItem(1,new QTableWidgetItem("Date"));
+  d->Table->setHorizontalHeaderItem(2,new QTableWidgetItem("Time"));
+  d->Table->setHorizontalHeaderItem(3,new QTableWidgetItem("Instance UID"));
 
   for(int i=0; i < selectedReportNode->GetStudiesCount(); ++i)
     {
@@ -140,19 +197,57 @@ void qSlicerLongPETCTStudySelectionWidget
       QCheckBox* cB = new QCheckBox(); // has no parent but will be deleted by deconstructor
       cB->setChecked(study->IsSelected());
 
-      QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
-      QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
-
-      QStringList cBText;
-      cBText << "Study Date:" << date.toString(Qt::SystemLocaleLongDate) << "\t";
-      cBText << "Time:" << time.toString(Qt::ISODate);
-
-      cB->setText(cBText.join(" "));
+      QString studyID = study->GetAttribute("DICOM.StudyID");
+      cB->setText(studyID);
 
       connect(cB,SIGNAL(toggled(bool)), this, SLOT(studyCheckBoxClicked(bool)));
 
       d->ListStudyCheckBoxes.append(cB);
-      d->Layout->addWidget(cB);
+
+      QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
+      QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
+
+      QString dateStr = date.toString(Qt::SystemLocaleLongDate);
+      QString timeStr = time.toString(Qt::ISODate);
+
+      int currRow = d->Table->rowCount();
+
+      QTableWidgetItem* dateItem = new QTableWidgetItem(dateStr);
+      dateItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      QTableWidgetItem* timeItem = new QTableWidgetItem(timeStr);
+      timeItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      QTableWidgetItem* uidItem = new QTableWidgetItem(study->GetAttribute("DICOM.StudyInstanceUID"));
+      uidItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+
+
+      d->Table->insertRow(currRow);
+      d->Table->setCellWidget(currRow,0,cB);
+      d->Table->setItem(currRow,1, dateItem);
+      d->Table->setItem(currRow,2, timeItem);
+      d->Table->setItem(currRow,3, uidItem);
+
+
+    }
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ListStudyCheckBoxes);
+  Q_ASSERT(d->Table);
+
+  d->DeselectTableAll();
+
+  std::cout << "TRYING TO SELECT ROW " << row << std::endl;
+  if(row >= 0 && row < d->ListStudyCheckBoxes.size() && row < d->Table->rowCount())
+    {
+      if(d->ListStudyCheckBoxes.at(row)->isChecked())
+        {
+          std::cout << "SELECTING ROW " << row << std::endl;
+          d->SelectTableRow(row, true);
+          emit studySelected(row);
+        }
     }
 }
 
@@ -161,21 +256,36 @@ void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->ListStudyCheckBoxes);
+  Q_ASSERT(d->Table);
 
   QCheckBox* sender =  qobject_cast<QCheckBox*>(QObject::sender());
+
+  d->DeselectTableAll();
 
   for(int i=0; i < d->ListStudyCheckBoxes.size(); ++i)
     {
       if(sender == d->ListStudyCheckBoxes.value(i))
         {
           if(selected)
-            emit studySelected(i);
+            {
+              d->SelectTableRow(i, true);
+              emit studySelected(i);
+            }
           else
-            emit studyDeselected(i);
-
+            {
+              d->SelectTableRow(i, false);
+              emit studyDeselected(i);
+            }
           break;
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::selectStudyInRow(int row)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  d->SelectTableRow(row, true);
 }
 
 
