@@ -35,7 +35,8 @@ class qSlicerLongPETCTModuleWidget:
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.vrDisplayNode = None
-    self.opacityFunction = None
+
+    self.opacityFunction = vtk.vtkPiecewiseFunction()
     
 
     # Reports Collapsible button
@@ -76,6 +77,11 @@ class qSlicerLongPETCTModuleWidget:
     studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
 
     self.studySelectionWidget = slicer.modulewidget.qSlicerLongPETCTStudySelectionWidget()    
+    self.studySelectionWidget.setProperty('volumeRendering',True)
+    self.studySelectionWidget.setProperty('gpuRendering',False)
+    self.studySelectionWidget.setProperty('linearOpacity',False)
+    self.studySelectionWidget.setProperty('rockView',True)
+    
     self.studySelectionWidget.update(self.reportSelector.currentNode())
     self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
     
@@ -83,7 +89,11 @@ class qSlicerLongPETCTModuleWidget:
 
     self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
     self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
-    
+    self.studySelectionWidget.connect('rockViewToggled(bool)',self.onStudySelectionWidgetRockView)
+    self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.onStudySelectionWidgetVolumeRendering)
+    self.studySelectionWidget.connect('opacityPowChanged(double)',self.onStudySelectionWidgetOpacityPow)
+    self.studySelectionWidget.connect('gpuRenderingToggled(bool)',self.onStudySelectionWidgetGPUVolumeRendering)
+
 
     # Add vertical spacer
     self.layout.addStretch()
@@ -119,7 +129,6 @@ class qSlicerLongPETCTModuleWidget:
         self.reportTableWidget.update(currentReport)
         self.studySliderWidget.update(currentReport)
              
-        
         self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
       else:
         self.onUpdateVolumeRendering(None)
@@ -142,13 +151,10 @@ class qSlicerLongPETCTModuleWidget:
         firstDisplayPet = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode() == None
         firstDisplayCt = selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode() == None
                 
-        
         if firstDisplayPet | firstDisplayCt:
           self.updateBgFgToUserSelectedStudy(selectedStudy)
 
-          print "PETVOLIMG" + str(selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().GetInputImageData())
-    
-        
+
         if firstDisplayCt:
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(0)
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
@@ -169,20 +175,23 @@ class qSlicerLongPETCTModuleWidget:
           viewNode.SetBoxVisible(0)
           
           viewNode.InvokeEvent(viewNode.ResetFocalPointRequestedEvent)
-          #viewNode.SetAnimationMode(viewNode.Rock)
           
-          #self.vrDisplayNode.SetCurrentVolumeMapper(0)
           self.vrDisplayNode.AddViewNodeID(viewNode.GetID())
-          
           self.vrDisplayNode.SetCroppingEnabled(0)
-          self.vrDisplayNode.VisibilityOn()
           
-          if self.opacityFunction == None:
-             self.opacityFunction = vtk.vtkPiecewiseFunction()
+          if self.studySelectionWidget.property('volumeRendering'):
+            self.vrDisplayNode.VisibilityOn()
+          else:
+            self.vrDisplayNode.VisibilityOff()
           
-        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
+          if self.studySelectionWidget.property('rockView'):
+            viewNode.SetAnimationMode(viewNode.Rock)
+          else:
+            viewNode.SetAnimationMode(0)
           
           
+          
+        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())  
         #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
           #self.vrColorMap = self.vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
 
@@ -255,36 +264,95 @@ class qSlicerLongPETCTModuleWidget:
     if volumeNode:
       self.vrDisplayNode.SetAndObserveVolumeNodeID(volumeNode.GetID())
       self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
-      
-      window = None          
-      
-      if volumeNode.GetScalarVolumeDisplayNode():
-        window = volumeNode.GetScalarVolumeDisplayNode().GetWindow()
-        
-        if window != None:
-          self.opacityFunction.RemoveAllPoints()
-          self.opacityFunction.AddPoint(0.,0.,0.5,0.)  
-          i = 1
-          while i < 9:
-            m = i/10.0
-            self.opacityFunction.AddPoint((window*m),m**2,0.5,0.)  
-            i = i+1
-          self.opacityFunction.AddPoint(window,1.,0.5,0.)  
-          self.vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
-
-      #self.vrDisplayNode.GetROINode().SetVisibility(1)
-      self.vrDisplayNode.VisibilityOn()
     
+      self.onStudySelectionWidgetOpacityPow(self.studySelectionWidget.property('opacityPow'))
+          
     elif self.vrDisplayNode:
-      self.vrDisplayNode.GetROINode().SetVisibility(0)
+      #self.vrDisplayNode.GetROINode().SetVisibility(0)
       self.vrDisplayNode.VisibilityOff()  
       
     #viewNode = slicer.util.getNode('vtkMRMLViewNode1')
     #print "YELLOW" + str(yellow.GetFieldOfView())
     #print "GREEN" + str(green.GetFieldOfView())
+  
+  def onStudySelectionWidgetOpacityPow(self, pow):
+    currentReport = self.reportSelector.currentNode()
     
-         
+    if currentReport:
+      selectedStudy = currentReport.GetUserSelectedStudy()
+      
+      if selectedStudy:
+        petVolumeNode = selectedStudy.GetPETVolumeNode()
+      
+        if petVolumeNode:
+          
+          if petVolumeNode.GetScalarVolumeDisplayNode():
+            window = petVolumeNode.GetScalarVolumeDisplayNode().GetWindow()
+    
+            if window > 0.:
+              self.opacityFunction.RemoveAllPoints()
+              
+              self.opacityFunction.AddPoint(0.,0.,0.5,0.)  
+              i = 1
+              while (i < 9):
+                m = i/10.0
+                self.opacityFunction.AddPoint((window*m),m**pow,0.5,0.)  
+                i = i+1
+          
+              self.opacityFunction.AddPoint(window,1.,0.5,0.)  
+              
+              if self.vrDisplayNode:
+                if self.vrDisplayNode.GetVolumePropertyNode():
+                  self.vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
+                
+    
+  
+  def onStudySelectionWidgetVolumeRendering(self, on):
+    
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    
+    if self.vrDisplayNode:
+      if on:
+        self.vrDisplayNode.VisibilityOn()
+        if viewNode:
+          viewNode.SetAxisLabelsVisible(1)
+      else:
+        self.vrDisplayNode.VisibilityOff()  
+        if viewNode:
+          viewNode.SetAxisLabelsVisible(0)
+        
+    
+  def onStudySelectionWidgetRockView(self, rock):
+    
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    
+    if viewNode:
+      if rock:
+        viewNode.SetAnimationMode(viewNode.Rock)
+        
+      else:
+        viewNode.SetAnimationMode(viewNode.Off)
+        
+        
+  def onStudySelectionWidgetGPUVolumeRendering(self, useGPU):
+    
+    
+    if useGPU:
+      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode('vtkMRMLGPURayCastVolumeRenderingDisplayNode')
+    else:
+      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
+      
+    if self.vrDisplayNode:
+      displayNode.Copy(self.vrDisplayNode)  
 
+    self.vrDisplayNode = displayNode
+    
+      
+
+        
+        
+
+           
   @staticmethod
   def SetBgFgVolumes(bg, fg):
     appLogic = slicer.app.applicationLogic()
