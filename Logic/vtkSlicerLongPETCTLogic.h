@@ -88,6 +88,10 @@ public:
 
   void AddReportNode(vtkMRMLLongPETCTReportNode* reportNode);
 
+  vtkGetMacro(SelectedReportNode, vtkMRMLLongPETCTReportNode*);
+  vtkSetMacro(SelectedReportNode, vtkMRMLLongPETCTReportNode*);
+
+
 protected:
 
   static const QString DATABASEDIRECTORY; // for DatabaseDirectory path
@@ -99,6 +103,8 @@ protected:
 
   ctkDICOMDatabase* GetDICOMDatabase();
   vtkSetMacro(DICOMDatabase,ctkDICOMDatabase*);
+
+  vtkMRMLLongPETCTReportNode*  SelectedReportNode;
 
   /**
    * Returns whether a study contains of at least one PET and one CT image series.

@@ -57,6 +57,7 @@ vtkStandardNewMacro(vtkSlicerLongPETCTLogic);
 //----------------------------------------------------------------------------
 vtkSlicerLongPETCTLogic::vtkSlicerLongPETCTLogic()
 {
+  this->SelectedReportNode = NULL;
   this->Initialize();
 }
 
