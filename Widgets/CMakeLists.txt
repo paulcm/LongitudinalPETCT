@@ -28,10 +28,11 @@ set(${KIT}_MOC_SRCS
 # UI files
 set(${KIT}_UI_SRCS
   ../Resources/UI/qSlicerLongPETCTReportSelectionWidget.ui
+  ../Resources/UI/qSlicerLongPETCTStudySelectionWidget.ui
+  ../Resources/UI/qSlicerLongPETCTStudySliderWidget.ui
   )
   
 set(${KIT}_RESOURCES
-  ../Resources/UI/qSlicerLongPETCTReportSelectionWidget.ui
   ../Resources/qSlicerLongPETCTModule.qrc
   )  
   

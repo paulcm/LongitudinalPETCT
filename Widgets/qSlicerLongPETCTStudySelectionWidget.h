@@ -37,12 +37,28 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySelectionWid
   : public QWidget
 {
   Q_OBJECT
+  Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
+  Q_PROPERTY(bool gpuRendering READ gpuRendering WRITE setGPURendering)
+  Q_PROPERTY(bool rockView READ rockView WRITE setRockView)
+  Q_PROPERTY(double opacityPow READ opacityPow WRITE setOpacityPow)
+
+
 
 public:
   typedef QWidget Superclass;
   qSlicerLongPETCTStudySelectionWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySelectionWidget();
 
+
+  bool volumeRendering();
+  bool gpuRendering();
+  bool rockView();
+  double opacityPow();
+
+  void setVolumeRendering(bool checked);
+  void setGPURendering(bool checked);
+  void setRockView(bool checked);
+  void setOpacityPow(double opacityPow);
 
 public slots:
   void update(vtkMRMLNode* node);
@@ -51,6 +67,11 @@ public slots:
 signals:
     void studySelected(int index);
     void studyDeselected(int index);
+    void volumeRenderingToggled(bool toggled);
+    void gpuRenderingToggled(bool toggled);
+    void linearOpacityToggled(bool toggled);
+    void rockViewToggled(bool toggled);
+    void opacityPowChanged(double d);
 
 protected slots:
     void studyCheckBoxClicked(bool selected);

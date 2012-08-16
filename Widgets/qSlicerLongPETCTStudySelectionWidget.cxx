@@ -20,21 +20,11 @@
 
 // LongPETCTStudySelection Widgets includes
 #include "qSlicerLongPETCTStudySelectionWidget.h"
+#include "ui_qSlicerLongPETCTStudySelectionWidget.h"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QPushButton>
-
-#include <QLabel>
-#include <QFrame>
-#include <QList>
 #include <QCheckBox>
-#include <QTableWidget>
-
 #include <QDate>
 #include <QTime>
-
-#include <ctkExpandButton.h>
 
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
@@ -43,7 +33,7 @@
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
 class qSlicerLongPETCTStudySelectionWidgetPrivate
-  : public QWidget
+  : public Ui_qSlicerLongPETCTStudySelectionWidget
 {
   Q_DECLARE_PUBLIC(qSlicerLongPETCTStudySelectionWidget);
 protected:
@@ -59,11 +49,7 @@ public:
   void DeselectTableAll();
   void SelectTableRow(int row, bool select);
 
-  QHBoxLayout* Layout;
-  QTableWidget* Table;
-
   QList<QCheckBox*> ListStudyCheckBoxes;
-
 
 };
 
@@ -117,20 +103,18 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 {
   Q_Q(qSlicerLongPETCTStudySelectionWidget);
 
-  this->Layout = new QHBoxLayout(widget);
-  this->Layout->setSpacing(5);
+  this->Ui_qSlicerLongPETCTStudySelectionWidget::setupUi(widget);
 
-  this->Table = new QTableWidget(widget);
-  this->Table->setRowCount(0);
-  this->Table->setColumnCount(4);
-  //this->Table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  this->WidgetButtonsPanel->setVisible(false);
 
-  this->Table->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), widget, SLOT(tableCellClicked(int,int)) );
 
-  connect(this->Table, SIGNAL(cellClicked(int,int)), widget, SLOT(tableCellClicked(int,int)) );
+  QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), widget, SIGNAL(volumeRenderingToggled(bool)) );
+  //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), widget, SIGNAL(gpuRenderingToggled(bool)) );
+  QObject::connect(this->ButtonRockView, SIGNAL(toggled(bool)), widget, SIGNAL(rockViewToggled(bool)) );
+  QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), widget, SIGNAL(opacityPowChanged(double)) );
 
-  this->Layout->addWidget(this->Table);
-
+  this->ButtonGPURendering->setVisible(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -159,7 +143,6 @@ void qSlicerLongPETCTStudySelectionWidget
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->ListStudyCheckBoxes);
-  Q_ASSERT(d->Layout);
 
   vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
 
@@ -179,17 +162,11 @@ void qSlicerLongPETCTStudySelectionWidget
       lastCheckBoxInList->deleteLater();
     }
 
-  d->Table->clear();
-
   while ( d->Table->rowCount() > 0)
     {
       d->Table->removeRow(d->Table->rowCount()-1);
     }
 
-  d->Table->setHorizontalHeaderItem(0,new QTableWidgetItem("Name"));
-  d->Table->setHorizontalHeaderItem(1,new QTableWidgetItem("Date"));
-  d->Table->setHorizontalHeaderItem(2,new QTableWidgetItem("Time"));
-  d->Table->setHorizontalHeaderItem(3,new QTableWidgetItem("Instance UID"));
 
   for(int i=0; i < selectedReportNode->GetStudiesCount(); ++i)
     {
@@ -225,8 +202,6 @@ void qSlicerLongPETCTStudySelectionWidget
       d->Table->setItem(currRow,1, dateItem);
       d->Table->setItem(currRow,2, timeItem);
       d->Table->setItem(currRow,3, uidItem);
-
-
     }
 }
 
@@ -239,12 +214,10 @@ void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
 
   d->DeselectTableAll();
 
-  std::cout << "TRYING TO SELECT ROW " << row << std::endl;
   if(row >= 0 && row < d->ListStudyCheckBoxes.size() && row < d->Table->rowCount())
     {
       if(d->ListStudyCheckBoxes.at(row)->isChecked())
         {
-          std::cout << "SELECTING ROW " << row << std::endl;
           d->SelectTableRow(row, true);
           emit studySelected(row);
         }
@@ -286,6 +259,81 @@ void qSlicerLongPETCTStudySelectionWidget::selectStudyInRow(int row)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   d->SelectTableRow(row, true);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTStudySelectionWidget::volumeRendering()
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonVolumeRendering);
+
+  return d->ButtonVolumeRendering->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTStudySelectionWidget::gpuRendering()
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonGPURendering);
+
+  return d->ButtonGPURendering->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTStudySelectionWidget::rockView()
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonRockView);
+
+  return d->ButtonRockView->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+double qSlicerLongPETCTStudySelectionWidget::opacityPow()
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->SpinBoxOpacityPow);
+
+  return d->SpinBoxOpacityPow->value();
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::setVolumeRendering(bool checked)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonVolumeRendering);
+
+  d->ButtonVolumeRendering->setChecked(checked);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::setGPURendering(bool checked)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonGPURendering);
+
+  d->ButtonGPURendering->setChecked(checked);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::setRockView(bool checked)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->ButtonRockView);
+
+  d->ButtonRockView->setChecked(checked);
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::setOpacityPow(double opacityPow)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->SpinBoxOpacityPow);
+
+  if(opacityPow >= d->SpinBoxOpacityPow->minimum() && opacityPow <= d->SpinBoxOpacityPow->maximum())
+    d->SpinBoxOpacityPow->setValue(opacityPow);
 }
 
 
