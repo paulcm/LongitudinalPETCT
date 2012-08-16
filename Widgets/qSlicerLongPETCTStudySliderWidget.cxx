@@ -20,10 +20,8 @@
 
 // LongPETCTStudySlider Widgets includes
 #include "qSlicerLongPETCTStudySliderWidget.h"
+#include "ui_qSlicerLongPETCTStudySliderWidget.h"
 
-#include <QGridLayout>
-#include <QLabel>
-#include <QSlider>
 #include <QDate>
 #include <QTime>
 
@@ -34,7 +32,7 @@
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
 class qSlicerLongPETCTStudySliderWidgetPrivate
-  : public QWidget
+  : public Ui_qSlicerLongPETCTStudySliderWidget
 {
   Q_DECLARE_PUBLIC(qSlicerLongPETCTStudySliderWidget);
 protected:
@@ -45,12 +43,6 @@ public:
     qSlicerLongPETCTStudySliderWidget& object);
   virtual void setupUi(qSlicerLongPETCTStudySliderWidget*);
 
-  QGridLayout* Layout;
-
-  QLabel* LabelDescription;
-  QLabel* LabelSelectedTimepoint;
-
-  QSlider* Slider;
 
 };
 
@@ -68,33 +60,9 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
 {
   Q_Q(qSlicerLongPETCTStudySliderWidget);
 
-  this->Layout = new QGridLayout(widget);
-  this->Layout->setSpacing(8);
+  this->Ui_qSlicerLongPETCTStudySliderWidget::setupUi(widget);
 
-  this->LabelDescription = new QLabel("Selected Study:",widget);
-  QFont font = this->LabelDescription->font();
-  font.setBold(true);
-  this->LabelDescription->setFont(font);
-
-  this->LabelSelectedTimepoint = new QLabel(widget);
-  this->LabelSelectedTimepoint->setAlignment(Qt::AlignLeft);
-
-  this->Slider = new QSlider(Qt::Horizontal,widget);
-  this->Slider->setMinimum(0);
-  this->Slider->setMaximum(1);
-  this->Slider->setValue(0);
-  this->Slider->setTickPosition(QSlider::TicksBothSides);
-  this->Slider->setSingleStep(1);
-  this->Slider->setPageStep(1);
-  this->Slider->setEnabled(false);
-  connect( this->Slider, SIGNAL(valueChanged(int)), widget, SIGNAL(sliderValueChanged(int)) );
-
-  this->Layout->addWidget(this->LabelDescription,0,0,1,1);
-  this->Layout->addWidget(this->LabelSelectedTimepoint,0,1,1,1);
-  this->Layout->addWidget(this->Slider,1,0,1,2);
-
-  this->Layout->setColumnStretch(0,0);
-  this->Layout->setColumnStretch(1,2);
+  QObject::connect( this->Slider, SIGNAL(valueChanged(int)), widget, SIGNAL(sliderValueChanged(int)) );
 
 }
 
@@ -125,11 +93,11 @@ void qSlicerLongPETCTStudySliderWidget
 {
   Q_D(qSlicerLongPETCTStudySliderWidget);
   Q_ASSERT(d->Slider);
-  Q_ASSERT(d->LabelSelectedTimepoint);
+  Q_ASSERT(d->LabelSelectedStudyDateTime);
 
   disconnect( d->Slider, SIGNAL(valueChanged(int)), this, SIGNAL(sliderValueChanged(int)) );
 
-  d->LabelSelectedTimepoint->setText("");
+  d->LabelSelectedStudyDateTime->setText("");
 
   vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
 
@@ -165,7 +133,7 @@ void qSlicerLongPETCTStudySliderWidget
       text << date.toString(Qt::SystemLocaleLongDate);
       text << time.toString(Qt::ISODate);
 
-      d->LabelSelectedTimepoint->setText(text.join("   "));
+      d->LabelSelectedStudyDateTime->setText(text.join("   "));
     }
 
   int sliderVal = selectedReportNode->GetIndexOfSelectedStudy(study);
