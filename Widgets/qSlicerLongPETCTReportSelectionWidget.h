@@ -29,10 +29,11 @@
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
 
 #include "vtkMRMLScene.h"
-#include "qMRMLNodeComboBox.h"
+
 
 class qSlicerLongPETCTReportSelectionWidgetPrivate;
 class vtkMRMLNode;
+class qMRMLNodeComboBox;
 
 
 

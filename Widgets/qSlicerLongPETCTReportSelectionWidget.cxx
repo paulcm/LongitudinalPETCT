@@ -23,15 +23,10 @@
 #include "ui_qSlicerLongPETCTReportSelectionWidget.h"
 
 
-#include <QFormLayout>
-#include <QLabel>
 #include <QDate>
 
 #include <qMRMLNodeComboBox.h>
-
 #include <vtkMRMLLongPETCTReportNode.h>
-
-#include <ctkExpandButton.h>
 
 
 
@@ -77,7 +72,7 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
 {
   Q_Q(qSlicerLongPETCTReportSelectionWidget);
 
-  this->Ui_qSlicerLongPETCTReportSelectionWidget::setupUi(q);
+  this->Ui_qSlicerLongPETCTReportSelectionWidget::setupUi(widget);
 
   this->ExpandButton->setOrientation(Qt::Vertical);
 
