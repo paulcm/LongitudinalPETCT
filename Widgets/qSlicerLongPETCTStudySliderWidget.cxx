@@ -84,6 +84,8 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
   this->Slider->setMaximum(1);
   this->Slider->setValue(0);
   this->Slider->setTickPosition(QSlider::TicksBothSides);
+  this->Slider->setSingleStep(1);
+  this->Slider->setPageStep(1);
   this->Slider->setEnabled(false);
   connect( this->Slider, SIGNAL(valueChanged(int)), widget, SIGNAL(sliderValueChanged(int)) );
 
