@@ -27,15 +27,24 @@ set(${KIT}_MOC_SRCS
 
 # UI files
 set(${KIT}_UI_SRCS
+  ../Resources/UI/qSlicerLongPETCTReportSelectionWidget.ui
   )
-
-# Resources
+  
 set(${KIT}_RESOURCES
-  )
+  ../Resources/UI/qSlicerLongPETCTReportSelectionWidget.ui
+  ../Resources/qSlicerLongPETCTModule.qrc
+  )  
   
 set(${KIT}_TARGET_LIBRARIES
   vtkSlicer${MODULE_NAME}ModuleLogic
   )
+  
+# Python wrap
+#if(Slicer_USE_PYTHONQT)
+#  list(APPEND KIT_target_libraries
+#    CTKScriptingPythonWidgets
+#    )
+#endif()
 
 #-----------------------------------------------------------------------------
 SlicerMacroBuildModuleWidgets(
