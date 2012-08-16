@@ -80,6 +80,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   std::vector<vtkMRMLLongPETCTStudyNode*> GetSelectedStudies();
 
+  int GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode* study);
   int GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study);
 
   vtkGetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);

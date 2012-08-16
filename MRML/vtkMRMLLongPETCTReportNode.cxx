@@ -126,7 +126,7 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index)
 {
   if(index >= 0 && index < this->Studies.size())
-    return Studies[index];
+    return this->Studies[index];
 
   else
     return NULL;
@@ -192,6 +192,22 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTSt
   for(int i=0; i < selectedStudies.size(); ++i)
     {
       if (selectedStudies[i] == study)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode* study)
+{
+
+  if(study == NULL)
+    return -1;
+
+  for(int i=0; i < this->Studies.size(); ++i)
+    {
+      if (this->Studies[i] == study)
         return i;
     }
 
