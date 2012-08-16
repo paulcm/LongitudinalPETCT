@@ -1,3 +1,7 @@
 <RCC>
-  <qresource/>
+    <qresource prefix="/">
+        <file>Icons/GPURendering.png</file>
+        <file>Icons/ViewRock.png</file>
+        <file>Icons/VolumeRendering.png</file>
+    </qresource>
 </RCC>
