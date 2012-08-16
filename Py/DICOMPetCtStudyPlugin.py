@@ -48,6 +48,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     self.tags['studyInstanceUID'] = "0020,000D"
     self.tags['studyDate'] = "0008,0020"
     self.tags['studyTime'] = "0008,0030"
+    self.tags['studyID'] = "0020,0010"
     
     self.tags['rows'] = "0028,0010"
     self.tags['columns'] = "0028,0011"
@@ -381,6 +382,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
   def load(self,loadable):
     """ ___ """
+
     reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTReportNode')
     reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1) 
       
@@ -408,6 +410,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
         
+          studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
           studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
           studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
@@ -418,6 +421,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
         
           studyNode.SetName('Study_'+str(i))
+          studyNode.SetAttribute('DICOM.StudyID',studyID)
           studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
           studyNode.SetAttribute('DICOM.StudyDate',studyDate)
           studyNode.SetAttribute('DICOM.StudyTime',studyTime)
