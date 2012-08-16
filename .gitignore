@@ -12,5 +12,8 @@
 bin/
 gen/
 
+# scalable vector graphics
+*.svg
+
 # Local configuration file (sdk path, etc)
 local.properties
