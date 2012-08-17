@@ -106,9 +106,7 @@ void qSlicerLongPETCTReportSelectionWidget::setMRMLScene(vtkMRMLScene* mrmlScene
   Q_D(qSlicerLongPETCTReportSelectionWidget);
   Q_ASSERT(d->MRMLNodeComboBoxReport);
 
-  std::cout << "MRML SCENE: " << mrmlScene << std::endl;
   d->MRMLNodeComboBoxReport->setMRMLScene(mrmlScene);
-  std::cout << "MRML SCENE SET" << std::endl;
   d->MRMLNodeComboBoxReport->setAddEnabled(false);
   d->MRMLNodeComboBoxReport->setRemoveEnabled(false);
   d->MRMLNodeComboBoxReport->setRenameEnabled(true);
@@ -144,7 +142,6 @@ void qSlicerLongPETCTReportSelectionWidget
 
 
   vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
-  std::cout << "SELECTED NODe" << selectedReportNode <<  std::endl;
 
   if(selectedReportNode)
     {
