@@ -11,6 +11,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   vtkMRML${MODULE_NAME}StudyNode.cxx
   vtkMRML${MODULE_NAME}StudyNode.h
+  vtkMRML${MODULE_NAME}FindingNode.cxx
+  vtkMRML${MODULE_NAME}FindingNode.h
   vtkMRML${MODULE_NAME}ReportNode.cxx
   vtkMRML${MODULE_NAME}ReportNode.h
   )
