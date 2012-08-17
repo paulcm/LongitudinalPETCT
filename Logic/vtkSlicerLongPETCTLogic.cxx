@@ -27,6 +27,7 @@
 
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
+#include <vtkMRMLLongPETCTFindingNode.h>
 
 // STD includes
 #include <cassert>
@@ -46,10 +47,13 @@
 #include <dcmtk/dcmdata/dcfilefo.h>
 #include <dcmtk/dcmdata/dcdeftag.h>
 
+#include <vtkNew.h>
 
 const QString vtkSlicerLongPETCTLogic::DATABASEDIRECTORY = "DatabaseDirectory";
 const QString vtkSlicerLongPETCTLogic::DATABASECONNECTIONNAME = "LongPETCT";
 const QString vtkSlicerLongPETCTLogic::DATABASEFILENAME = "ctkDICOM.sql";
+
+
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSlicerLongPETCTLogic);
@@ -98,6 +102,10 @@ void vtkSlicerLongPETCTLogic::RegisterNodes()
   vtkMRMLLongPETCTStudyNode *studyNode = vtkMRMLLongPETCTStudyNode::New();
   this->GetMRMLScene()->RegisterNodeClass(studyNode);
   studyNode->Delete();
+
+  vtkMRMLLongPETCTFindingNode *findingNode = vtkMRMLLongPETCTFindingNode::New();
+  this->GetMRMLScene()->RegisterNodeClass(findingNode);
+  findingNode->Delete();
 
  // assert(this->GetMRMLScene() != 0);
 }
