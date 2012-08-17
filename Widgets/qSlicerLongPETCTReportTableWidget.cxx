@@ -25,6 +25,7 @@
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
 
+#include <QBrush>
 #include <QDate>
 
 //-----------------------------------------------------------------------------
@@ -125,6 +126,11 @@ void qSlicerLongPETCTReportTableWidget
       QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
       QString itemText = date.toString(Qt::SystemLocaleShortDate);
       QTableWidgetItem* item = new QTableWidgetItem(itemText);
+
+      QFont font = item->font();
+      font.setBold(true);
+      item->setFont(font);
+
       item->setToolTip(itemText);
       this->setHorizontalHeaderItem(newColumnID, item);
     }
@@ -142,23 +148,13 @@ void qSlicerLongPETCTReportTableWidget
 void qSlicerLongPETCTReportTableWidget
 ::selectStudyColumn(int index)
 {
-  QFont font;
-
-  for(int i=0; i < this->columnCount();++i)
-    {
-      font = this->horizontalHeaderItem(i)->font();
-      font.setBold(false);
-
-      this->horizontalHeaderItem(i)->setFont(font);
-    }
-
 
   if(index >= 0 && index < this->columnCount()-1)
     {
-      font = this->horizontalHeaderItem(index+1)->font();
-      font.setBold(true);
-
-      this->horizontalHeaderItem(index+1)->setFont(font);
+      QBrush background(QColor(98,140,178));
+      QBrush foreground(QColor(255,255,255));
+      this->horizontalHeaderItem(index+1)->setBackground(background);
+      this->horizontalHeaderItem(index+1)->setForeground(foreground);
     }
 
 }
