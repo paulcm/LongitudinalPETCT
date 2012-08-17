@@ -472,7 +472,7 @@ class DICOMPetCtStudyPlugin:
       slicer.modules.dicomPlugins
     except AttributeError:
       slicer.modules.dicomPlugins = {}
-    slicer.modules.dicomPlugins['DICOMPetCtStudyPlugin'] = DICOMPetCtStudyPluginClass
+    slicer.modules.dicomPlugins['DICOMPETCTStudyPlugin'] = DICOMPetCtStudyPluginClass
 
 #
 # DICOMPetCtStudyWidget
