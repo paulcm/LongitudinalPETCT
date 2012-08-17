@@ -28,6 +28,10 @@
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
 
+#include <QSlider>
+#include <QMouseEvent>
+
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -43,6 +47,70 @@ public:
     qSlicerLongPETCTStudySliderWidget& object);
   virtual void setupUi(qSlicerLongPETCTStudySliderWidget*);
 
+
+
+  class qSlicerLongPETCTJumpSlider : public QSlider
+  {
+  public:
+    qSlicerLongPETCTJumpSlider(QWidget* parent = 0) :
+        QSlider(parent)
+    {
+      this->setOrientation(Qt::Horizontal);
+      this->setTickPosition(QSlider::TicksBothSides);
+      this->setMinimum(0);
+      this->setMaximum(1);
+      this->setPageStep(1);
+      this->setSingleStep(1);
+      this->setEnabled(false);
+    }
+
+  protected:
+
+    int
+    getNearestSliderValue(int position)
+    {
+      double min = static_cast<double>(minimum());
+      double max = static_cast<double>(maximum());
+      double pos = static_cast<double>(position);
+      double wdt = static_cast<double>(width());
+
+      int val = static_cast<int>(min + (max - min) * pos / wdt + 0.5);
+
+      std::cout << "VALUE: " << val << std::endl;
+      return val;
+    }
+
+    void
+    mousePressEvent(QMouseEvent* event)
+    {
+      if (event->button() == Qt::LeftButton)
+        {
+          if (orientation() == Qt::Horizontal)
+            setValue(this->getNearestSliderValue(event->x()));
+          else
+            QSlider::mousePressEvent(event);
+
+          event->accept();
+        }
+    }
+
+    void
+    mouseReleaseEvent(QMouseEvent* event)
+    {
+      if (event->button() == Qt::LeftButton)
+        {
+          if (orientation() == Qt::Horizontal)
+            setValue(this->getNearestSliderValue(event->x()));
+          else
+            QSlider::mousePressEvent(event);
+
+          event->accept();
+        }
+    }
+  };
+
+
+  qSlicerLongPETCTJumpSlider* Slider;
 
 };
 
@@ -61,6 +129,11 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
   Q_Q(qSlicerLongPETCTStudySliderWidget);
 
   this->Ui_qSlicerLongPETCTStudySliderWidget::setupUi(widget);
+
+  this->Slider = new qSlicerLongPETCTJumpSlider(widget);
+
+
+  this->Layout->addWidget(this->Slider);
 
   QObject::connect( this->Slider, SIGNAL(valueChanged(int)), widget, SIGNAL(sliderValueChanged(int)) );
 
