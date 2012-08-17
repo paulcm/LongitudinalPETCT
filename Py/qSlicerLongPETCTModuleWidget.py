@@ -32,45 +32,42 @@ class qSlicerLongPETCTModuleWidget:
     #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
+
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.vrDisplayNode = None
 
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
-
-    # Reports Collapsible button
-    reportsCollapsibleButton = ctk.ctkCollapsibleButton()
-    reportsCollapsibleButton.text = "Report Selection"
-    self.layout.addWidget(reportsCollapsibleButton)
-
-    # Layout within the dummy collapsible button
-    reportsLayout = qt.QVBoxLayout(reportsCollapsibleButton)
-
-    #self.reportSelector = slicer.qMRMLNodeComboBox()
-    #self.reportSelector.nodeTypes = ['vtkMRMLLongPETCTReportNode']
-    #self.reportSelector.setMRMLScene(slicer.mrmlScene)
-    #self.reportSelector.setProperty('addEnabled',0)
-    #self.reportSelector.setProperty('removeEnabled',0)
-    #self.reportSelector.setProperty('renameEnabled',1)
-
+    # instanciate all collapsible buttons
+    self.reportsCollapsibleButton = ctk.ctkCollapsibleButton()
+    self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
+    self.findingsCollapsibleButton = ctk.ctkCollapsibleButton()
     
+    
+    # Reports Collapsible button
+    self.reportsCollapsibleButton.text = "Report Selection"
+    
+    self.layout.addWidget(self.reportsCollapsibleButton)
+    
+    reportsLayout = qt.QVBoxLayout(self.reportsCollapsibleButton)
+      
     self.reportSelectionWidget = slicer.modulewidget.qSlicerLongPETCTReportSelectionWidget()    
     self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
     self.reportSelector = self.reportSelectionWidget.mrmlNodeComboBoxReport()
-    #self.reportSelectionWidget.setMRMLNodeComboBoxReports(self.reportSelector)
+    
     reportsLayout.addWidget(self.reportSelectionWidget)
     
     
-    # Studies Collapsible button
-    self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
+    # Studies Collapsible button    
     self.studiesCollapsibleButton.text = "Study Selection"
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     
+    
     if self.reportSelector.currentNode():
-      self.studiesCollapsibleButton.setProperty('enabled',True)
+      self.enableStudiesCollapsibleButton(True)
     else:
-      self.studiesCollapsibleButton.setProperty('enabled',False)
+      self.enableStudiesCollapsibleButton(False)
     
     self.layout.addWidget(self.studiesCollapsibleButton)
 
@@ -94,6 +91,28 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.connect('opacityPowChanged(double)',self.onStudySelectionWidgetOpacityPow)
     self.studySelectionWidget.connect('gpuRenderingToggled(bool)',self.onStudySelectionWidgetGPUVolumeRendering)
 
+
+    # Findings Collapsible button
+    self.findingsCollapsibleButton.text = "Findings"
+    self.findingsCollapsibleButton.setProperty('collapsed',True)
+    
+    if self.reportSelector.currentNode():
+      if self.reportSelector.currentNode().GetUserSelectedStudy():
+        self.enableFindingsCollapsibleButton(True)
+      else:
+        self.enableFindingsCollapsibleButton(False)
+   
+    
+    self.layout.addWidget(self.findingsCollapsibleButton)
+    
+    findingsLayout = qt.QVBoxLayout(self.findingsCollapsibleButton)
+      
+    self.findingSelectionWidget = slicer.modulewidget.qSlicerLongPETCTFindingSelectionWidget()    
+    self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
+    self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
+    
+    findingsLayout.addWidget(self.findingSelectionWidget)
+    
 
     # Add vertical spacer
     self.layout.addStretch()
@@ -190,17 +209,14 @@ class qSlicerLongPETCTModuleWidget:
             viewNode.SetAnimationMode(0)
           
           
-          
-        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())  
-        #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
-          #self.vrColorMap = self.vrDisplayNode.GetVolumePropertyNode().GetVolumeProperty().GetRGBTransferFunction()
-
-          # setup color transfer function once
-          #self.vrColorMap.RemoveAllPoints()
-          ##self.vrColorMap.AddRGBPoint(0, 0.8, 0.8, 0)
-          #self.vrColorMap.AddRGBPoint(500, 0.8, 0.8, 0)      
+        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())     
 
       self.updateBgFgToUserSelectedStudy(selectedStudy)
+      
+      if currentReport.GetUserSelectedStudy():
+        self.enableFindingsCollapsibleButton(True)
+      else:
+        self.enableFindingsCollapsibleButton(False)  
         
 
   def onStudyDeselected(self, idx):
@@ -216,13 +232,19 @@ class qSlicerLongPETCTModuleWidget:
         self.onUpdateVolumeRendering(None)
       
       self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())
-      self.onUpdateSliderAndTableWidgets(currentReport)       
+      self.onUpdateSliderAndTableWidgets(currentReport)     
+      
+      if currentReport.GetUserSelectedStudy():
+        self.enableFindingsCollapsibleButton(True)
+      else:
+        self.enableFindingsCollapsibleButton(False)    
       
       
   def onCurrentReportChanged(self, reportNode):
     self.logic.SetSelectedReportNode = reportNode
     if reportNode:
-      self.studiesCollapsibleButton.setProperty('enabled',True)
+      self.enableStudiesCollapsibleButton(True)
+
       self.studySelectionWidget.update(reportNode)
       self.studySliderWidget.update(reportNode)
       self.reportTableWidget.update(reportNode)
@@ -235,6 +257,8 @@ class qSlicerLongPETCTModuleWidget:
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
     
     else:
+      self.enableStudiesCollapsibleButton(False)
+      
       self.onUpdateVolumeRendering(None)
       self.updateBgFgToUserSelectedStudy(None)  
     
@@ -349,7 +373,21 @@ class qSlicerLongPETCTModuleWidget:
     
       
 
-        
+  def enableStudiesCollapsibleButton(self, enable):
+    if enable:
+      self.studiesCollapsibleButton.setProperty('enabled',True)
+    else:
+      self.studiesCollapsibleButton.setProperty('collapsed',True)
+      self.studiesCollapsibleButton.setProperty('enabled',False)
+      # cascade disabling
+      self.enableFindingsCollapsibleButton(enable)
+  
+  def enableFindingsCollapsibleButton(self, enable):
+    if enable:
+      self.findingsCollapsibleButton.setProperty('enabled',True)
+    else:
+      self.findingsCollapsibleButton.setProperty('collapsed',True)
+      self.findingsCollapsibleButton.setProperty('enabled',False)           
         
 
            
