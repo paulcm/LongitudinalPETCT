@@ -52,7 +52,7 @@
      </column>
      <column>
       <property name="text">
-       <string>New Column</string>
+       <string>Time</string>
       </property>
      </column>
      <column>
