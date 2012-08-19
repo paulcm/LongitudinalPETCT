@@ -31,6 +31,23 @@ vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
 {
   this->SetHideFromEditors(false);
   this->UserSelectedStudy = NULL;
+  this->UserSelectedFinding = NULL;
+  this->ColorNode = NULL;
+
+  vtkMRMLLongPETCTFindingNode::FindingType type;
+  type.colorID = 7;
+  type.typeName = "Tumor";
+  this->AddFindingType(type);
+  type.colorID = 23;
+  type.typeName = "Lymph Node";
+  this->AddFindingType(type);
+  type.colorID = 216;
+  type.typeName = "Liver";
+  this->AddFindingType(type);
+  type.colorID = 191;
+  type.typeName = "Aorta";
+  this->AddFindingType(type);
+
 }
 
 //----------------------------------------------------------------------------
@@ -213,4 +230,17 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode*
 
   return -1;
 }
+
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLLongPETCTFindingNode::FindingType> vtkMRMLLongPETCTReportNode::GetFindingTypes()
+{
+  return this->FindingTypes;
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType findingType)
+{
+  this->FindingTypes.push_back(findingType);
+}
+
 
