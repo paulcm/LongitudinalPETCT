@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>296</width>
-    <height>190</height>
+    <width>354</width>
+    <height>238</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,16 +23,6 @@
    <property name="margin">
     <number>25</number>
    </property>
-   <item row="3" column="0">
-    <widget class="QLabel" name="LabelColorTable">
-     <property name="text">
-      <string>Select Color Table:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="qMRMLColorTableComboBox" name="ColorTableComboBox" native="true"/>
-   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="LabelName">
      <property name="text">
@@ -50,46 +40,34 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="LabelType">
-     <property name="text">
-      <string>Select Finding Type:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1">
+   <item row="4" column="1">
     <widget class="QPushButton" name="ButtonApply">
      <property name="text">
       <string>Apply</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
-    <widget class="QComboBox" name="ComboBoxType"/>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
+   <item row="3" column="0" colspan="2">
+    <widget class="QTableWidget" name="Table">
+     <column>
+      <property name="text">
+       <string>Finding Type</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Color Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Color</string>
+      </property>
+     </column>
     </widget>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>qMRMLNodeComboBox</class>
-   <extends>QWidget</extends>
-   <header>qmrmlnodecombobox.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLColorTableComboBox</class>
-   <extends>qMRMLNodeComboBox</extends>
-   <header>qmrmlcolortablecombobox.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
