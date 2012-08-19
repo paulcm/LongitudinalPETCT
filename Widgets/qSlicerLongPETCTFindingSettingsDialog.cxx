@@ -22,10 +22,9 @@
 #include "qSlicerLongPETCTFindingSettingsDialog.h"
 #include "ui_qSlicerLongPETCTFindingSettingsDialog.h"
 
-
-
-
-
+#include <vtkMRMLLongPETCTReportNode.h>
+#include <vtkMRMLColorNode.h>
+#include <vtkMRMLLongPETCTFindingNode.h>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -42,10 +41,13 @@ public:
 
   virtual ~qSlicerLongPETCTFindingSettingsDialogPrivate();
 
-
   virtual void setupUi(qSlicerLongPETCTFindingSettingsDialog* widget);
+  void AddRowToTable(const QString& findingType, const QString& colorName, const QColor& color);
 
-  bool applied;
+  std::vector<vtkMRMLLongPETCTFindingNode::FindingType> FindingTypes;
+
+  bool Applied;
+
 
 };
 
@@ -53,7 +55,7 @@ public:
 qSlicerLongPETCTFindingSettingsDialogPrivate
 ::qSlicerLongPETCTFindingSettingsDialogPrivate(
   qSlicerLongPETCTFindingSettingsDialog& object)
-  : q_ptr(&object), applied(false)
+  : q_ptr(&object), Applied(false)
 {
 }
 
@@ -70,10 +72,26 @@ void qSlicerLongPETCTFindingSettingsDialogPrivate
   Q_Q(qSlicerLongPETCTFindingSettingsDialog);
 
   this->Ui_qSlicerLongPETCTFindingSettingsDialog::setupUi(widget);
-  this->ColorTableComboBox->setNodeTypes(QStringList("vtkMRMLColorNode"));
 
   QObject::connect( this->ButtonApply, SIGNAL(clicked()), widget, SLOT(applyClicked()) );
+}
 
+// --------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSettingsDialogPrivate::AddRowToTable(const QString& findingType, const QString& colorName, const QColor& color)
+{
+  int currentRow = this->Table->rowCount();
+
+  this->Table->insertRow(currentRow);
+
+  QTableWidgetItem* type = new QTableWidgetItem(findingType);
+  QTableWidgetItem* name = new QTableWidgetItem(colorName);
+
+  QPushButton* colorButton = new QPushButton(this->Table);
+  colorButton->setStyleSheet("background-color: "+color.name());
+
+  this->Table->setItem(currentRow,0,type);
+  this->Table->setItem(currentRow,1,name);
+  this->Table->setCellWidget(currentRow,2,colorButton);
 }
 
 //-----------------------------------------------------------------------------
@@ -95,30 +113,6 @@ qSlicerLongPETCTFindingSettingsDialog
 {
 }
 
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTFindingSettingsDialog::setMRMLScene(vtkMRMLScene* mrmlScene)
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->ColorTableComboBox);
-
-  d->ColorTableComboBox->setAddEnabled(false);
-  d->ColorTableComboBox->setNoneEnabled(false);
-  d->ColorTableComboBox->setSelectNodeUponCreation(true);
-  d->ColorTableComboBox->setShowHidden(true);
-  d->ColorTableComboBox->showChildNodeTypes();
-  QStringList list;
-
-
-  d->ColorTableComboBox->setMRMLScene(mrmlScene);
-}
-
-//-----------------------------------------------------------------------------
-vtkMRMLScene* qSlicerLongPETCTFindingSettingsDialog::mrmlScene()
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-
-  return NULL; //d->MRMLNodeComboBoxFinding->mrmlScene();
-}
 
 //-----------------------------------------------------------------------------
 QString qSlicerLongPETCTFindingSettingsDialog::findingName()
@@ -143,7 +137,7 @@ bool qSlicerLongPETCTFindingSettingsDialog::applied()
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
 
-  return d->applied;
+  return d->Applied;
 }
 
 //-----------------------------------------------------------------------------
@@ -151,14 +145,75 @@ void qSlicerLongPETCTFindingSettingsDialog::setApplied(bool applied)
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
 
-  d->applied = applied;
+  d->Applied = applied;
 }
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTFindingSettingsDialog::applyClicked()
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
 
-  d->applied = true;
+  d->Applied = true;
 
   this->close();
 }
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSettingsDialog::show()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  d->Applied = false;
+
+  Superclass::show();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+qSlicerLongPETCTFindingSettingsDialog::update(vtkMRMLLongPETCTReportNode* node)
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->LineEditName);
+  Q_ASSERT(d->Table);
+
+
+  vtkMRMLLongPETCTReportNode* selectedReportNode =
+      vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+
+  if (selectedReportNode != NULL && selectedReportNode->GetUserSelectedFinding() != NULL)
+    {
+
+      while (d->Table->rowCount() > 0)
+        {
+          d->Table->removeRow(d->Table->rowCount() - 1);
+        }
+
+      vtkMRMLColorNode* colorNode = selectedReportNode->GetColorNode();
+
+      d->LineEditName->setText(selectedReportNode->GetUserSelectedFinding()->GetName());
+
+      if (colorNode != NULL)
+        {
+          d->FindingTypes.clear();
+          d->FindingTypes = selectedReportNode->GetFindingTypes();
+
+          for (int i = 0; i < d->FindingTypes.size(); ++i)
+            {
+              int value = d->FindingTypes.at(i).colorID;
+              QString type = d->FindingTypes.at(i).typeName.c_str();
+              QString colorName = colorNode->GetColorName(value);
+              double col[3];
+              colorNode->GetColor(value, col);
+              QColor color(col[0] * 255, col[1] * 255, col[2] * 255);
+              d->AddRowToTable(type, colorName, color);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+qSlicerLongPETCTFindingSettingsDialog::execDialog()
+{
+  this->exec();
+}
+

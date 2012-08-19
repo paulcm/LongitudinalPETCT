@@ -30,6 +30,9 @@
 
 #include "vtkMRMLScene.h"
 
+class vtkMRMLLongPETCTReportNode;
+class vtkMRMLColorNode;
+
 
 class qSlicerLongPETCTFindingSettingsDialogPrivate;
 
@@ -39,19 +42,13 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSettingsDi
   : public QDialog
 {
   Q_OBJECT
-  Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
   Q_PROPERTY(bool applied READ applied WRITE setApplied)
   Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
-
-  //Q_PROPERTY(qMRMLNodeComboBox* mrmlNodeComboBoxFinding READ mrmlNodeComboBoxFinding WRITE setMRMLNodeComboBoxFinding)
 
 public:
   typedef QDialog Superclass;
   qSlicerLongPETCTFindingSettingsDialog(QWidget *parent=0);
   virtual ~qSlicerLongPETCTFindingSettingsDialog();
-
-  Q_INVOKABLE void setMRMLScene(vtkMRMLScene* mrmlScene);
-  vtkMRMLScene* mrmlScene();
 
   QString findingName();
   void setFindingName(const QString& name);
@@ -60,7 +57,9 @@ public:
   void setApplied(bool applied);
 
 public slots:
-
+  void update(vtkMRMLLongPETCTReportNode* node);
+  void execDialog();
+  virtual void show();
 
 protected slots:
   void applyClicked();
