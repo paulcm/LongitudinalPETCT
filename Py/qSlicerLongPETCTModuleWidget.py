@@ -109,11 +109,13 @@ class qSlicerLongPETCTModuleWidget:
       
     self.findingSelectionWidget = slicer.modulewidget.qSlicerLongPETCTFindingSelectionWidget()    
     self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
+    
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
+    self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.on_FindingNodeCreated)
     
     findingsLayout.addWidget(self.findingSelectionWidget)
     
-
+    
     # Add vertical spacer
     self.layout.addStretch()
     
@@ -172,7 +174,6 @@ class qSlicerLongPETCTModuleWidget:
                 
         if firstDisplayPet | firstDisplayCt:
           self.updateBgFgToUserSelectedStudy(selectedStudy)
-
 
         if firstDisplayCt:
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(0)
@@ -388,7 +389,15 @@ class qSlicerLongPETCTModuleWidget:
     else:
       self.findingsCollapsibleButton.setProperty('collapsed',True)
       self.findingsCollapsibleButton.setProperty('enabled',False)           
-        
+
+
+  def on_FindingNodeCreated(self, findingNode):
+    currentReport = self.reportSelector.currentNode()
+    if currentReport:
+      currentReport.SetUserSelectedFinding(findingNode)
+      findingSettingsDialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog()
+      findingSettingsDialog.update(currentReport)
+      findingSettingsDialog.execDialog()
 
            
   @staticmethod
