@@ -78,6 +78,12 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkMRMLAnnotationROINode* GetROIForStudy(const vtkMRMLLongPETCTStudyNode* study);
   vtkMRMLScalarVolumeNode* GetLabelMapVolumeForROI(const vtkMRMLAnnotationROINode* roi);
 
+  struct FindingType
+  {
+    int colorID;
+    std::string typeName;
+  };
+
 protected:
   vtkMRMLLongPETCTFindingNode();
   ~vtkMRMLLongPETCTFindingNode();
