@@ -385,7 +385,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
 
     reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTReportNode')
     reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1) 
-      
+
     if self.petFileLoadables:
       files = self.petFileLoadables[0].files
         
@@ -399,8 +399,14 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
       reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
       reportNode.SetAttribute('DICOM.PatientSex',patientSex)
       reportNode.SetScene(slicer.mrmlScene)
+      
+      colorLogic = slicer.modules.colors.logic()
+      defaultColorID = colorLogic.GetDefaultEditorColorNodeID()
+      defaultColorNode = slicer.mrmlScene.GetNodeByID(defaultColorID)
     
-  
+      reportNode.SetColorNode(defaultColorNode)
+      
+        
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
 
@@ -415,7 +421,6 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
           studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
     
-        
           #Study Node
           studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTStudyNode')
           studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
