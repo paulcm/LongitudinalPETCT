@@ -28,6 +28,7 @@
 
 #include <qMRMLNodeComboBox.h>
 #include <vtkMRMLLongPETCTFindingNode.h>
+#include <vtkMRMLColorNode.h>
 
 #include "qSlicerLongPETCTFindingSettingsDialog.h"
 
@@ -50,8 +51,9 @@ public:
 
   virtual ~qSlicerLongPETCTFindingSelectionWidgetPrivate();
 
-
   virtual void setupUi(qSlicerLongPETCTFindingSelectionWidget* widget);
+
+  vtkMRMLColorNode* ColorNode;
 
 };
 
@@ -59,7 +61,7 @@ public:
 qSlicerLongPETCTFindingSelectionWidgetPrivate
 ::qSlicerLongPETCTFindingSelectionWidgetPrivate(
   qSlicerLongPETCTFindingSelectionWidget& object)
-  : q_ptr(&object)
+  : q_ptr(&object), ColorNode(NULL)
 {
 }
 
@@ -80,8 +82,7 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
   this->MRMLNodeComboBoxFinding->setNodeTypes(QStringList("vtkMRMLLongPETCTFindingNode"));
 
   QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(currentNodeChanged(vtkMRMLNode*)), widget, SLOT(update(vtkMRMLNode*)) );
-  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), widget, SLOT(findingCreatedByUser(vtkMRMLNode*)) );
-
+  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), widget, SIGNAL(FindingNodeAddedByUser(vtkMRMLNode*)) );
 
 }
 
@@ -139,35 +140,4 @@ void qSlicerLongPETCTFindingSelectionWidget
 ::update(vtkMRMLNode* node)
 {
   Q_D(qSlicerLongPETCTFindingSelectionWidget);
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTFindingSelectionWidget::findingCreatedByUser(vtkMRMLNode* node)
-{
-  Q_D(qSlicerLongPETCTFindingSelectionWidget);
-  Q_ASSERT(d->MRMLNodeComboBoxFinding);
-
-  qSlicerLongPETCTFindingSettingsDialog dialog;
-  dialog.setMRMLScene(d->MRMLNodeComboBoxFinding->mrmlScene());
-
-
-  vtkMRMLLongPETCTFindingNode* selectedFindingNode = vtkMRMLLongPETCTFindingNode::SafeDownCast(node);
-
-  dialog.setFindingName(selectedFindingNode->GetName());
-  dialog.exec();
-
-  if(dialog.applied())
-    {
-      if( ! dialog.findingName().isEmpty())
-        selectedFindingNode->SetName(dialog.findingName().toStdString().c_str());
-    }
-
-  else
-    {
-      if(d->MRMLNodeComboBoxFinding->mrmlScene())
-        d->MRMLNodeComboBoxFinding->mrmlScene()->RemoveNode(selectedFindingNode);
-    }
-
-
-  //QMessageBox::information(NULL, "Longitudinal PET/CT Analysis", "The user has created a finding!");
 }

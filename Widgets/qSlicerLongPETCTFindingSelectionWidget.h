@@ -44,6 +44,8 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
   Q_OBJECT
   Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
 
+
+
 public slots:
   void update(vtkMRMLNode* node);
 
@@ -57,9 +59,8 @@ public:
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxFinding();
 
-
-protected slots:
-  void findingCreatedByUser(vtkMRMLNode* node);
+signals:
+  void FindingNodeAddedByUser(vtkMRMLNode* node);
 
 protected:
   QScopedPointer<qSlicerLongPETCTFindingSelectionWidgetPrivate> d_ptr;
