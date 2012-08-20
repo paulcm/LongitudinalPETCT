@@ -41,7 +41,6 @@
 #include "vtkMRMLLongPETCTFindingNode.h"
 
 class vtkMRMLLongPETCTStudyNode;
-class vtkMRMLColorNode;
 class vector;
 
 /// \ingroup Slicer_QtModules_LongPETCTReportNode
@@ -70,10 +69,17 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   int AddStudy(vtkMRMLLongPETCTStudyNode* study);
   //bool RemoveStudy(vtkMRMLLongPETCTStudyNode study);
 
-  int GetStudiesCount() const;
-  int GetSelectedStudiesCount();
+  void AddFinding(vtkMRMLLongPETCTFindingNode* finding);
 
-  vtkMRMLLongPETCTStudyNode* GetStudy(int index);
+  int GetStudiesCount() const;
+  int GetSelectedStudiesCount() const;
+  int GetFindingsCount() const;
+
+  vtkMRMLLongPETCTFindingNode* GetFinding(int index) const;
+
+  bool FindingNameInList(const std::string& name);
+
+  vtkMRMLLongPETCTStudyNode* GetStudy(int index) const;
 
   vtkMRMLLongPETCTStudyNode* GetSelectedStudy(int index);
   vtkMRMLLongPETCTStudyNode* GetSelectedStudyFirst();
@@ -90,12 +96,6 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   vtkGetMacro(UserSelectedFinding,vtkMRMLLongPETCTFindingNode*);
   vtkSetMacro(UserSelectedFinding,vtkMRMLLongPETCTFindingNode*);
 
-  vtkGetMacro(ColorNode,vtkMRMLColorNode*);
-  vtkSetMacro(ColorNode,vtkMRMLColorNode*);
-
-  std::vector<vtkMRMLLongPETCTFindingNode::FindingType> GetFindingTypes();
-
-  void AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType findingType);
 
 protected:
   vtkMRMLLongPETCTReportNode();
@@ -104,11 +104,12 @@ protected:
   void operator=(const vtkMRMLLongPETCTReportNode&);
 
   std::vector<vtkMRMLLongPETCTStudyNode*> Studies;
+  std::vector<vtkMRMLLongPETCTFindingNode*> Findings;
+
   vtkMRMLLongPETCTStudyNode* UserSelectedStudy;
   vtkMRMLLongPETCTFindingNode* UserSelectedFinding;
 
-  vtkMRMLColorNode* ColorNode;
-  std::vector<vtkMRMLLongPETCTFindingNode::FindingType> FindingTypes;
+
 
 };
 

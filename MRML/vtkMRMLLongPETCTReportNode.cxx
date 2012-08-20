@@ -21,6 +21,8 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTReportNode.h"
 #include "vtkMRMLLongPETCTStudyNode.h"
 
+#include "vtkMRMLLongPETCTFindingNode.h"
+
 // STD includes
 
 //----------------------------------------------------------------------------
@@ -32,21 +34,11 @@ vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
   this->SetHideFromEditors(false);
   this->UserSelectedStudy = NULL;
   this->UserSelectedFinding = NULL;
-  this->ColorNode = NULL;
 
-  vtkMRMLLongPETCTFindingNode::FindingType type;
-  type.colorID = 7;
-  type.typeName = "Tumor";
-  this->AddFindingType(type);
-  type.colorID = 23;
-  type.typeName = "Lymph Node";
-  this->AddFindingType(type);
-  type.colorID = 216;
-  type.typeName = "Liver";
-  this->AddFindingType(type);
-  type.colorID = 191;
-  type.typeName = "Aorta";
-  this->AddFindingType(type);
+  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(7,"Tumor"));
+  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(23,"Lymph Node"));
+  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(216,"Liver"));
+  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(191,"Aorta"));
 
 }
 
@@ -99,7 +91,13 @@ int vtkMRMLLongPETCTReportNode::GetStudiesCount() const
 }
 
 //----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount()
+int vtkMRMLLongPETCTReportNode::GetFindingsCount() const
+{
+  return this->Findings.size();
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 {
   int count = 0;
 
@@ -138,15 +136,46 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
   return i;
 }
 
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::AddFinding(vtkMRMLLongPETCTFindingNode* finding)
+{
+  this->Findings.push_back(finding);
+}
+
 
 //----------------------------------------------------------------------------
-vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index)
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index) const
 {
   if(index >= 0 && index < this->Studies.size())
     return this->Studies[index];
 
   else
     return NULL;
+}
+
+
+//----------------------------------------------------------------------------
+vtkMRMLLongPETCTFindingNode* vtkMRMLLongPETCTReportNode::GetFinding(int index) const
+{
+  if(index >= 0 && index < this->Findings.size())
+    return this->Findings[index];
+
+  else
+    return NULL;
+}
+
+
+//----------------------------------------------------------------------------
+bool vtkMRMLLongPETCTReportNode::FindingNameInList(const std::string& name)
+{
+  for(int i=0; i < this->Findings.size(); ++i)
+    {
+      std::string findingName = this->Findings.at(i)->GetName();
+      if(findingName.compare(name) == 0)
+        return true;
+    }
+
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -231,16 +260,5 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode*
   return -1;
 }
 
-//----------------------------------------------------------------------------
-std::vector<vtkMRMLLongPETCTFindingNode::FindingType> vtkMRMLLongPETCTReportNode::GetFindingTypes()
-{
-  return this->FindingTypes;
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType findingType)
-{
-  this->FindingTypes.push_back(findingType);
-}
 
 
