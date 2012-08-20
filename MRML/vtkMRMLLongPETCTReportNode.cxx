@@ -22,8 +22,12 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTStudyNode.h"
 
 #include "vtkMRMLLongPETCTFindingNode.h"
-
+#include <vtkMRMLColorNode.h>
 // STD includes
+#include <cassert>
+
+
+std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTReportNode::FindingTypes = std::vector< std::pair<int,std::string> >();
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
@@ -35,10 +39,10 @@ vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
   this->UserSelectedStudy = NULL;
   this->UserSelectedFinding = NULL;
 
-  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(7,"Tumor"));
-  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(23,"Lymph Node"));
-  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(216,"Liver"));
-  vtkMRMLLongPETCTFindingNode::AddFindingType(std::make_pair(191,"Aorta"));
+  AddFindingType(std::make_pair(7,"Tumor"));
+  AddFindingType(std::make_pair(23,"Lymph Node"));
+  AddFindingType(std::make_pair(216,"Liver"));
+  AddFindingType(std::make_pair(191,"Aorta"));
 
 }
 
@@ -258,6 +262,53 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode*
     }
 
   return -1;
+}
+
+//----------------------------------------------------------------------------
+const vtkMRMLColorNode* vtkMRMLLongPETCTReportNode::GetColorNode()
+{
+  assert(this->GetScene());
+
+  return vtkMRMLColorNode::SafeDownCast(this->GetScene()->GetNodeByID(this->GetAttribute("ColorNodeID")));
+}
+
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexFindingColorID(int colorID)
+{
+  for(int i=0; i < vtkMRMLLongPETCTReportNode::FindingTypes.size(); ++i)
+    {
+      if(vtkMRMLLongPETCTReportNode::FindingTypes.at(i).first == colorID)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexFindingTypeName(const std::string& typeName)
+{
+  for(int i=0; i < vtkMRMLLongPETCTReportNode::FindingTypes.size(); ++i)
+    {
+      if(vtkMRMLLongPETCTReportNode::FindingTypes.at(i).second.compare(typeName) == 0)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTReportNode::GetFindingTypes()
+{
+  return vtkMRMLLongPETCTReportNode::FindingTypes;
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::AddFindingType(std::pair<int, std::string> type)
+{
+  int index = vtkMRMLLongPETCTReportNode::GetIndexFindingColorID(type.first);
+  if( index == -1)
+    vtkMRMLLongPETCTReportNode::FindingTypes.push_back(type);
 }
 
 

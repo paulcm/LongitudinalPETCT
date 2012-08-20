@@ -30,7 +30,6 @@ Version:   $Revision: 1.2 $
 #include <vtkMRMLScalarVolumeNode.h>
 // STD includes
 
-std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTFindingNode::FindingTypes = std::vector< std::pair<int,std::string> >();
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
@@ -166,40 +165,4 @@ void vtkMRMLLongPETCTFindingNode::SetFindingType(int colorID, std::string typeNa
   this->FindingType.second = typeName;
 }
 
-//----------------------------------------------------------------------------
-int vtkMRMLLongPETCTFindingNode::GetIndexFindingColorID(int colorID)
-{
-  for(int i=0; i < vtkMRMLLongPETCTFindingNode::FindingTypes.size(); ++i)
-    {
-      if(vtkMRMLLongPETCTFindingNode::FindingTypes.at(i).first == colorID)
-        return i;
-    }
 
-  return -1;
-}
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongPETCTFindingNode::GetIndexFindingTypeName(const std::string& typeName)
-{
-  for(int i=0; i < vtkMRMLLongPETCTFindingNode::FindingTypes.size(); ++i)
-    {
-      if(vtkMRMLLongPETCTFindingNode::FindingTypes.at(i).second.compare(typeName) == 0)
-        return i;
-    }
-
-  return -1;
-}
-
-//----------------------------------------------------------------------------
-std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTFindingNode::GetFindingTypes()
-{
-  return vtkMRMLLongPETCTFindingNode::FindingTypes;
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::AddFindingType(std::pair<int, std::string> type)
-{
-  int index = vtkMRMLLongPETCTFindingNode::GetIndexFindingColorID(type.first);
-  if( index == -1)
-    vtkMRMLLongPETCTFindingNode::FindingTypes.push_back(type);
-}
