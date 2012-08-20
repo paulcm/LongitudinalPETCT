@@ -16,7 +16,6 @@ Version:   $Revision: 1.2 $
 #include <vtkCommand.h>
 #include <vtkObjectFactory.h>
 
-#include <map>
 
 
 // MRML includes
@@ -31,6 +30,7 @@ Version:   $Revision: 1.2 $
 #include <vtkMRMLScalarVolumeNode.h>
 // STD includes
 
+std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTFindingNode::FindingTypes = std::vector< std::pair<int,std::string> >();
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
@@ -39,6 +39,8 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
+  this->FindingType.first = 0;
+  this->FindingType.second = "None";
 }
 
 //----------------------------------------------------------------------------
@@ -117,6 +119,8 @@ vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::RemoveLabelMapForROI(const
   return labelMapVolumeToRemove;
 }
 
+
+
 //----------------------------------------------------------------------------
 vtkMRMLAnnotationROINode* vtkMRMLLongPETCTFindingNode::GetROIForStudy(const vtkMRMLLongPETCTStudyNode* study)
 {
@@ -143,4 +147,59 @@ vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::GetLabelMapVolumeForROI(co
   return labelMapVolume;
 }
 
+//----------------------------------------------------------------------------
+std::pair<int,std::string> vtkMRMLLongPETCTFindingNode::GetFindingType()
+{
+  return this->FindingType;
+}
 
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTFindingNode::SetFindingType(std::pair<int,std::string> type)
+{
+  this->SetFindingType(type.first, type.second);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTFindingNode::SetFindingType(int colorID, std::string typeName)
+{
+  this->FindingType.first = colorID;
+  this->FindingType.second = typeName;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTFindingNode::GetIndexFindingColorID(int colorID)
+{
+  for(int i=0; i < vtkMRMLLongPETCTFindingNode::FindingTypes.size(); ++i)
+    {
+      if(vtkMRMLLongPETCTFindingNode::FindingTypes.at(i).first == colorID)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTFindingNode::GetIndexFindingTypeName(const std::string& typeName)
+{
+  for(int i=0; i < vtkMRMLLongPETCTFindingNode::FindingTypes.size(); ++i)
+    {
+      if(vtkMRMLLongPETCTFindingNode::FindingTypes.at(i).second.compare(typeName) == 0)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+std::vector< std::pair<int,std::string> > vtkMRMLLongPETCTFindingNode::GetFindingTypes()
+{
+  return vtkMRMLLongPETCTFindingNode::FindingTypes;
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTFindingNode::AddFindingType(std::pair<int, std::string> type)
+{
+  int index = vtkMRMLLongPETCTFindingNode::GetIndexFindingColorID(type.first);
+  if( index == -1)
+    vtkMRMLLongPETCTFindingNode::FindingTypes.push_back(type);
+}

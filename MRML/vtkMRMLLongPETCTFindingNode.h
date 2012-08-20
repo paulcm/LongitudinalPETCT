@@ -78,11 +78,15 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkMRMLAnnotationROINode* GetROIForStudy(const vtkMRMLLongPETCTStudyNode* study);
   vtkMRMLScalarVolumeNode* GetLabelMapVolumeForROI(const vtkMRMLAnnotationROINode* roi);
 
-  struct FindingType
-  {
-    int colorID;
-    std::string typeName;
-  };
+  static std::vector< std::pair<int,std::string> > GetFindingTypes();
+  static void AddFindingType(std::pair<int, std::string>);
+
+  static int GetIndexFindingColorID(int colorID);
+  static int GetIndexFindingTypeName(const std::string& typeName);
+
+  std::pair<int,std::string> GetFindingType();
+  void SetFindingType(std::pair<int,std::string> type);
+  void SetFindingType(int colorID, std::string typeName);
 
 protected:
   vtkMRMLLongPETCTFindingNode();
@@ -90,9 +94,12 @@ protected:
   vtkMRMLLongPETCTFindingNode(const vtkMRMLLongPETCTFindingNode&);
   void operator=(const vtkMRMLLongPETCTFindingNode&);
 
-
   std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLAnnotationROINode*> StudyAndROIMap;
   std::map<vtkMRMLAnnotationROINode*,vtkMRMLScalarVolumeNode*> ROIandLabelsMap;
+
+  std::pair<int,std::string> FindingType;
+
+  static std::vector< std::pair<int,std::string> > FindingTypes;
 
 };
 
