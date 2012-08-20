@@ -42,6 +42,7 @@
 
 class vtkMRMLLongPETCTStudyNode;
 class vector;
+class string;
 class vtkMRMLColorNode;
 
 /// \ingroup Slicer_QtModules_LongPETCTReportNode
@@ -99,12 +100,20 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   const vtkMRMLColorNode* GetColorNode();
 
-  static std::vector< std::pair<int,std::string> > GetFindingTypes();
-  static void AddFindingType(std::pair<int, std::string>);
 
-  static int GetIndexFindingColorID(int colorID);
-  static int GetIndexFindingTypeName(const std::string& typeName);
+  int GetFindingTypesCount();
 
+  void AddFindingType(std::pair<std::string,int> type);
+
+  std::string GetFindingTypeName(int colorID);
+  int GetFindingTypeColorID(const std::string& typeName);
+
+  std::pair<std::string,int> GetFindingType(int index);
+
+  void SetFindingTypeColorID(const std::string& typeName, int newColorID);
+
+  int GetIndexOfFindingTypeName(const std::string& typeName);
+  int GetIndexOfFindingColorID(int colorID);
 
 protected:
   vtkMRMLLongPETCTReportNode();
@@ -118,7 +127,9 @@ protected:
   vtkMRMLLongPETCTStudyNode* UserSelectedStudy;
   vtkMRMLLongPETCTFindingNode* UserSelectedFinding;
 
-  static std::vector< std::pair<int,std::string> > FindingTypes;
+  std::vector< std::pair<std::string,int> > FindingTypes;
+
+
 
 };
 
