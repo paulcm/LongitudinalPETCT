@@ -144,7 +144,6 @@ void qSlicerLongPETCTStudySelectionWidget
 ::update(vtkMRMLNode* node)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ListStudyCheckBoxes);
 
   vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
 
@@ -211,7 +210,6 @@ void qSlicerLongPETCTStudySelectionWidget
 void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ListStudyCheckBoxes);
   Q_ASSERT(d->Table);
 
   d->DeselectTableAll();
@@ -236,7 +234,6 @@ void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
 void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ListStudyCheckBoxes);
   Q_ASSERT(d->Table);
 
   QCheckBox* sender =  qobject_cast<QCheckBox*>(QObject::sender());
