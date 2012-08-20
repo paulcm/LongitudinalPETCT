@@ -201,13 +201,15 @@ class qSlicerLongPETCTModuleWidget:
           
           if self.studySelectionWidget.property('volumeRendering'):
             self.vrDisplayNode.VisibilityOn()
+            viewNode.SetAxisLabelsVisible(1)
           else:
             self.vrDisplayNode.VisibilityOff()
+            viewNode.SetAxisLabelsVisible(0)
           
-          if self.studySelectionWidget.property('rockView'):
+          if self.studySelectionWidget.property('rockView') & self.studySelectionWidget.property('volumeRendering'):
             viewNode.SetAnimationMode(viewNode.Rock)
           else:
-            viewNode.SetAnimationMode(0)
+            viewNode.SetAnimationMode(viewNode.Off)
           
           
         self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())     
@@ -341,11 +343,15 @@ class qSlicerLongPETCTModuleWidget:
         self.vrDisplayNode.VisibilityOn()
         if viewNode:
           viewNode.SetAxisLabelsVisible(1)
+          if self.studySelectionWidget.property('rockView'):
+            viewNode.SetAnimationMode(viewNode.Rock)
       else:
         self.vrDisplayNode.VisibilityOff()  
         if viewNode:
           viewNode.SetAxisLabelsVisible(0)
+          viewNode.SetAnimationMode(viewNode.Off)
         
+    
     
   def onStudySelectionWidgetRockView(self, rock):
     
@@ -393,20 +399,38 @@ class qSlicerLongPETCTModuleWidget:
 
   def on_FindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
-    if currentReport:
-      currentReport.SetUserSelectedFinding(findingNode)
-      findingSettingsDialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog()
-      findingSettingsDialog.update(currentReport)
-      findingSettingsDialog.execDialog()
+    currentReport.SetUserSelectedFinding(findingNode)
+    dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
+    dialog.setReportNode(currentReport)
+    dialog.exec_()
+    if dialog.property('applied'):
+      findingNode.SetName(dialog.property('findingName'))
+      findingNode.SetFindingType(dialog.property('colorID'),dialog.property('typeName'))
+      print dialog.property('colorID')
+      print dialog.property('typeName')
+      currentReport.AddFinding(findingNode)
+      
+    else:
+      scene = findingNode.GetScene()
+      if scene:
+        scene.RemoveNode(findingNode)
+    
+    
+    #if currentReport:
+     # currentReport.SetUserSelectedFinding(findingNode)
+     # findingSettingsDialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog()
+     # findingSettingsDialog.update(currentReport)
+     # findingSettingsDialog.execDialog()
 
            
   @staticmethod
   def SetBgFgVolumes(bg, fg):
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceSecondaryVolumeID(fg)
     selectionNode.SetReferenceActiveVolumeID(bg)
+    selectionNode.SetReferenceSecondaryVolumeID(fg)
     appLogic.PropagateVolumeSelection()
+    
     
     #red = slicer.util.getNode('vtkMRMLSliceNodeRed')
     #yellow = slicer.util.getNode('vtkMRMLSliceNodeYellow')
