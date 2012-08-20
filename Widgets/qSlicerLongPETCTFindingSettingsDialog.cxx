@@ -26,6 +26,10 @@
 #include <vtkMRMLColorNode.h>
 #include <vtkMRMLLongPETCTFindingNode.h>
 
+#include <QCloseEvent>
+
+#include <QMessageBox>
+
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongPETCT
 class qSlicerLongPETCTFindingSettingsDialogPrivate :
@@ -42,12 +46,14 @@ public:
   virtual ~qSlicerLongPETCTFindingSettingsDialogPrivate();
 
   virtual void setupUi(qSlicerLongPETCTFindingSettingsDialog* widget);
-  void AddRowToTable(const QString& findingType, const QString& colorName, const QColor& color);
+  void addFindingType(const QString& typeName);
 
-  std::vector<vtkMRMLLongPETCTFindingNode::FindingType> FindingTypes;
+  void selectFindingType(const QString& typeName);
+
 
   bool Applied;
 
+  vtkMRMLLongPETCTReportNode* ReportNode;
 
 };
 
@@ -55,7 +61,7 @@ public:
 qSlicerLongPETCTFindingSettingsDialogPrivate
 ::qSlicerLongPETCTFindingSettingsDialogPrivate(
   qSlicerLongPETCTFindingSettingsDialog& object)
-  : q_ptr(&object), Applied(false)
+  : q_ptr(&object), Applied(false), ReportNode(NULL)
 {
 }
 
@@ -73,27 +79,44 @@ void qSlicerLongPETCTFindingSettingsDialogPrivate
 
   this->Ui_qSlicerLongPETCTFindingSettingsDialog::setupUi(widget);
 
+  this->ExpandButton->setOrientation(Qt::Vertical);
+  this->ExpandButton->mirrorOnExpand();
+  this->WidgetAddType->setVisible(false);
+
+  this->LabelAddType->setMinimumWidth(this->LabelName->sizeHint().width());
+  this->ButtonRemove->setMaximumHeight(this->ButtonColor->sizeHint().height());
+  this->ButtonRemove->setMaximumWidth(this->ButtonColor->sizeHint().height());
+
+  this->ButtonAddType->setMaximumWidth(this->ButtonColorAddType->sizeHint().height());
+  this->ButtonAddType->setMaximumHeight(this->ButtonColorAddType->sizeHint().height());
+
+
   QObject::connect( this->ButtonApply, SIGNAL(clicked()), widget, SLOT(applyClicked()) );
+  QObject::connect( this->ComboBoxType, SIGNAL(currentIndexChanged(int)), widget, SLOT(typeSelectionChanged(int)) );
+
 }
+
+void qSlicerLongPETCTFindingSettingsDialogPrivate
+::selectFindingType(const QString& typeName)
+{
+  for(int i=0; i < this->ComboBoxType->count(); ++i)
+    {
+      if(this->ComboBoxType->itemText(i).compare(typeName) == 0)
+          {
+            this->ComboBoxType->setCurrentIndex(i);
+            return;
+          }
+    }
+
+  this->ComboBoxType->setCurrentIndex(0); // if type was not found in combobox
+}
+
 
 // --------------------------------------------------------------------------
-void qSlicerLongPETCTFindingSettingsDialogPrivate::AddRowToTable(const QString& findingType, const QString& colorName, const QColor& color)
+void qSlicerLongPETCTFindingSettingsDialogPrivate::addFindingType(const QString& typeName)
 {
-  int currentRow = this->Table->rowCount();
-
-  this->Table->insertRow(currentRow);
-
-  QTableWidgetItem* type = new QTableWidgetItem(findingType);
-  QTableWidgetItem* name = new QTableWidgetItem(colorName);
-
-  QPushButton* colorButton = new QPushButton(this->Table);
-  colorButton->setStyleSheet("background-color: "+color.name());
-
-  this->Table->setItem(currentRow,0,type);
-  this->Table->setItem(currentRow,1,name);
-  this->Table->setCellWidget(currentRow,2,colorButton);
+  this->ComboBoxType->addItem(typeName);
 }
-
 //-----------------------------------------------------------------------------
 // qSlicerLongPETCTFindingSettingsDialog methods
 
@@ -105,6 +128,9 @@ qSlicerLongPETCTFindingSettingsDialog
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
   d->setupUi(this);
+
+  this->setWindowTitle("Finding Settings");
+  this->setModal(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -113,12 +139,13 @@ qSlicerLongPETCTFindingSettingsDialog
 {
 }
 
-
 //-----------------------------------------------------------------------------
 QString qSlicerLongPETCTFindingSettingsDialog::findingName()
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
   Q_ASSERT(d->LineEditName);
+
+  QString tempName = d->LineEditName->text();
 
   return d->LineEditName->text();
 }
@@ -131,6 +158,61 @@ void qSlicerLongPETCTFindingSettingsDialog::setFindingName(const QString& name)
 
   return d->LineEditName->setText(name);
 }
+
+//-----------------------------------------------------------------------------
+QString qSlicerLongPETCTFindingSettingsDialog::typeName()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ComboBoxType);
+
+  return d->ComboBoxType->currentText();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSettingsDialog::setTypeName(const QString& name)
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ComboBoxType);
+
+  int index = vtkMRMLLongPETCTFindingNode::GetIndexFindingTypeName(name.toStdString());
+
+  if(index >= 0 && index < d->ComboBoxType->count())
+    d->ComboBoxType->setCurrentIndex(index);
+
+  else
+    d->ComboBoxType->setCurrentIndex(-1);
+}
+
+//-----------------------------------------------------------------------------
+int qSlicerLongPETCTFindingSettingsDialog::colorID()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ComboBoxType);
+
+  int index = d->ComboBoxType->currentIndex();
+
+  if(index >= 0 && index < vtkMRMLLongPETCTFindingNode::GetFindingTypes().size())
+    return vtkMRMLLongPETCTFindingNode::GetFindingTypes().at(index).first;
+
+  return -1;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSettingsDialog::setColorID(int colorID)
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ComboBoxType);
+
+  int index = vtkMRMLLongPETCTFindingNode::GetIndexFindingColorID(colorID);
+
+  if(index >= 0 && index < d->ComboBoxType->count())
+    d->ComboBoxType->setCurrentIndex(index);
+
+  else
+    d->ComboBoxType->setCurrentIndex(-1);
+}
+
+
 
 //-----------------------------------------------------------------------------
 bool qSlicerLongPETCTFindingSettingsDialog::applied()
@@ -153,8 +235,33 @@ void qSlicerLongPETCTFindingSettingsDialog::applyClicked()
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
 
   d->Applied = true;
-
   this->close();
+}
+
+void qSlicerLongPETCTFindingSettingsDialog::typeSelectionChanged(int index)
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ButtonColor);
+
+  d->ButtonColor->setStyleSheet("");
+
+  if(d->ReportNode == NULL || d->ReportNode->GetScene() == NULL || (index < 0 || index >= vtkMRMLLongPETCTFindingNode::GetFindingTypes().size()) )
+    return;
+
+  vtkMRMLScene* scene = d->ReportNode->GetScene();
+  vtkMRMLColorNode* colorNode = vtkMRMLColorNode::SafeDownCast(scene->GetNodeByID(d->ReportNode->GetAttribute("ColorNodeID")));
+
+  if(colorNode == NULL)
+    return;
+
+  int colorID = vtkMRMLLongPETCTFindingNode::GetFindingTypes().at(index).first;
+
+  QString colorName = colorNode->GetColorName(colorID);
+  double col[3];
+  colorNode->GetColor(colorID, col);
+  QColor color(col[0] * 255, col[1] * 255, col[2] * 255);
+
+  d->ButtonColor->setStyleSheet("background-color: "+color.name());
 }
 
 //-----------------------------------------------------------------------------
@@ -166,54 +273,30 @@ void qSlicerLongPETCTFindingSettingsDialog::show()
   Superclass::show();
 }
 
-
 //-----------------------------------------------------------------------------
-void
-qSlicerLongPETCTFindingSettingsDialog::update(vtkMRMLLongPETCTReportNode* node)
+void qSlicerLongPETCTFindingSettingsDialog::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->LineEditName);
-  Q_ASSERT(d->Table);
+
+  d->ReportNode = reportNode;
+
+  if (d->ReportNode == NULL || d->ReportNode->GetScene() == NULL || d->ReportNode->GetUserSelectedFinding() == NULL)
+      return;
+
+    this->setFindingName(reportNode->GetUserSelectedFinding()->GetName());
+
+    d->ComboBoxType->clear();
 
 
-  vtkMRMLLongPETCTReportNode* selectedReportNode =
-      vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+    for (int i = 0; i < vtkMRMLLongPETCTFindingNode::GetFindingTypes().size(); ++i)
+      {
+        d->addFindingType(vtkMRMLLongPETCTFindingNode::GetFindingTypes().at(i).second.c_str());
+      }
 
-  if (selectedReportNode != NULL && selectedReportNode->GetUserSelectedFinding() != NULL)
-    {
+    d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetFindingType().second.c_str());
 
-      while (d->Table->rowCount() > 0)
-        {
-          d->Table->removeRow(d->Table->rowCount() - 1);
-        }
-
-      vtkMRMLColorNode* colorNode = selectedReportNode->GetColorNode();
-
-      d->LineEditName->setText(selectedReportNode->GetUserSelectedFinding()->GetName());
-
-      if (colorNode != NULL)
-        {
-          d->FindingTypes.clear();
-          d->FindingTypes = selectedReportNode->GetFindingTypes();
-
-          for (int i = 0; i < d->FindingTypes.size(); ++i)
-            {
-              int value = d->FindingTypes.at(i).colorID;
-              QString type = d->FindingTypes.at(i).typeName.c_str();
-              QString colorName = colorNode->GetColorName(value);
-              double col[3];
-              colorNode->GetColor(value, col);
-              QColor color(col[0] * 255, col[1] * 255, col[2] * 255);
-              d->AddRowToTable(type, colorName, color);
-            }
-        }
-    }
 }
 
-//-----------------------------------------------------------------------------
-void
-qSlicerLongPETCTFindingSettingsDialog::execDialog()
-{
-  this->exec();
-}
+
+
 
