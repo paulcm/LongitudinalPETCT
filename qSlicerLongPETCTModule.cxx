@@ -89,13 +89,13 @@ QStringList qSlicerLongPETCTModule::contributors()const
 //-----------------------------------------------------------------------------
 QIcon qSlicerLongPETCTModule::icon()const
 {
-  return QIcon(":/Icons/LongPETCT.png");
+  return QIcon(":/Resources/Icons/LongPETCT.png");
 }
 
 //-----------------------------------------------------------------------------
 QStringList qSlicerLongPETCTModule::categories() const
 {
-  return QStringList() << "Quantification";
+  return QStringList() << "Work in Progress";
 }
 
 //-----------------------------------------------------------------------------
