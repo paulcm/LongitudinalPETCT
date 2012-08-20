@@ -38,8 +38,9 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->FindingType.first = 0;
-  this->FindingType.second = "None";
+  this->FindingType.first = "None";
+  this->FindingType.second = -1;
+
 }
 
 //----------------------------------------------------------------------------
@@ -147,22 +148,22 @@ vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::GetLabelMapVolumeForROI(co
 }
 
 //----------------------------------------------------------------------------
-std::pair<int,std::string> vtkMRMLLongPETCTFindingNode::GetFindingType()
+std::pair<std::string, int> vtkMRMLLongPETCTFindingNode::GetFindingType()
 {
   return this->FindingType;
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::SetFindingType(std::pair<int,std::string> type)
+void vtkMRMLLongPETCTFindingNode::SetFindingType(std::pair<std::string,int> type)
 {
   this->SetFindingType(type.first, type.second);
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::SetFindingType(int colorID, std::string typeName)
+void vtkMRMLLongPETCTFindingNode::SetFindingType(std::string typeName, int colorID)
 {
-  this->FindingType.first = colorID;
-  this->FindingType.second = typeName;
+  this->FindingType.first = typeName;
+  this->FindingType.second = colorID;
 }
 
 

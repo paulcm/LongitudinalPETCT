@@ -79,9 +79,9 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkMRMLScalarVolumeNode* GetLabelMapVolumeForROI(const vtkMRMLAnnotationROINode* roi);
 
 
-  std::pair<int,std::string> GetFindingType();
-  void SetFindingType(std::pair<int,std::string> type);
-  void SetFindingType(int colorID, std::string typeName);
+  std::pair<std::string,int> GetFindingType();
+  void SetFindingType(std::pair<std::string,int> type);
+  void SetFindingType(std::string typeName, int);
 
 protected:
   vtkMRMLLongPETCTFindingNode();
@@ -92,7 +92,7 @@ protected:
   std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLAnnotationROINode*> StudyAndROIMap;
   std::map<vtkMRMLAnnotationROINode*,vtkMRMLScalarVolumeNode*> ROIandLabelsMap;
 
-  std::pair<int,std::string> FindingType;
+  std::pair<std::string,int> FindingType;
 
 };
 
