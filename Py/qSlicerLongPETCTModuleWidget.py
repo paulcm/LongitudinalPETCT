@@ -405,7 +405,7 @@ class qSlicerLongPETCTModuleWidget:
     dialog.exec_()
     if dialog.property('applied'):
       findingNode.SetName(dialog.property('findingName'))
-      findingNode.SetFindingType(dialog.property('colorID'),dialog.property('typeName'))
+      findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
       print dialog.property('colorID')
       print dialog.property('typeName')
       currentReport.AddFinding(findingNode)
