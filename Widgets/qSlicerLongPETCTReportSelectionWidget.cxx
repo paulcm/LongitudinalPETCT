@@ -25,10 +25,12 @@
 
 #include <QDate>
 
-#include <qMRMLNodeComboBox.h>
+#include <vtkSmartPointer.h>
 #include <vtkMRMLLongPETCTReportNode.h>
+#include <vtkCommand.h>
 
 
+#include <qMRMLNodeComboBox.h>
 
 
 //-----------------------------------------------------------------------------
@@ -46,17 +48,18 @@ public:
     qSlicerLongPETCTReportSelectionWidget& object);
 
   virtual ~qSlicerLongPETCTReportSelectionWidgetPrivate();
-
-
   virtual void setupUi(qSlicerLongPETCTReportSelectionWidget* widget);
 
+
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> currentSelectedReportNode();
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 };
 
 // --------------------------------------------------------------------------
 qSlicerLongPETCTReportSelectionWidgetPrivate
 ::qSlicerLongPETCTReportSelectionWidgetPrivate(
   qSlicerLongPETCTReportSelectionWidget& object)
-  : q_ptr(&object)
+  : q_ptr(&object), ReportNode(NULL)
 {
 }
 
@@ -77,8 +80,21 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
   this->ExpandButton->setOrientation(Qt::Vertical);
 
   this->MRMLNodeComboBoxReport->setNodeTypes(QStringList("vtkMRMLLongPETCTReportNode"));
-  QObject::connect( this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), widget, SLOT(update(vtkMRMLNode*)) );
+  this->MRMLNodeComboBoxReport->setAddEnabled(false);
+  this->MRMLNodeComboBoxReport->setRemoveEnabled(false);
+  this->MRMLNodeComboBoxReport->setRenameEnabled(true);
 
+  QObject::connect( this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(reportNodeChanged(vtkMRMLNode*)) );
+
+}
+
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkMRMLLongPETCTReportNode> qSlicerLongPETCTReportSelectionWidgetPrivate::currentSelectedReportNode()
+{
+  Q_ASSERT(this->MRMLNodeComboBoxReport);
+
+  return vtkMRMLLongPETCTReportNode::SafeDownCast(this->MRMLNodeComboBoxReport->currentNode());
 }
 
 //-----------------------------------------------------------------------------
@@ -101,15 +117,24 @@ qSlicerLongPETCTReportSelectionWidget
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportSelectionWidget
+::reportNodeChanged(vtkMRMLNode* node)
+{
+  Q_D(qSlicerLongPETCTReportSelectionWidget);
+
+  d->ReportNode = d->currentSelectedReportNode();
+  this->updateView();
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportSelectionWidget::setMRMLScene(vtkMRMLScene* mrmlScene)
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
   Q_ASSERT(d->MRMLNodeComboBoxReport);
 
   d->MRMLNodeComboBoxReport->setMRMLScene(mrmlScene);
-  d->MRMLNodeComboBoxReport->setAddEnabled(false);
-  d->MRMLNodeComboBoxReport->setRemoveEnabled(false);
-  d->MRMLNodeComboBoxReport->setRenameEnabled(true);
+
+  this->setReportNode(d->currentSelectedReportNode());
 
 }
 
@@ -132,23 +157,30 @@ qMRMLNodeComboBox* qSlicerLongPETCTReportSelectionWidget::mrmlNodeComboBoxReport
 
 
 //-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportSelectionWidget::setReportNode(vtkSmartPointer<vtkMRMLLongPETCTReportNode> reportNode)
+{
+  Q_D(qSlicerLongPETCTReportSelectionWidget);
+
+  qvtkReconnect(d->ReportNode.GetPointer(), vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
+  d->ReportNode = reportNode;
+
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportSelectionWidget
-::update(vtkMRMLNode* node)
+::updateView()
 {
   Q_D(qSlicerLongPETCTReportSelectionWidget);
   Q_ASSERT(d->LabelNameInfo);
   Q_ASSERT(d->LabelDoBInfo);
   Q_ASSERT(d->LabelSexInfo);
 
-
-  vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
-
-  if(selectedReportNode)
+  if(d->ReportNode.GetPointer() != NULL)
     {
-        d->LabelNameInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientName"));
-        QDate dob = QDate::fromString(QString(selectedReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
+        d->LabelNameInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientName"));
+        QDate dob = QDate::fromString(QString(d->ReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
         d->LabelDoBInfo->setText(dob.toString(Qt::SystemLocaleLongDate));
-        d->LabelSexInfo->setText(selectedReportNode->GetAttribute("DICOM.PatientSex"));
+        d->LabelSexInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientSex"));
     }
   else
     {
@@ -157,5 +189,4 @@ void qSlicerLongPETCTReportSelectionWidget
         d->LabelDoBInfo->setText(noText);
         d->LabelSexInfo->setText(noText);
     }
-
 }

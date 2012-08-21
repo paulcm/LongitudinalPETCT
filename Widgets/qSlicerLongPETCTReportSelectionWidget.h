@@ -24,17 +24,19 @@
 // Qt includes
 #include <QWidget>
 
+// CTK includes
+#include <ctkVTKObject.h>
 
 // LongPETCTReportSelection Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
-
-#include "vtkMRMLScene.h"
+#include <vtkSmartPointer.h>
 
 
 class qSlicerLongPETCTReportSelectionWidgetPrivate;
+class vtkMRMLScene;
 class vtkMRMLNode;
 class qMRMLNodeComboBox;
-
+class vtkMRMLLongPETCTReportNode;
 
 
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -42,6 +44,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTReportSelectionWi
   : public QWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
   Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
   //Q_PROPERTY(qMRMLNodeComboBox* mrmlNodeComboBoxReport READ mrmlNodeComboBoxReport WRITE setMRMLNodeComboBoxReport)
 
@@ -56,11 +59,16 @@ public:
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxReport();
 
+
 public slots:
-  void update(vtkMRMLNode* node);
+  void updateView();
+
+protected slots:
+  void reportNodeChanged(vtkMRMLNode* node);
 
 protected:
   QScopedPointer<qSlicerLongPETCTReportSelectionWidgetPrivate> d_ptr;
+  void setReportNode(vtkSmartPointer<vtkMRMLLongPETCTReportNode> reportNode);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerLongPETCTReportSelectionWidget);
