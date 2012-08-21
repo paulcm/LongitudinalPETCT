@@ -27,6 +27,7 @@
 
 #include <QBrush>
 #include <QDate>
+#include <QHeaderView>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -92,13 +93,11 @@ qSlicerLongPETCTReportTableWidget
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportTableWidget
-::update(vtkMRMLNode* node)
+::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
 {
   Q_D(qSlicerLongPETCTReportTableWidget);
 
-  vtkSmartPointer<vtkMRMLLongPETCTReportNode> selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
-
-  if(selectedReportNode.GetPointer() == NULL)
+  if(reportNode == NULL)
     return;
 
   this->clear();
@@ -107,14 +106,13 @@ void qSlicerLongPETCTReportTableWidget
   while (this->rowCount() > 0)
     this->removeRow(this->rowCount()-1);
 
-  this->insertColumn(0);
-  this->setHorizontalHeaderItem(0, new QTableWidgetItem(""));
 
-  int selectedStudies = selectedReportNode->GetSelectedStudiesCount();
+  int selectedStudies = reportNode->GetSelectedStudiesCount();
+  int findings = reportNode->GetFindingsCount();
 
   for(int i=0; i < selectedStudies; ++i)
     {
-      vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = selectedReportNode->GetSelectedStudy(i);
+      vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = reportNode->GetSelectedStudy(i);
 
       if(study.GetPointer() == NULL)
         return;
@@ -133,12 +131,39 @@ void qSlicerLongPETCTReportTableWidget
 
       item->setToolTip(itemText);
       this->setHorizontalHeaderItem(newColumnID, item);
-    }
 
-  int lastSelectedIndex = selectedReportNode->GetIndexOfSelectedStudy(selectedReportNode->GetUserSelectedStudy());
+     }
 
-  if(lastSelectedIndex >= 0 && lastSelectedIndex < selectedReportNode->GetSelectedStudiesCount())
-    this->selectStudyColumn(lastSelectedIndex);
+  for(int i=0; i < findings; ++i)
+      {
+        vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = reportNode->GetFinding(i);
+
+        if(finding.GetPointer() == NULL)
+          return;
+
+        int newRowID = this->rowCount();
+
+        this->insertRow(newRowID);
+
+        QString itemText = finding->GetName();
+        QTableWidgetItem* item = new QTableWidgetItem(itemText);
+
+        QFont font = item->font();
+        font.setBold(true);
+        item->setFont(font);
+
+        item->setToolTip(itemText);
+        this->setVerticalHeaderItem(newRowID, item);
+      }
+
+  int lastSelectedStudyIndex = reportNode->GetIndexOfSelectedStudy(reportNode->GetUserSelectedStudy());
+  int lastSelectedFindingIndex = reportNode->GetIndexOfFinding(reportNode->GetUserSelectedFinding());
+
+  if(lastSelectedStudyIndex >= 0 && lastSelectedStudyIndex < reportNode->GetSelectedStudiesCount())
+    this->selectStudyColumn(lastSelectedStudyIndex);
+
+  if(lastSelectedFindingIndex >= 0 && lastSelectedFindingIndex < reportNode->GetFindingsCount())
+    this->selectFindingRow(lastSelectedFindingIndex);
 
   this->arrangeColumns();
 }
@@ -149,21 +174,34 @@ void qSlicerLongPETCTReportTableWidget
 ::selectStudyColumn(int index)
 {
 
-  if(index >= 0 && index < this->columnCount()-1)
+  if(index >= 0 && index < this->columnCount())
     {
       QBrush background(QColor(98,140,178));
       QBrush foreground(QColor(255,255,255));
-      this->horizontalHeaderItem(index+1)->setBackground(background);
-      this->horizontalHeaderItem(index+1)->setForeground(foreground);
+      this->horizontalHeaderItem(index)->setBackground(background);
+      this->horizontalHeaderItem(index)->setForeground(foreground);
     }
+}
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidget
+::selectFindingRow(int index)
+{
+
+  if(index >= 0 && index < this->rowCount())
+    {
+      QBrush background(QColor(98,140,178));
+      QBrush foreground(QColor(255,255,255));
+      this->verticalHeaderItem(index)->setBackground(background);
+      this->verticalHeaderItem(index)->setForeground(foreground);
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
 qSlicerLongPETCTReportTableWidget::arrangeColumns()
 {
-  int width = this->width() - 4;
+  int width = this->width() - this->verticalHeader()->width() - 4;
   int columns = this->columnCount();
 
   for (int i = 0; i < columns; ++i)

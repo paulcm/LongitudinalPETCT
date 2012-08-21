@@ -27,6 +27,7 @@
 // LongPETCTReportTable Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
 #include <vtkSmartPointer.h>
+#include <vtkMRMLLongPETCTReportNode.h>
 
 class qSlicerLongPETCTReportTableWidgetPrivate;
 
@@ -47,10 +48,11 @@ public:
 
 
 public slots:
-  void update(vtkMRMLNode* node);
+  void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
 
 protected slots:
   void selectStudyColumn(int index);
+  void selectFindingRow(int index);
 
 
 protected:

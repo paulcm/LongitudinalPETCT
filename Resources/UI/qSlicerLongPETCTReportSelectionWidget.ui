@@ -71,7 +71,7 @@
          <string notr="true">border: none</string>
         </property>
         <property name="text">
-         <string>   </string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -94,7 +94,7 @@
          <string notr="true">border: none</string>
         </property>
         <property name="text">
-         <string>   </string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -117,7 +117,7 @@
          <string notr="true">border: none</string>
         </property>
         <property name="text">
-         <string>   </string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -135,7 +135,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>12</height>
+       <height>16</height>
       </size>
      </property>
      <property name="checkable">

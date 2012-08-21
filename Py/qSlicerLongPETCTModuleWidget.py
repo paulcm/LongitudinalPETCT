@@ -56,6 +56,7 @@ class qSlicerLongPETCTModuleWidget:
     self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
     self.reportSelector = self.reportSelectionWidget.mrmlNodeComboBoxReport()
     
+      
     reportsLayout.addWidget(self.reportSelectionWidget)
     
     
@@ -111,7 +112,9 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
     
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
-    self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.on_FindingNodeCreated)
+    self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
+    self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+    
     
     findingsLayout.addWidget(self.findingSelectionWidget)
     
@@ -147,7 +150,7 @@ class qSlicerLongPETCTModuleWidget:
         studyIdx = currentReport.GetIndexOfStudy(currentSelectedStudy)
         self.studySelectionWidget.selectStudyInRow(studyIdx)
       
-        self.reportTableWidget.update(currentReport)
+        self.reportTableWidget.setReportNode(currentReport)
         self.studySliderWidget.update(currentReport)
              
         self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
@@ -246,11 +249,12 @@ class qSlicerLongPETCTModuleWidget:
   def onCurrentReportChanged(self, reportNode):
     self.logic.SetSelectedReportNode = reportNode
     if reportNode:
+          
       self.enableStudiesCollapsibleButton(True)
 
       self.studySelectionWidget.update(reportNode)
       self.studySliderWidget.update(reportNode)
-      self.reportTableWidget.update(reportNode)
+      self.reportTableWidget.setReportNode(reportNode)
       
       if reportNode.GetUserSelectedStudy():
         self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
@@ -284,7 +288,7 @@ class qSlicerLongPETCTModuleWidget:
 
   def onUpdateSliderAndTableWidgets(self, reportNode):
     self.studySliderWidget.update(reportNode)
-    self.reportTableWidget.update(reportNode)
+    self.reportTableWidget.setReportNode(reportNode)
 
 
   def onUpdateVolumeRendering(self, volumeNode):
@@ -397,23 +401,39 @@ class qSlicerLongPETCTModuleWidget:
       self.findingsCollapsibleButton.setProperty('enabled',False)           
 
 
-  def on_FindingNodeCreated(self, findingNode):
+  def onFindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
-    currentReport.SetUserSelectedFinding(findingNode)
-    dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
-    dialog.setReportNode(currentReport)
-    dialog.exec_()
-    if dialog.property('applied'):
-      findingNode.SetName(dialog.property('findingName'))
-      findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
-      print dialog.property('colorID')
-      print dialog.property('typeName')
-      currentReport.AddFinding(findingNode)
+    if currentReport:
+      currentReport.SetUserSelectedFinding(findingNode)
+      dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
+      dialog.setReportNode(currentReport)
+      dialog.exec_()
+      if dialog.property('applied'):
+        findingNode.SetName(dialog.property('findingName'))
+        findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
+        currentReport.AddFinding(findingNode)
       
-    else:
-      scene = findingNode.GetScene()
-      if scene:
-        scene.RemoveNode(findingNode)
+      else:
+        scene = findingNode.GetScene()
+        if scene:
+          scene.RemoveNode(findingNode)
+    
+    self.reportTableWidget.setReportNode(currentReport)
+    
+    
+  def onFindingNodeChanged(self, findingNode):
+    currentReport = self.reportSelector.currentNode()
+    if currentReport:
+      currentReport.SetUserSelectedFinding(findingNode)
+    
+    self.reportTableWidget.setReportNode(currentReport)
+  
+  def onFindingNodeToBeDeleted(self, findingNode):
+    currentReport = self.reportSelector.currentNode()
+    if currentReport:
+      currentReport.DeleteFinding(findingNode)
+    
+    self.reportTableWidget.setReportNode(currentReport)        
     
     
     #if currentReport:
