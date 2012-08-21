@@ -34,15 +34,7 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
 {
-  this->SetHideFromEditors(false);
-  this->UserSelectedStudy = NULL;
-  this->UserSelectedFinding = NULL;
-
-  this->AddFindingType(std::make_pair("Tumor",7));
-  this->AddFindingType(std::make_pair("Lymph Node",23));
-  this->AddFindingType(std::make_pair("Liver",216));
-  this->AddFindingType(std::make_pair("Aorta",191));
-
+  this->Initialize();
 }
 
 //----------------------------------------------------------------------------
@@ -52,14 +44,31 @@ vtkMRMLLongPETCTReportNode::~vtkMRMLLongPETCTReportNode()
 }
 
 //----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::Initialize()
+{
+    int disabledModify = this->StartModify();
+
+    this->SetHideFromEditors(false);
+
+    this->UserSelectedStudy = NULL;
+    this->UserSelectedFinding = NULL;
+
+    this->AddFindingType(std::make_pair("Tumor",7));
+    this->AddFindingType(std::make_pair("Lymph Node",23));
+    this->AddFindingType(std::make_pair("Liver",216));
+    this->AddFindingType(std::make_pair("Aorta",191));
+
+    this->EndModify(disabledModify);
+}
+
+//----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::ReadXMLAttributes(const char** atts)
 {
   int disabledModify = this->StartModify();
 
   Superclass::ReadXMLAttributes(atts);
 
-
-    this->EndModify(disabledModify);
+  this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
@@ -75,6 +84,10 @@ void vtkMRMLLongPETCTReportNode::Copy(vtkMRMLNode *anode)
 {
   int disabledModify = this->StartModify();
   
+  this->SetAttribute("DICOM.PatientName",anode->GetAttribute("DICOM.PatientName"));
+  this->SetAttribute("DICOM.PatientBirthDate",anode->GetAttribute("DICOM.PatientBirthDate"));
+  this->SetAttribute("DICOM.PatientSex",anode->GetAttribute("DICOM.PatientSex"));
+
   Superclass::Copy(anode);
 
   this->EndModify(disabledModify);
@@ -117,6 +130,8 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 {
+  int disabledModify = this->StartModify();
+
   std::string studyDate = study->GetAttribute("DICOM.StudyDate");
   std::string studyTime = study->GetAttribute("DICOM.StudyTime");
 
@@ -136,13 +151,23 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 
   Studies.insert(Studies.begin()+i, study);
 
+  this->EndModify(disabledModify);
+
+  this->InvokeEvent(vtkMRMLLongPETCTReportNode::StudiesChangedEvent);
+
   return i;
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::AddFinding(vtkMRMLLongPETCTFindingNode* finding)
 {
+  int disabledModify = this->StartModify();
+
   this->Findings.push_back(finding);
+
+  this->EndModify(disabledModify);
+
+  this->InvokeEvent(vtkMRMLLongPETCTReportNode::FindingsChangedEvent);
 }
 
 
@@ -264,9 +289,27 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode*
 }
 
 //----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexOfFinding(const vtkMRMLLongPETCTFindingNode* finding)
+{
+
+  if(finding == NULL)
+    return -1;
+
+  for(int i=0; i < this->Findings.size(); ++i)
+    {
+      if (this->Findings[i] == finding)
+        return i;
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
 const vtkMRMLColorNode* vtkMRMLLongPETCTReportNode::GetColorNode()
 {
-  assert(this->GetScene());
+  if(this->GetScene() == NULL)
+    return NULL;
+
 
   return vtkMRMLColorNode::SafeDownCast(this->GetScene()->GetNodeByID(this->GetAttribute("ColorNodeID")));
 }
@@ -324,22 +367,29 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfFindingTypeName(const std::string& typ
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::AddFindingType(std::pair<std::string, int> type)
 {
+  int disabledModify = this->StartModify();
+
   int indexName = this->GetIndexOfFindingTypeName(type.first);
   int indexColor = this->GetIndexOfFindingColorID(type.second);
 
+  vtkMRMLLongPETCTReportNode::FindingTypes.push_back(type);
 
-      vtkMRMLLongPETCTReportNode::FindingTypes.push_back(type);
-      std::cout << "ADDING: " << type.first << " : " << type.second << std::endl;
-
+  this->EndModify(disabledModify);
+  this->InvokeEvent(FindingTypesChangedEvent);
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::SetFindingTypeColorID(const std::string& typeName, int newColorID)
 {
+  int disabledModify = this->StartModify();
+
   int index = this->GetIndexOfFindingTypeName(typeName);
 
   if(index >= 0 && index < this->FindingTypes.size())
     this->FindingTypes.at(index).second = newColorID;
+
+  this->EndModify(disabledModify);
+  this->InvokeEvent(FindingTypesChangedEvent);
 }
 
 //----------------------------------------------------------------------------
@@ -355,4 +405,18 @@ std::pair<std::string,int> vtkMRMLLongPETCTReportNode::GetFindingType(int index)
     return this->FindingTypes.at(index);
 
   return std::make_pair("None",-1);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::DeleteFinding(vtkMRMLLongPETCTFindingNode* finding)
+{
+  int disabledModify = this->StartModify();
+
+  int index = this->GetIndexOfFinding(finding);
+
+  if(index >= 0 && index < this->GetFindingsCount())
+    this->Findings.erase(this->Findings.begin()+index);
+
+  this->EndModify(disabledModify);
+  this->InvokeEvent(FindingsChangedEvent);
 }

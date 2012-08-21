@@ -50,6 +50,14 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 {
   public:   
 
+  enum
+  {
+    StudiesChangedEvent,
+    SelectedStudiesChangedEvent,
+    FindingsChangedEvent,
+    FindingTypesChangedEvent
+  };
+
   static vtkMRMLLongPETCTReportNode *New();
   vtkTypeMacro(vtkMRMLLongPETCTReportNode,vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent);
@@ -67,6 +75,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Report";};
+
+  void Initialize();
 
   int AddStudy(vtkMRMLLongPETCTStudyNode* study);
   //bool RemoveStudy(vtkMRMLLongPETCTStudyNode study);
@@ -91,6 +101,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   int GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode* study);
   int GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study);
+  int GetIndexOfFinding(const vtkMRMLLongPETCTFindingNode* finding);
 
   vtkGetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);
   vtkSetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);
@@ -100,9 +111,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   const vtkMRMLColorNode* GetColorNode();
 
-
   int GetFindingTypesCount();
-
   void AddFindingType(std::pair<std::string,int> type);
 
   std::string GetFindingTypeName(int colorID);
@@ -114,6 +123,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   int GetIndexOfFindingTypeName(const std::string& typeName);
   int GetIndexOfFindingColorID(int colorID);
+
+  void DeleteFinding(vtkMRMLLongPETCTFindingNode* finding);
 
 protected:
   vtkMRMLLongPETCTReportNode();
