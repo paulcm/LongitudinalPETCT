@@ -80,7 +80,7 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.setProperty('linearOpacity',False)
     self.studySelectionWidget.setProperty('rockView',True)
     
-    self.studySelectionWidget.update(self.reportSelector.currentNode())
+    self.studySelectionWidget.setReportNode(self.reportSelector.currentNode())
     self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
     
     studiesLayout.addWidget(self.studySelectionWidget)
@@ -252,7 +252,7 @@ class qSlicerLongPETCTModuleWidget:
           
       self.enableStudiesCollapsibleButton(True)
 
-      self.studySelectionWidget.update(reportNode)
+      self.studySelectionWidget.setReportNode(reportNode)
       self.studySliderWidget.update(reportNode)
       self.reportTableWidget.setReportNode(reportNode)
       
