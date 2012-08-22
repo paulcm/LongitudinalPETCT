@@ -25,30 +25,30 @@
 #include <QWidget>
 #include <QString>
 
+#include <ctkVTKObject.h>
+
 // LongPETCTStudySelection Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
 
-
+class vtkMRMLLongPETCTReportNode;
 class qSlicerLongPETCTStudySelectionWidgetPrivate;
-class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
 class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySelectionWidget
   : public QWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
   Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
   Q_PROPERTY(bool gpuRendering READ gpuRendering WRITE setGPURendering)
   Q_PROPERTY(bool rockView READ rockView WRITE setRockView)
   Q_PROPERTY(double opacityPow READ opacityPow WRITE setOpacityPow)
 
 
-
 public:
   typedef QWidget Superclass;
   qSlicerLongPETCTStudySelectionWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySelectionWidget();
-
 
   bool volumeRendering();
   bool gpuRendering();
@@ -60,8 +60,11 @@ public:
   void setRockView(bool checked);
   void setOpacityPow(double opacityPow);
 
+  Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  vtkMRMLLongPETCTReportNode* reportNode();
+
 public slots:
-  void update(vtkMRMLNode* node);
+  void updateView();
   void selectStudyInRow(int row);
 
 signals:
