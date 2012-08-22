@@ -119,7 +119,7 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 
   for(int i=0; i < this->Studies.size(); ++i)
     {
-      if(this->Studies.at(i)->IsSelected())
+      if(this->Studies.at(i)->GetSelected())
         count++;
     }
 
@@ -213,7 +213,7 @@ std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedS
 
   for(int i=0; i < this->Studies.size();++i)
     {
-      if(this->Studies.at(i)->IsSelected())
+      if(this->Studies.at(i)->GetSelected())
         selectedStudies.push_back(this->Studies[i]);
     }
 

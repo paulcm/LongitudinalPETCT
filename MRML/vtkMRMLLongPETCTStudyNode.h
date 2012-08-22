@@ -74,8 +74,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkGetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkGetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
 
-  void SetSelected(bool selected);
-  bool IsSelected() const;
+  vtkBooleanMacro(Selected, int);
 
 protected:
   vtkMRMLLongPETCTStudyNode();
