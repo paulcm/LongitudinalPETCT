@@ -65,6 +65,8 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
     self.ctTerm = "CT"
     self.petTerm = "PT"
+    
+
 
   def examine(self,fileLists):
     """ Returns a list of DICOMLoadable instances
@@ -414,6 +416,10 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
         while i < len(self.petFileLoadables):
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
+        
+          logic = slicer.modules.longpetct.logic()
+          if logic:
+            logic.CenterPETCTVolumeNodes(petScalarVolume,ctScalarVolume)
         
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
