@@ -91,6 +91,7 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.onStudySelectionWidgetVolumeRendering)
     self.studySelectionWidget.connect('opacityPowChanged(double)',self.onStudySelectionWidgetOpacityPow)
     self.studySelectionWidget.connect('gpuRenderingToggled(bool)',self.onStudySelectionWidgetGPUVolumeRendering)
+    self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
 
 
     # Findings Collapsible button
@@ -114,7 +115,7 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
     self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
     self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
-    
+    self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
     
     findingsLayout.addWidget(self.findingSelectionWidget)
     
@@ -164,7 +165,7 @@ class qSlicerLongPETCTModuleWidget:
     if currentReport:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
-        selectedStudy.SetSelected(True)
+        selectedStudy.SetSelectedWithoutModified(True) # no need for update StudySelection widget here
         currentReport.SetUserSelectedStudy(selectedStudy)
         
         self.onUpdateSliderAndTableWidgets(currentReport)        
@@ -190,14 +191,13 @@ class qSlicerLongPETCTModuleWidget:
             compositeNode.SetForegroundVolumeID(petID)
             compositeNode.SetForegroundOpacity(0.6)
       
+        viewNode = slicer.util.getNode('vtkMRMLViewNode1')
         
         # volume rendering
         if self.vrDisplayNode == None:
-          self.vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
-          viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+          self.vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode('vtkMRMLGPUTextureMappingVolumeRenderingDisplayNode')
+                    
           viewNode.SetBoxVisible(0)
-          
-          viewNode.InvokeEvent(viewNode.ResetFocalPointRequestedEvent)
           
           self.vrDisplayNode.AddViewNodeID(viewNode.GetID())
           self.vrDisplayNode.SetCroppingEnabled(0)
@@ -214,9 +214,13 @@ class qSlicerLongPETCTModuleWidget:
           else:
             viewNode.SetAnimationMode(viewNode.Off)
           
-          
+        #viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
+        
         self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())     
-
+        
+        if viewNode:
+            viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified)
+            
       self.updateBgFgToUserSelectedStudy(selectedStudy)
       
       if currentReport.GetUserSelectedStudy():
@@ -227,8 +231,8 @@ class qSlicerLongPETCTModuleWidget:
 
   def onStudyDeselected(self, idx):
     currentReport = self.reportSelector.currentNode()
-    if currentReport:
-      currentReport.GetStudy(idx).SetSelected(False)
+    if currentReport:        
+      currentReport.GetStudy(idx).SetSelectedWithoutModified(False)# no need for update StudySelection widget here
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       currentReport.SetUserSelectedStudy(lastSelectedStudy)
       
@@ -294,13 +298,21 @@ class qSlicerLongPETCTModuleWidget:
   def onUpdateVolumeRendering(self, volumeNode):
     if volumeNode:
       self.vrDisplayNode.SetAndObserveVolumeNodeID(volumeNode.GetID())
+      # TODO: clean this hack
+      slicer.util.getNode('vtkMRMLViewNode1').InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
+
       self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
     
       self.onStudySelectionWidgetOpacityPow(self.studySelectionWidget.property('opacityPow'))
-          
-    elif self.vrDisplayNode:
-      #self.vrDisplayNode.GetROINode().SetVisibility(0)
-      self.vrDisplayNode.VisibilityOff()  
+      
+      self.vrDisplayNode.VisibilityOn()
+      self.onStudySelectionWidgetVolumeRendering(self.studySelectionWidget.property('volumeRendering'))   
+      
+    else:
+      self.onStudySelectionWidgetVolumeRendering(False) 
+      if self.vrDisplayNode:
+        self.vrDisplayNode.VisibilityOff()  
+      
       
     #viewNode = slicer.util.getNode('vtkMRMLViewNode1')
     #print "YELLOW" + str(yellow.GetFieldOfView())
@@ -353,7 +365,7 @@ class qSlicerLongPETCTModuleWidget:
         self.vrDisplayNode.VisibilityOff()  
         if viewNode:
           viewNode.SetAxisLabelsVisible(0)
-          viewNode.SetAnimationMode(viewNode.Off)
+          #viewNode.SetAnimationMode(viewNode.Off)
         
     
     
@@ -367,11 +379,33 @@ class qSlicerLongPETCTModuleWidget:
         
       else:
         viewNode.SetAnimationMode(viewNode.Off)
+        viewNode.Modified()
         
+        
+  def onStudySelectionWidgetShowStudiesCentered(self, centered):
+    currentReport = self.reportSelector.currentNode()
+    if currentReport:
+      i = 0
+      while i < currentReport.GetStudiesCount():
+        study = currentReport.GetStudy(i)
+        
+        if centered & (study.GetCenteringTransform() != None):
+          study.GetPETVolumeNode().SetAndObserveTransformNodeID(study.GetCenteringTransform().GetID()) 
+          study.GetCTVolumeNode().SetAndObserveTransformNodeID(study.GetCenteringTransform().GetID()) 
+        else:
+          study.GetPETVolumeNode().SetAndObserveTransformNodeID("")
+          study.GetCTVolumeNode().SetAndObserveTransformNodeID("")
+          
+        i += 1
+        
+      currentStudy = currentReport.GetUserSelectedStudy()
+      
+      if currentStudy:
+        self.onUpdateVolumeRendering(currentStudy.GetPETVolumeNode())
+        self.SetBgFgVolumes(currentStudy.GetCTVolumeNode().GetID(), currentStudy.GetPETVolumeNode().GetID())     
         
   def onStudySelectionWidgetGPUVolumeRendering(self, useGPU):
-    
-    
+  
     if useGPU:
       displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode('vtkMRMLGPURayCastVolumeRenderingDisplayNode')
     else:
@@ -403,23 +437,38 @@ class qSlicerLongPETCTModuleWidget:
 
   def onFindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
+    print "HERE 1"
+    applied = self.onShowFindingSettingsDialog(findingNode)
+  
+    if applied:
+      currentReport.AddFinding(findingNode)
+    else:
+      scene = findingNode.GetScene()
+      if scene:
+        scene.RemoveNode(findingNode)  
+    
+  
+  
+  def onShowFindingSettingsDialog(self, findingNode):
+    applied = False
+    print "HERE 2"
+    currentReport = self.reportSelector.currentNode()
     if currentReport:
+      print "HERE 3"
       currentReport.SetUserSelectedFinding(findingNode)
+      
       dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
       dialog.setReportNode(currentReport)
+      print "HERE 4"
       dialog.exec_()
+
       if dialog.property('applied'):
         findingNode.SetName(dialog.property('findingName'))
         findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
-        currentReport.AddFinding(findingNode)
-      
-      else:
-        scene = findingNode.GetScene()
-        if scene:
-          scene.RemoveNode(findingNode)
+        
+      applied =  dialog.property('applied')
     
-    self.reportTableWidget.setReportNode(currentReport)
-    
+    return applied    
     
   def onFindingNodeChanged(self, findingNode):
     currentReport = self.reportSelector.currentNode()
@@ -461,6 +510,13 @@ class qSlicerLongPETCTModuleWidget:
     #print "PRESSP" + str(red.GetPrescribedSliceSpacing())
 
 
+  def viewNodeModified(self, caller, event):
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    if viewNode == caller:
+      if viewNode.GetAnimationMode() == viewNode.Rock:
+        self.studySelectionWidget.setProperty('rockView',True)
+      else:
+        self.studySelectionWidget.setProperty('rockView',False)
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
