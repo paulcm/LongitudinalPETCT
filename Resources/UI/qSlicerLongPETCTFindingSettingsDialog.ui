@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>453</width>
+    <width>378</width>
     <height>221</height>
    </rect>
   </property>
@@ -27,7 +27,7 @@
     <number>25</number>
    </property>
    <item>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="0,2,1,0">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0">
      <property name="horizontalSpacing">
       <number>8</number>
      </property>
@@ -45,13 +45,20 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="3">
+     <item row="0" column="1" colspan="2">
       <widget class="QLineEdit" name="LineEditName"/>
      </item>
      <item row="1" column="2">
-      <widget class="QPushButton" name="ButtonColor">
+      <widget class="QPushButton" name="ButtonRemove">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongPETCTModule.qrc">
+         <normaloff>:/Icons/delete.png</normaloff>:/Icons/delete.png</iconset>
        </property>
       </widget>
      </item>
@@ -62,20 +69,6 @@
          <width>24</width>
          <height>16</height>
         </size>
-       </property>
-       <property name="frame">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <widget class="QPushButton" name="ButtonRemove">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../qSlicerLongPETCTModule.qrc">
-         <normaloff>:/Icons/delete.png</normaloff>:/Icons/delete.png</iconset>
        </property>
       </widget>
      </item>

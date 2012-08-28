@@ -78,9 +78,10 @@ public slots:
 
 protected slots:
   void applyClicked();
-  void typeSelectionChanged(int index);
   void colorSelectionButtonClicked();
   void addTypeButtonClicked();
+  void removeTypeButtonClicked();
+  void selectionChanged(int);
 
 
 protected:
