@@ -42,6 +42,7 @@
 
 
 class vtkMRMLScalarVolumeNode;
+class vtkMRMLLinearTransformNode;
 
 
 
@@ -70,11 +71,17 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
 
   vtkSetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkSetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
 
   vtkGetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkGetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkGetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
 
   vtkBooleanMacro(Selected, int);
+
+  void SetSelectedWithoutModified(bool selected);
+
+  void Initialize();
 
 protected:
   vtkMRMLLongPETCTStudyNode();
@@ -86,6 +93,8 @@ protected:
 
   vtkMRMLScalarVolumeNode* PETVolumeNode;
   vtkMRMLScalarVolumeNode* CTVolumeNode;
+
+  vtkMRMLLinearTransformNode* CenteringTransform;
 
 };
 

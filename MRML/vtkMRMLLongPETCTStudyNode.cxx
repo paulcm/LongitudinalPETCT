@@ -32,8 +32,20 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTStudyNode);
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTStudyNode::vtkMRMLLongPETCTStudyNode()
 {
+  this->Initialize();
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTStudyNode::Initialize()
+{
   this->SetHideFromEditors(true);
   this->Selected = false;
+
+  this->PETVolumeNode = NULL;
+  this->CTVolumeNode = NULL;
+
+  this->CenteringTransform = NULL;
+
 }
 
 //----------------------------------------------------------------------------
@@ -75,5 +87,11 @@ void vtkMRMLLongPETCTStudyNode::Copy(vtkMRMLNode *anode)
 void vtkMRMLLongPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os,indent);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTStudyNode::SetSelectedWithoutModified(bool selected)
+{
+  this->Selected = selected;
 }
 
