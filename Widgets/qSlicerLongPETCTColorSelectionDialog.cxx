@@ -24,6 +24,10 @@
 
 #include <vtkMRMLColorNode.h>
 
+#include <QIcon>
+#include <QPixmap>
+#include <QListWidgetItem>
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -101,7 +105,6 @@ void qSlicerLongPETCTColorSelectionDialog
   Q_ASSERT(d->ListWidgetColors);
 
   d->ListWidgetColors->clear();
-
   if(d->ColorNode == NULL)
     return;
 
@@ -109,10 +112,10 @@ void qSlicerLongPETCTColorSelectionDialog
 
   for(int i=0; i < numberOfColors; ++i)
     {
-      QString colorName = d->ColorNode->GetColorName(i);
 
-      if( !filter.isEmpty() && !colorName.contains(filter, Qt::CaseInsensitive))
+      if( !filter.isEmpty() && !QString(d->ColorNode->GetColorName(i)).contains(filter, Qt::CaseInsensitive))
         continue;
+
 
       double c[3];
       d->ColorNode->GetColor(i,c);
@@ -125,10 +128,11 @@ void qSlicerLongPETCTColorSelectionDialog
 
       QIcon colorIcon(pixmap);
 
+      QListWidgetItem* item = new QListWidgetItem(colorIcon, d->ColorNode->GetColorName(i));
 
-      QListWidgetItem* item = new QListWidgetItem(colorIcon,colorName);
       d->ListWidgetColors->addItem(item);
     }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -162,11 +166,9 @@ qSlicerLongPETCTColorSelectionDialog::getColorIDByListName(const QString& name)
 int qSlicerLongPETCTColorSelectionDialog::colorIDSelectionForNode(QWidget* parent, const vtkMRMLColorNode* colorNode)
 {
   qSlicerLongPETCTColorSelectionDialog dialog(parent);
-
   dialog.setColorNode(colorNode);
   dialog.populateColorsList();
   dialog.exec();
-
   return dialog.selectedColorID();
 }
 
@@ -191,6 +193,7 @@ void qSlicerLongPETCTColorSelectionDialog::setColorNode(const vtkMRMLColorNode* 
   Q_D(qSlicerLongPETCTColorSelectionDialog);
 
   d->ColorNode = const_cast<vtkMRMLColorNode*>(colorNode);
+  this->populateColorsList();
 }
 
 //-----------------------------------------------------------------------------
