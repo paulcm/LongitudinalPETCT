@@ -407,7 +407,7 @@ class qSlicerLongPETCTModuleWidget:
   def onStudySelectionWidgetGPUVolumeRendering(self, useGPU):
   
     if useGPU:
-      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode('vtkMRMLGPURayCastVolumeRenderingDisplayNode')
+      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode() #'vtkMRMLGPURayCastVolumeRenderingDisplayNode')
     else:
       displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
       
@@ -437,7 +437,6 @@ class qSlicerLongPETCTModuleWidget:
 
   def onFindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
-    print "HERE 1"
     applied = self.onShowFindingSettingsDialog(findingNode)
   
     if applied:
@@ -451,17 +450,13 @@ class qSlicerLongPETCTModuleWidget:
   
   def onShowFindingSettingsDialog(self, findingNode):
     applied = False
-    print "HERE 2"
     currentReport = self.reportSelector.currentNode()
     if currentReport:
-      print "HERE 3"
       currentReport.SetUserSelectedFinding(findingNode)
-      
       dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
       dialog.setReportNode(currentReport)
-      print "HERE 4"
       dialog.exec_()
-
+      
       if dialog.property('applied'):
         findingNode.SetName(dialog.property('findingName'))
         findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
@@ -476,6 +471,7 @@ class qSlicerLongPETCTModuleWidget:
       currentReport.SetUserSelectedFinding(findingNode)
     
     self.reportTableWidget.setReportNode(currentReport)
+    
   
   def onFindingNodeToBeDeleted(self, findingNode):
     currentReport = self.reportSelector.currentNode()
