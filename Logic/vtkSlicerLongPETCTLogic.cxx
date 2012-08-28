@@ -52,6 +52,8 @@
 #include <vtkImageData.h>
 
 #include <vtkMRMLVolumeNode.h>
+#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLLinearTransformNode.h>
 
 const QString vtkSlicerLongPETCTLogic::DATABASEDIRECTORY = "DatabaseDirectory";
 const QString vtkSlicerLongPETCTLogic::DATABASECONNECTIONNAME = "LongPETCT";
@@ -82,12 +84,19 @@ void vtkSlicerLongPETCTLogic::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-bool vtkSlicerLongPETCTLogic::CenterPETCTVolumeNodes(vtkMRMLVolumeNode* petVolume, vtkMRMLVolumeNode* ctVolume)
+bool vtkSlicerLongPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* study, vtkMRMLScene* scene)
 {
+  if (study == NULL)
+    return false;
 
-  if(petVolume == NULL || ctVolume == NULL || petVolume->GetImageData() == NULL || ctVolume->GetImageData() == NULL)
+  vtkMRMLScalarVolumeNode* petVolume = study->GetPETVolumeNode();
+  vtkMRMLScalarVolumeNode* ctVolume = study->GetCTVolumeNode();
+
+  if (petVolume == NULL || ctVolume == NULL || petVolume->GetImageData() == NULL
+      || ctVolume->GetImageData() == NULL)
     {
-      vtkDebugMacro("vtkSlicerLongPETCTLogic: PETVolume and/or CTVolume to be centered have NULL value or their image data is NULL");
+      vtkDebugMacro(
+          "vtkSlicerLongPETCTLogic: PETVolume and/or CTVolume to be centered have NULL value or their image data is NULL");
       return false;
     }
 
@@ -100,9 +109,10 @@ bool vtkSlicerLongPETCTLogic::CenterPETCTVolumeNodes(vtkMRMLVolumeNode* petVolum
   petVolume->GetImageData()->GetDimensions(petDimensions);
   ctVolume->GetImageData()->GetDimensions(ctDimensions);
 
-  double petCapacity = petDimensions[0]*petSpacing[0]*petDimensions[1]*petSpacing[1]*petDimensions[2]*petSpacing[2];
-  double ctCapacity = ctDimensions[0]*ctSpacing[0]*ctDimensions[1]*ctSpacing[1]*ctDimensions[2]*ctSpacing[2];
-
+  double petCapacity = petDimensions[0] * petSpacing[0] * petDimensions[1]
+      * petSpacing[1] * petDimensions[2] * petSpacing[2];
+  double ctCapacity = ctDimensions[0] * ctSpacing[0] * ctDimensions[1]
+      * ctSpacing[1] * ctDimensions[2] * ctSpacing[2];
 
   vtkSmartPointer<vtkMRMLVolumeNode> referenceVolume;
   vtkSmartPointer<vtkMRMLVolumeNode> secondaryVolume;
@@ -119,61 +129,111 @@ bool vtkSlicerLongPETCTLogic::CenterPETCTVolumeNodes(vtkMRMLVolumeNode* petVolum
       secondaryVolume = petVolume;
     }
 
+
   vtkNew<vtkMatrix4x4> originalIJKToRAS;
   referenceVolume->GetIJKToRASMatrix(originalIJKToRAS.GetPointer());
 
   vtkNew<vtkMatrix4x4> referenceIJKToRAS;
   referenceIJKToRAS->DeepCopy(originalIJKToRAS.GetPointer());
 
-  char* scanOrder = const_cast<char*>(vtkMRMLVolumeNode::ComputeScanOrderFromIJKToRAS(referenceIJKToRAS.GetPointer()));
-  bool center = vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,referenceVolume->GetSpacing(),referenceVolume->GetImageData()->GetDimensions(),true,referenceIJKToRAS.GetPointer());
-
-  if(!center)
-    {
-      vtkDebugMacro("vtkSlicerLongPETCTLogic: Centering of bigger volume failed");
-      return false;
-    }
+  char* scanOrder =
+      const_cast<char*>(vtkMRMLVolumeNode::ComputeScanOrderFromIJKToRAS(
+          referenceIJKToRAS.GetPointer()));
+  bool center = vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,
+      referenceVolume->GetSpacing(),
+      referenceVolume->GetImageData()->GetDimensions(), true,
+      referenceIJKToRAS.GetPointer());
 
   double translation[3];
-  translation[0] = referenceIJKToRAS->GetElement(0,3) - originalIJKToRAS->GetElement(0,3);
-  translation[1] = referenceIJKToRAS->GetElement(1,3) - originalIJKToRAS->GetElement(1,3);
-  translation[2] = referenceIJKToRAS->GetElement(2,3) - originalIJKToRAS->GetElement(2,3);
+  translation[0] = referenceIJKToRAS->GetElement(0, 3)
+      - originalIJKToRAS->GetElement(0, 3);
+  translation[1] = referenceIJKToRAS->GetElement(1, 3)
+      - originalIJKToRAS->GetElement(1, 3);
+  translation[2] = referenceIJKToRAS->GetElement(2, 3)
+      - originalIJKToRAS->GetElement(2, 3);
+
+  vtkNew<vtkMatrix4x4> translationMatrix;
+  translationMatrix->Identity();
+
+  for (int i = 0; i < 3; ++i)
+    {
+      translationMatrix->SetElement(i, 3, translation[i]);
+    }
 
 
-  // centering reference volume
-  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
-  vtkNew<vtkMatrix4x4> referenceRASToIJK;
-
-  referenceRASToIJK->DeepCopy(referenceIJKToRAS.GetPointer());
-  referenceRASToIJK->Invert();
-
-  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
-  referenceVolume->SetRASToIJKMatrix(referenceRASToIJK.GetPointer());
+  vtkNew<vtkMRMLLinearTransformNode> translationTransform;
+  translationTransform->ApplyTransformMatrix(
+      translationMatrix.GetPointer());
+  translationTransform->SetHideFromEditors(true);
 
 
-  // centering secondary volume
-  vtkNew<vtkMatrix4x4> secondaryIJKToRAS;
-  secondaryVolume->GetIJKToRASMatrix(secondaryIJKToRAS.GetPointer());
+  scene->AddNode(translationTransform.GetPointer());
 
-  // modify IJKToRAS with translation of reference volume
-  secondaryIJKToRAS->SetElement(0,3, secondaryIJKToRAS->GetElement(0,3)+translation[0]);
-  secondaryIJKToRAS->SetElement(1,3, secondaryIJKToRAS->GetElement(1,3)+translation[1]);
-  secondaryIJKToRAS->SetElement(2,3, secondaryIJKToRAS->GetElement(2,3)+translation[2]);
+  referenceVolume->SetAndObserveTransformNodeID(
+      translationTransform->GetID());
+  secondaryVolume->SetAndObserveTransformNodeID(
+      translationTransform->GetID());
 
-  vtkNew<vtkMatrix4x4> secondaryRASToIJK;
-  secondaryRASToIJK->DeepCopy(secondaryIJKToRAS.GetPointer());
-  secondaryRASToIJK->Invert();
+  study->SetCenteringTransform(translationTransform.GetPointer());
 
-  secondaryVolume->SetIJKToRASMatrix(secondaryRASToIJK.GetPointer());
-  secondaryVolume->SetRASToIJKMatrix(secondaryRASToIJK.GetPointer());
-
-
-  referenceVolume->Modified();
-  secondaryVolume->Modified();
 
   return true;
-
 }
+//  vtkNew<vtkMatrix4x4> originalIJKToRAS;
+//  referenceVolume->GetIJKToRASMatrix(originalIJKToRAS.GetPointer());
+//
+//  vtkNew<vtkMatrix4x4> referenceIJKToRAS;
+//  referenceIJKToRAS->DeepCopy(originalIJKToRAS.GetPointer());
+//
+//  char* scanOrder = const_cast<char*>(vtkMRMLVolumeNode::ComputeScanOrderFromIJKToRAS(referenceIJKToRAS.GetPointer()));
+//  bool center = vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,referenceVolume->GetSpacing(),referenceVolume->GetImageData()->GetDimensions(),true,referenceIJKToRAS.GetPointer());
+//
+//  if(!center)
+//    {
+//      vtkDebugMacro("vtkSlicerLongPETCTLogic: Centering of bigger volume failed");
+//      return false;
+//    }
+//
+//  double translation[3];
+//  translation[0] = referenceIJKToRAS->GetElement(0,3) - originalIJKToRAS->GetElement(0,3);
+//  translation[1] = referenceIJKToRAS->GetElement(1,3) - originalIJKToRAS->GetElement(1,3);
+//  translation[2] = referenceIJKToRAS->GetElement(2,3) - originalIJKToRAS->GetElement(2,3);
+//
+//
+//  // centering reference volume
+//  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
+//  vtkNew<vtkMatrix4x4> referenceRASToIJK;
+//
+//  referenceRASToIJK->DeepCopy(referenceIJKToRAS.GetPointer());
+//  referenceRASToIJK->Invert();
+//
+//  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
+//  referenceVolume->SetRASToIJKMatrix(referenceRASToIJK.GetPointer());
+//
+//
+//  // centering secondary volume
+//  vtkNew<vtkMatrix4x4> secondaryIJKToRAS;
+//  secondaryVolume->GetIJKToRASMatrix(secondaryIJKToRAS.GetPointer());
+//
+//  // modify IJKToRAS with translation of reference volume
+//  secondaryIJKToRAS->SetElement(0,3, secondaryIJKToRAS->GetElement(0,3)+translation[0]);
+//  secondaryIJKToRAS->SetElement(1,3, secondaryIJKToRAS->GetElement(1,3)+translation[1]);
+//  secondaryIJKToRAS->SetElement(2,3, secondaryIJKToRAS->GetElement(2,3)+translation[2]);
+//
+//  vtkNew<vtkMatrix4x4> secondaryRASToIJK;
+//  secondaryRASToIJK->DeepCopy(secondaryIJKToRAS.GetPointer());
+//  secondaryRASToIJK->Invert();
+//
+//  secondaryVolume->SetIJKToRASMatrix(secondaryRASToIJK.GetPointer());
+//  secondaryVolume->SetRASToIJKMatrix(secondaryRASToIJK.GetPointer());
+//
+//
+//  referenceVolume->Modified();
+//  secondaryVolume->Modified();
+//
+//  return true;
+
+
 
 //---------------------------------------------------------------------------
 void vtkSlicerLongPETCTLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)

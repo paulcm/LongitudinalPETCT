@@ -43,7 +43,9 @@ class ctkDICOMDatabase;
 #include "vtkSlicerLongPETCTModuleLogicExport.h"
 
 class vtkMRMLLongPETCTReportNode;
+class vtkMRMLLongPETCTStudyNode;
 class vtkMRMLVolumeNode;
+class vtkMRMLScene;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_LONGPETCT_MODULE_LOGIC_EXPORT vtkSlicerLongPETCTLogic :
@@ -57,7 +59,7 @@ public:
 
   void Initialize();
 
-  static bool CenterPETCTVolumeNodes(vtkMRMLVolumeNode* petVolume, vtkMRMLVolumeNode* ctVolume);
+  static bool CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* study, vtkMRMLScene* scene);
 
   /**
    * Returns a list with UIDs of all patients from the DICOM database with PET/CT studies.
