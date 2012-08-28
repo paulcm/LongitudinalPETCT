@@ -75,6 +75,7 @@ signals:
     void linearOpacityToggled(bool toggled);
     void rockViewToggled(bool toggled);
     void opacityPowChanged(double d);
+    void showStudiesCentered(bool centered);
 
 protected slots:
     void studyCheckBoxClicked(bool selected);

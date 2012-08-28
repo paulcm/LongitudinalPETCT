@@ -26,8 +26,10 @@
 #include <QDate>
 #include <QTime>
 
-#include <QMessageBox>
-#include <QMap>
+
+#include <ctkMessageBox.h>
+
+
 
 #include <vtkSmartPointer.h>
 #include <vtkMRMLLongPETCTReportNode.h>
@@ -96,7 +98,7 @@ qSlicerLongPETCTStudySelectionWidgetPrivate::addRowToTableForStudy(vtkSmartPoint
   Q_Q(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(this->Table);
 
-  QCheckBox* studyIDCheckBox = new QCheckBox(q);
+  QCheckBox* studyIDCheckBox = new QCheckBox();
   studyIDCheckBox->setChecked(study->GetSelected());
 
   QString studyID = study->GetAttribute("DICOM.StudyID");
@@ -151,7 +153,8 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 void qSlicerLongPETCTStudySelectionWidgetPrivate
 ::deselectTableAll()
 {
-  Q_Q(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(this->Table);
+
   QTableWidgetSelectionRange range(0,0,this->Table->rowCount()-1,this->Table->columnCount()-1);
   this->Table->setRangeSelected(range,false);
 }
@@ -160,15 +163,12 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 void qSlicerLongPETCTStudySelectionWidgetPrivate
 ::selectTableRow(int row, bool select)
 {
-  Q_Q(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(this->Table);
 
   this->deselectTableAll();
 
-  if(row >= 0 && row < this->Table->rowCount())
-    {
-      QTableWidgetSelectionRange range(row,0,row,this->Table->columnCount()-1);
-      this->Table->setRangeSelected(range,select);
-    }
+  QTableWidgetSelectionRange range(row,0,row,this->Table->columnCount()-1);
+    this->Table->setRangeSelected(range,select);
 
 }
 
@@ -182,12 +182,23 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 
   this->WidgetButtonsPanel->setVisible(false);
 
-  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), widget, SLOT(tableCellClicked(int,int)) );
+  //this->SliderOpacityPow->setOrientation(Qt::Vertical);
+  this->SliderOpacityPow->setValue(2.0); //this->SpinBoxOpacityPow->value());
+  this->SliderOpacityPow->setMinimum(1.0); //this->SpinBoxOpacityPow->minimum());
+  this->SliderOpacityPow->setMaximum(3.0); //this->SpinBoxOpacityPow->minimum());
+  this->SliderOpacityPow->setSingleStep(0.1); //this->SpinBoxOpacityPow->singleStep());
 
-  QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), widget, SIGNAL(volumeRenderingToggled(bool)) );
-  //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), widget, SIGNAL(gpuRenderingToggled(bool)) );
-  QObject::connect(this->ButtonRockView, SIGNAL(toggled(bool)), widget, SIGNAL(rockViewToggled(bool)) );
-  QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), widget, SIGNAL(opacityPowChanged(double)) );
+  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int,int)) );
+
+  QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
+  //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), q, SIGNAL(gpuRenderingToggled(bool)) );
+  QObject::connect(this->ButtonRockView, SIGNAL(toggled(bool)), q, SIGNAL(rockViewToggled(bool)) );
+
+  QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), this->SliderOpacityPow, SLOT(setValue(double)) );
+  QObject::connect(this->SliderOpacityPow, SIGNAL(valueChanged(double)), this->SpinBoxOpacityPow, SLOT(setValue(double)) );
+  QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), q, SIGNAL(opacityPowChanged(double)) );
+
+  QObject::connect(this->CheckBoxStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
 
   this->ButtonGPURendering->setVisible(false);
 }
@@ -240,8 +251,6 @@ void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->Table);
 
-  d->deselectTableAll();
-
   if(row >= 0 && row < d->ListStudyCheckBoxes.size() && row < d->Table->rowCount())
     {
       if(d->ListStudyCheckBoxes.at(row)->isChecked())
@@ -249,12 +258,14 @@ void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
           d->selectTableRow(row, true);
           emit studySelected(row);
         }
-//      else
-//        {
-//          static bool unseen = true;
-//          if(unseen)
-//            QMessageBox::information(NULL,"Longitudinal PET/CT Analysis","By clicking into a row the study is loaded into the view. This is only possible if the study has been checked into the workflow first.");
-//        }
+      else
+        {
+          static bool unseen = true;
+          if(unseen)
+            QMessageBox::information(NULL,"Longitudinal PET/CT Analysis","By clicking into a row the study is loaded into the view. This is only possible if the study has been checked into the workflow first.");
+
+          d->deselectTableAll();
+        }
     }
 }
 
@@ -264,9 +275,11 @@ void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->Table);
 
+  std::cout << "STUDY CHECKBOX CLICKED 1" << std::endl;
   QCheckBox* sender =  qobject_cast<QCheckBox*>(QObject::sender());
+  std::cout << "STUDY CHECKBOX CLICKED 1" << std::endl;
+  //d->deselectTableAll();
 
-  d->deselectTableAll();
 
   for(int i=0; i < d->ListStudyCheckBoxes.size(); ++i)
     {
@@ -285,6 +298,8 @@ void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
           break;
         }
     }
+
+  std::cout << "STUDY CHECKBOX CLICKED" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
