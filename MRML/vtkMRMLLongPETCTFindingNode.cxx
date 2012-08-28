@@ -31,6 +31,9 @@ Version:   $Revision: 1.2 $
 // STD includes
 
 
+std::vector< vtkMRMLLongPETCTFindingNode::FindingType > vtkMRMLLongPETCTFindingNode::DefaultFindingTypes = std::vector< std::pair<std::string,int> >();
+
+
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 
@@ -38,8 +41,8 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->FindingType.first = "None";
-  this->FindingType.second = -1;
+  this->Type.first = "Tumor";
+  this->Type.second = 7;
 
 }
 
@@ -148,13 +151,13 @@ vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::GetLabelMapVolumeForROI(co
 }
 
 //----------------------------------------------------------------------------
-std::pair<std::string, int> vtkMRMLLongPETCTFindingNode::GetFindingType()
+vtkMRMLLongPETCTFindingNode::FindingType vtkMRMLLongPETCTFindingNode::GetFindingType()
 {
-  return this->FindingType;
+  return this->Type;
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::SetFindingType(std::pair<std::string,int> type)
+void vtkMRMLLongPETCTFindingNode::SetFindingType(FindingType type)
 {
   this->SetFindingType(type.first, type.second);
 }
@@ -162,8 +165,20 @@ void vtkMRMLLongPETCTFindingNode::SetFindingType(std::pair<std::string,int> type
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTFindingNode::SetFindingType(std::string typeName, int colorID)
 {
-  this->FindingType.first = typeName;
-  this->FindingType.second = colorID;
+  this->Type.first = typeName;
+  this->Type.second = colorID;
+}
+
+bool vtkMRMLLongPETCTFindingNode::IsDefaultFindingType(FindingType type)
+{
+  for(int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
+    {
+      FindingType tempFindingType = vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.at(i);
+      if(tempFindingType.first.compare(type.first) == 0 && tempFindingType.second == type.second)
+        return true;
+    }
+
+  return false;
 }
 
 
