@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>525</width>
-    <height>503</height>
+    <height>164</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,14 +35,14 @@
     </layout>
    </item>
    <item>
-    <widget class="QWidget" name="WidgetInformations" native="true">
-     <property name="styleSheet">
-      <string notr="true">border: 1px solid #979797;</string>
+    <widget class="QFrame" name="FrameInformation">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
      </property>
-     <layout class="QFormLayout" name="formLayout_2">
-      <property name="fieldGrowthPolicy">
-       <enum>QFormLayout::FieldsStayAtSizeHint</enum>
-      </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout" columnstretch="0,1">
       <property name="horizontalSpacing">
        <number>12</number>
       </property>
@@ -65,16 +65,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="LabelNameInfo">
-        <property name="styleSheet">
-         <string notr="true">border: none</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="LabelDoB">
         <property name="styleSheet">
@@ -85,16 +75,6 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="LabelDoBInfo">
-        <property name="styleSheet">
-         <string notr="true">border: none</string>
-        </property>
-        <property name="text">
-         <string/>
         </property>
        </widget>
       </item>
@@ -111,6 +91,26 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="LabelNameInfo">
+        <property name="styleSheet">
+         <string notr="true">border: none</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="LabelDoBInfo">
+        <property name="styleSheet">
+         <string notr="true">border: none</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="1">
        <widget class="QLabel" name="LabelSexInfo">
         <property name="styleSheet">
@@ -122,6 +122,13 @@
        </widget>
       </item>
      </layout>
+     <zorder>LabelName</zorder>
+     <zorder>LabelName</zorder>
+     <zorder>LabelDoB</zorder>
+     <zorder>LabelSex</zorder>
+     <zorder>LabelNameInfo</zorder>
+     <zorder>LabelDoBInfo</zorder>
+     <zorder>LabelSexInfo</zorder>
     </widget>
    </item>
    <item>
@@ -153,15 +160,15 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>ctkExpandButton</class>
+   <extends>QToolButton</extends>
+   <header>ctkExpandButton.h</header>
+  </customwidget>
+  <customwidget>
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qmrmlnodecombobox.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ctkExpandButton</class>
-   <extends>QToolButton</extends>
-   <header>ctkExpandButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
@@ -169,16 +176,16 @@
   <connection>
    <sender>ExpandButton</sender>
    <signal>toggled(bool)</signal>
-   <receiver>WidgetInformations</receiver>
+   <receiver>FrameInformation</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>262</x>
-     <y>414</y>
+     <y>143</y>
     </hint>
     <hint type="destinationlabel">
      <x>262</x>
-     <y>251</y>
+     <y>82</y>
     </hint>
    </hints>
   </connection>
