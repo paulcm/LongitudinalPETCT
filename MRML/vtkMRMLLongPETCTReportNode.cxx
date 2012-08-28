@@ -117,7 +117,7 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 {
   int count = 0;
 
-  for(int i=0; i < this->Studies.size(); ++i)
+  for(unsigned int i=0; i < this->Studies.size(); ++i)
     {
       if(this->Studies.at(i)->GetSelected())
         count++;
@@ -135,7 +135,7 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
   std::string studyDate = study->GetAttribute("DICOM.StudyDate");
   std::string studyTime = study->GetAttribute("DICOM.StudyTime");
 
-  int i=0;
+  unsigned int i=0;
   for(; i < this->Studies.size(); ++i)
     {
       std::string listStudyDate = this->Studies.at(i)->GetAttribute("DICOM.StudyDate");
@@ -155,7 +155,7 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 
   this->InvokeEvent(vtkMRMLLongPETCTReportNode::StudiesChangedEvent);
 
-  return i;
+  return static_cast<int>(i);
 }
 
 //----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void vtkMRMLLongPETCTReportNode::AddFinding(vtkMRMLLongPETCTFindingNode* finding
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index) const
 {
-  if(index >= 0 && index < this->Studies.size())
+  if(index >= 0 && index < static_cast<int>(this->Studies.size()))
     return this->Studies[index];
 
   else
@@ -185,7 +185,7 @@ vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudy(int index) const
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTFindingNode* vtkMRMLLongPETCTReportNode::GetFinding(int index) const
 {
-  if(index >= 0 && index < this->Findings.size())
+  if(index >= 0 && index < static_cast<int>(this->Findings.size()))
     return this->Findings[index];
 
   else
@@ -196,7 +196,7 @@ vtkMRMLLongPETCTFindingNode* vtkMRMLLongPETCTReportNode::GetFinding(int index) c
 //----------------------------------------------------------------------------
 bool vtkMRMLLongPETCTReportNode::FindingNameInList(const std::string& name)
 {
-  for(int i=0; i < this->Findings.size(); ++i)
+  for(int i=0; i < static_cast<int>(this->Findings.size()); ++i)
     {
       std::string findingName = this->Findings.at(i)->GetName();
       if(findingName.compare(name) == 0)
@@ -211,7 +211,7 @@ std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedS
 {
   std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies;
 
-  for(int i=0; i < this->Studies.size();++i)
+  for(unsigned int i=0; i < this->Studies.size();++i)
     {
       if(this->Studies.at(i)->GetSelected())
         selectedStudies.push_back(this->Studies[i]);
@@ -226,7 +226,7 @@ vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int inde
 {
   std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
 
-  if(index >= 0 && index < selectedStudies.size())
+  if(index >= 0 && index < static_cast<int>(selectedStudies.size()))
     return selectedStudies[index];
 
 
@@ -263,10 +263,10 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTSt
 
   std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudies = this->GetSelectedStudies();
 
-  for(int i=0; i < selectedStudies.size(); ++i)
+  for(unsigned int i=0; i < selectedStudies.size(); ++i)
     {
       if (selectedStudies[i] == study)
-        return i;
+        return static_cast<int>(i);
     }
 
   return -1;
@@ -279,10 +279,10 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode*
   if(study == NULL)
     return -1;
 
-  for(int i=0; i < this->Studies.size(); ++i)
+  for(unsigned int i=0; i < this->Studies.size(); ++i)
     {
       if (this->Studies[i] == study)
-        return i;
+        return static_cast<int>(i);
     }
 
   return -1;
@@ -295,10 +295,10 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfFinding(const vtkMRMLLongPETCTFindingN
   if(finding == NULL)
     return -1;
 
-  for(int i=0; i < this->Findings.size(); ++i)
+  for(unsigned int i=0; i < this->Findings.size(); ++i)
     {
       if (this->Findings[i] == finding)
-        return i;
+        return static_cast<int>(i);
     }
 
   return -1;
@@ -341,10 +341,10 @@ std::string vtkMRMLLongPETCTReportNode::GetFindingTypeName(int colorID)
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetIndexOfFindingColorID(int colorID)
 {
-  for(int i=0; i < this->FindingTypes.size(); ++i)
+  for(unsigned int i=0; i < this->FindingTypes.size(); ++i)
     {
       if(this->FindingTypes.at(i).second == colorID)
-        return i;
+        return static_cast<int>(i);
     }
 
   return -1;
@@ -353,10 +353,10 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfFindingColorID(int colorID)
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetIndexOfFindingTypeName(const std::string& typeName)
 {
-  for(int i=0; i < this->FindingTypes.size(); ++i)
+  for(unsigned int i=0; i < this->FindingTypes.size(); ++i)
     {
       if(this->FindingTypes.at(i).first.compare(typeName) == 0)
-        return i;
+        return static_cast<int>(i);
     }
 
   return -1;
@@ -369,6 +369,7 @@ void vtkMRMLLongPETCTReportNode::AddFindingType(std::pair<std::string, int> type
 {
   int disabledModify = this->StartModify();
 
+  //TODO check for existance
   int indexName = this->GetIndexOfFindingTypeName(type.first);
   int indexColor = this->GetIndexOfFindingColorID(type.second);
 
@@ -385,7 +386,7 @@ void vtkMRMLLongPETCTReportNode::SetFindingTypeColorID(const std::string& typeNa
 
   int index = this->GetIndexOfFindingTypeName(typeName);
 
-  if(index >= 0 && index < this->FindingTypes.size())
+  if(index >= 0 && index < static_cast<int>(this->FindingTypes.size()))
     this->FindingTypes.at(index).second = newColorID;
 
   this->EndModify(disabledModify);
@@ -401,7 +402,7 @@ int vtkMRMLLongPETCTReportNode::GetFindingTypesCount()
 //----------------------------------------------------------------------------
 std::pair<std::string,int> vtkMRMLLongPETCTReportNode::GetFindingType(int index)
 {
-  if(index >= 0 && index < this->FindingTypes.size())
+  if(index >= 0 && index < static_cast<int>(this->FindingTypes.size()))
     return this->FindingTypes.at(index);
 
   return std::make_pair("None",-1);
