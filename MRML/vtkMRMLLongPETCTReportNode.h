@@ -112,7 +112,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   const vtkMRMLColorNode* GetColorNode();
 
   int GetFindingTypesCount();
-  void AddFindingType(std::pair<std::string,int> type);
+  void AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType type);
+  void RemoveFindingType(unsigned int index);
 
   std::string GetFindingTypeName(int colorID);
   int GetFindingTypeColorID(const std::string& typeName);
@@ -138,9 +139,7 @@ protected:
   vtkMRMLLongPETCTStudyNode* UserSelectedStudy;
   vtkMRMLLongPETCTFindingNode* UserSelectedFinding;
 
-  std::vector< std::pair<std::string,int> > FindingTypes;
-
-
+  std::vector< vtkMRMLLongPETCTFindingNode::FindingType > FindingTypes;
 
 };
 

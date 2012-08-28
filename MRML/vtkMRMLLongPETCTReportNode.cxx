@@ -53,10 +53,22 @@ void vtkMRMLLongPETCTReportNode::Initialize()
     this->UserSelectedStudy = NULL;
     this->UserSelectedFinding = NULL;
 
-    this->AddFindingType(std::make_pair("Tumor",7));
-    this->AddFindingType(std::make_pair("Lymph Node",23));
-    this->AddFindingType(std::make_pair("Liver",216));
-    this->AddFindingType(std::make_pair("Aorta",191));
+    if (vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.empty())
+    {
+      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
+          std::make_pair("Tumor", 7));
+      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
+          std::make_pair("Lymph Node", 23));
+      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
+          std::make_pair("Liver", 216));
+      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
+          std::make_pair("Aorta", 191));
+    }
+
+    for(unsigned int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
+      {
+        this->AddFindingType(vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.at(i));
+      }
 
     this->EndModify(disabledModify);
 }
@@ -365,18 +377,35 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfFindingTypeName(const std::string& typ
 
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::AddFindingType(std::pair<std::string, int> type)
+void vtkMRMLLongPETCTReportNode::AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType type)
 {
   int disabledModify = this->StartModify();
 
-  //TODO check for existance
-  int indexName = this->GetIndexOfFindingTypeName(type.first);
-  int indexColor = this->GetIndexOfFindingColorID(type.second);
+  int indexOfName = this->GetIndexOfFindingTypeName(type.first);
+  int indexOfColor = this->GetIndexOfFindingColorID(type.second);
 
-  vtkMRMLLongPETCTReportNode::FindingTypes.push_back(type);
+  if(indexOfName == -1 && indexOfName == indexOfColor )
+    {
+      this->FindingTypes.push_back(type);
+      this->InvokeEvent(FindingTypesChangedEvent);
+    }
 
   this->EndModify(disabledModify);
-  this->InvokeEvent(FindingTypesChangedEvent);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::RemoveFindingType(unsigned int index)
+{
+  int disabledModify = this->StartModify();
+
+
+  if(index >= vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size() && index < this->FindingTypes.size())
+    {
+      this->FindingTypes.erase(this->FindingTypes.begin()+index);
+      this->InvokeEvent(FindingTypesChangedEvent);
+    }
+
+  this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
