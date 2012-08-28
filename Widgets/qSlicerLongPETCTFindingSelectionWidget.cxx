@@ -81,9 +81,8 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
 
   this->MRMLNodeComboBoxFinding->setNodeTypes(QStringList("vtkMRMLLongPETCTFindingNode"));
 
-  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(currentNodeChanged(vtkMRMLNode*)), widget, SLOT(update(vtkMRMLNode*)) );
-  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), widget, SIGNAL(FindingNodeAddedByUser(vtkMRMLNode*)) );
-
+  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(update(vtkMRMLNode*)) );
+  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(FindingNodeAddedByUser(vtkMRMLNode*)) );
 }
 
 //-----------------------------------------------------------------------------
@@ -115,7 +114,9 @@ void qSlicerLongPETCTFindingSelectionWidget::setMRMLScene(vtkMRMLScene* mrmlScen
   d->MRMLNodeComboBoxFinding->setAddEnabled(true);
   d->MRMLNodeComboBoxFinding->setRemoveEnabled(true);
   d->MRMLNodeComboBoxFinding->setRenameEnabled(false);
+  d->MRMLNodeComboBoxFinding->setEditEnabled(true);
 }
+
 
 //-----------------------------------------------------------------------------
 vtkMRMLScene* qSlicerLongPETCTFindingSelectionWidget::mrmlScene()
@@ -139,5 +140,5 @@ qMRMLNodeComboBox* qSlicerLongPETCTFindingSelectionWidget::mrmlNodeComboBoxFindi
 void qSlicerLongPETCTFindingSelectionWidget
 ::update(vtkMRMLNode* node)
 {
-  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  //Q_D(qSlicerLongPETCTFindingSelectionWidget);
 }
