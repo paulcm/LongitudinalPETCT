@@ -29,6 +29,7 @@
 #include "qSlicerLongPETCTColorSelectionDialog.h"
 
 #include <QMessageBox>
+#include <vtkSmartPointer.h>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -54,7 +55,7 @@ public:
 
   bool Applied;
 
-  vtkMRMLLongPETCTReportNode* ReportNode;
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
 };
 
@@ -117,7 +118,12 @@ void qSlicerLongPETCTFindingSettingsDialogPrivate
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTFindingSettingsDialogPrivate::addFindingType(const QString& typeName)
 {
+  Q_Q(qSlicerLongPETCTFindingSettingsDialog);
+  QObject::disconnect( this->ComboBoxType, SIGNAL(currentIndexChanged(int)), q, SLOT(typeSelectionChanged(int)) );
   this->ComboBoxType->addItem(typeName);
+  QObject::connect( this->ComboBoxType, SIGNAL(currentIndexChanged(int)), q, SLOT(typeSelectionChanged(int)) );
+
+  std::cout << "ITEM ADDED: " << typeName.toStdString().c_str() << std::endl;
 }
 //-----------------------------------------------------------------------------
 // qSlicerLongPETCTFindingSettingsDialog methods
@@ -268,18 +274,25 @@ void qSlicerLongPETCTFindingSettingsDialog::typeSelectionChanged(int index)
 
   const vtkMRMLColorNode* colorNode = d->ReportNode->GetColorNode();
 
+
   if(colorNode == NULL)
     return;
+
+
 
   QString selectedTypeName = d->ComboBoxType->currentText();
   int colorID = d->ReportNode->GetFindingTypeColorID(selectedTypeName.toStdString());
 
+  std::cout << "COLOR ID: " << colorID << std::endl;
 
   double col[3];
   const_cast<vtkMRMLColorNode*>(colorNode)->GetColor(colorID, col);
   QColor color = qSlicerLongPETCTColorSelectionDialog::getRGBColorFromDoubleValues(col[0], col[1], col[2]);
 
+  std::cout << "COLOR: " << color.name().toStdString() << std::endl;
   d->ButtonColor->setStyleSheet("background-color: "+color.name());
+  std::cout << "SET COLOR" << std::endl;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -296,23 +309,66 @@ void qSlicerLongPETCTFindingSettingsDialog::setReportNode(vtkMRMLLongPETCTReport
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
 
+  std::cout << "HERESETREPORT" << std::endl;
+
+  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkMRMLLongPETCTReportNode::StudiesChangedEvent, this, SLOT(updateView()) );
   d->ReportNode = reportNode;
 
-  if (d->ReportNode == NULL || d->ReportNode->GetScene() == NULL || d->ReportNode->GetUserSelectedFinding() == NULL)
-      return;
-
-    this->setFindingName(reportNode->GetUserSelectedFinding()->GetName());
-
-    d->ComboBoxType->clear();
-
-
-    for (int i = 0; i < d->ReportNode->GetFindingTypesCount(); ++i)
-      {
-        d->addFindingType(d->ReportNode->GetFindingType(i).first.c_str());
-      }
-
-    d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetFindingType().first.c_str());
+  this->updateView();
 }
+
+//-----------------------------------------------------------------------------
+vtkMRMLLongPETCTReportNode* qSlicerLongPETCTFindingSettingsDialog::reportNode()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+
+  return d->ReportNode.GetPointer();
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSettingsDialog
+::updateView()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->ComboBoxType);
+
+  if(d->ReportNode.GetPointer() == NULL || d->ReportNode->GetScene() == NULL || d->ReportNode->GetUserSelectedFinding() == NULL)
+    return;
+
+  std::cout << "HERE" << std::endl;
+  this->setFindingName(d->ReportNode->GetUserSelectedFinding()->GetName());
+  std::cout << d->ReportNode->GetUserSelectedFinding()->GetName() << std::endl;
+
+  d->ComboBoxType->clear();
+
+  std::cout << "TYPES: "<< d->ReportNode->GetFindingTypesCount() << std::endl;
+
+  for(int i=0; i < d->ReportNode->GetFindingTypesCount(); ++i)
+    {
+      d->addFindingType(QString(d->ReportNode->GetFindingType(i).first.c_str()));
+    }
+
+  std::cout << "HERE END" << std::endl;
+  //d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetFindingType().first.c_str());
+
+}
+//  if (d->ReportNode == NULL || d->ReportNode->GetScene() == NULL || d->ReportNode->GetUserSelectedFinding() == NULL)
+//      return;
+//
+//    this->setFindingName(reportNode->GetUserSelectedFinding()->GetName());
+//
+//    d->ComboBoxType->clear();
+//
+//
+//    for (int i = 0; i < d->ReportNode->GetFindingTypesCount(); ++i)
+//      {
+//        d->addFindingType(d->ReportNode->GetFindingType(i).first.c_str());
+//      }
+//
+//
+//    d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetFindingType().first.c_str());
+
 
 
 //-----------------------------------------------------------------------------

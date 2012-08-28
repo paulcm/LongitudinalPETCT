@@ -30,6 +30,8 @@
 
 #include "vtkMRMLScene.h"
 
+#include <ctkVTKObject.h>
+
 #include <vtkMRMLLongPETCTReportNode.h>
 class vtkMRMLColorNode;
 
@@ -42,6 +44,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSettingsDi
   : public QDialog
 {
   Q_OBJECT
+  QVTK_OBJECT
   Q_PROPERTY(bool applied READ applied WRITE setApplied)
   Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
   Q_PROPERTY(int colorID READ colorID WRITE setColorID)
@@ -65,10 +68,12 @@ public:
   void setApplied(bool applied);
 
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  vtkMRMLLongPETCTReportNode* reportNode();
 
 
 
 public slots:
+  void updateView();
   virtual void show();
 
 protected slots:
