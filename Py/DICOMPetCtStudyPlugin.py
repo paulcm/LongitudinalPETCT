@@ -412,15 +412,13 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
 
       if len(self.petFileLoadables) == len(self.ctFileLoadables):
+        logic = slicer.modules.longpetct.logic()
         i = 0
         while i < len(self.petFileLoadables):
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
         
-          logic = slicer.modules.longpetct.logic()
-          if logic:
-            logic.CenterPETCTVolumeNodes(petScalarVolume,ctScalarVolume)
-        
+          
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
           studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
@@ -441,6 +439,10 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
         
           slicer.mrmlScene.AddNode(studyNode)
           reportNode.AddStudy(studyNode)
+          
+          
+          if logic:
+            logic.CenterStudyVolumeNodes(studyNode,slicer.mrmlScene)
         
           i += 1 
         
