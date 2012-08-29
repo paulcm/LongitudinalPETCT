@@ -44,8 +44,13 @@ protected:
 
 public:
   qSlicerLongPETCTStudySliderWidgetPrivate(
-    qSlicerLongPETCTStudySliderWidget& object);
+  qSlicerLongPETCTStudySliderWidget& object);
+
+  virtual ~qSlicerLongPETCTStudySliderWidgetPrivate();
+
   virtual void setupUi(qSlicerLongPETCTStudySliderWidget*);
+
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
 
 
@@ -109,7 +114,6 @@ public:
     }
   };
 
-
   qSlicerLongPETCTJumpSlider* Slider;
 
 };
@@ -118,9 +122,16 @@ public:
 qSlicerLongPETCTStudySliderWidgetPrivate
 ::qSlicerLongPETCTStudySliderWidgetPrivate(
   qSlicerLongPETCTStudySliderWidget& object)
-  : q_ptr(&object)
+  : q_ptr(&object), ReportNode(NULL)
 {
 }
+
+// --------------------------------------------------------------------------
+qSlicerLongPETCTStudySliderWidgetPrivate
+::~qSlicerLongPETCTStudySliderWidgetPrivate()
+{
+}
+
 
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTStudySliderWidgetPrivate
@@ -135,7 +146,7 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
 
   this->Layout->addWidget(this->Slider);
 
-  QObject::connect( this->Slider, SIGNAL(valueChanged(int)), widget, SIGNAL(sliderValueChanged(int)) );
+  QObject::connect( this->Slider, SIGNAL(valueChanged(int)), q, SIGNAL(sliderValueChanged(int)) );
 
 }
 
@@ -162,7 +173,7 @@ qSlicerLongPETCTStudySliderWidget
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTStudySliderWidget
-::update(vtkMRMLNode* node)
+::updateView()
 {
   Q_D(qSlicerLongPETCTStudySliderWidget);
   Q_ASSERT(d->Slider);
@@ -172,12 +183,11 @@ void qSlicerLongPETCTStudySliderWidget
 
   d->LabelSelectedStudyDateTime->setText("");
 
-  vtkMRMLLongPETCTReportNode* selectedReportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+  if(d->ReportNode == NULL)
+    return;
 
-  if( selectedReportNode == NULL )
-      return;
-
-  int studiesCount = selectedReportNode->GetSelectedStudiesCount();
+  int studiesCount = d->ReportNode->GetSelectedStudiesCount();
+  std::cout << "STUDIES COUNT" << studiesCount << std::endl;
 
   if(studiesCount < 2)
     {
@@ -191,7 +201,7 @@ void qSlicerLongPETCTStudySliderWidget
       d->Slider->setMaximum(studiesCount-1);
     }
 
-  vtkMRMLLongPETCTStudyNode* study = selectedReportNode->GetUserSelectedStudy();
+  vtkMRMLLongPETCTStudyNode* study = d->ReportNode->GetUserSelectedStudy();
 
   if (study != NULL)
     {
@@ -209,7 +219,7 @@ void qSlicerLongPETCTStudySliderWidget
       d->LabelSelectedStudyDateTime->setText(text.join("   "));
     }
 
-  int sliderVal = selectedReportNode->GetIndexOfSelectedStudy(study);
+  int sliderVal = d->ReportNode->GetIndexOfSelectedStudy(study);
 
   if(sliderVal >= 0 && sliderVal <= d->Slider->maximum())
     d->Slider->setValue(sliderVal);
@@ -218,6 +228,25 @@ void qSlicerLongPETCTStudySliderWidget
 
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySliderWidget::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
+{
+  Q_D(qSlicerLongPETCTStudySliderWidget);
+
+  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
+  d->ReportNode = reportNode;
+
+  this->updateView();
+}
+
+
+//-----------------------------------------------------------------------------
+vtkMRMLLongPETCTReportNode* qSlicerLongPETCTStudySliderWidget::reportNode()
+{
+  Q_D(qSlicerLongPETCTStudySliderWidget);
+
+  return d->ReportNode.GetPointer();
+}
 
 
 

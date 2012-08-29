@@ -25,12 +25,12 @@
 #include <QWidget>
 #include <QString>
 
-
+#include <ctkVTKObject.h>
 
 // LongPETCTStudySlider Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
 
-class vtkMRMLNode;
+class vtkMRMLLongPETCTReportNode;
 
 class qSlicerLongPETCTStudySliderWidgetPrivate;
 
@@ -40,18 +40,21 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySliderWidget
   : public QWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
 
 public:
   typedef QWidget Superclass;
   qSlicerLongPETCTStudySliderWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTStudySliderWidget();
 
+  Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  vtkMRMLLongPETCTReportNode* reportNode();
 
 signals:
   void sliderValueChanged(int value);
 
 public slots:
-  void update(vtkMRMLNode* node);
+  void updateView();
 
 protected slots:
 
