@@ -59,12 +59,11 @@ public:
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxReport();
 
-
 public slots:
   void updateView();
 
 protected slots:
-  void reportNodeChanged(vtkMRMLNode* node);
+  void selectionChanged(vtkMRMLNode* node);
 
 protected:
   QScopedPointer<qSlicerLongPETCTReportSelectionWidgetPrivate> d_ptr;

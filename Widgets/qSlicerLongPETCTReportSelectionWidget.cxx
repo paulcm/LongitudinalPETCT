@@ -84,8 +84,7 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
   this->MRMLNodeComboBoxReport->setRemoveEnabled(false);
   this->MRMLNodeComboBoxReport->setRenameEnabled(true);
 
-  QObject::connect( this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(reportNodeChanged(vtkMRMLNode*)) );
-
+  QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(selectionChanged(vtkMRMLNode*)) );
 }
 
 
@@ -114,16 +113,6 @@ qSlicerLongPETCTReportSelectionWidget
 qSlicerLongPETCTReportSelectionWidget
 ::~qSlicerLongPETCTReportSelectionWidget()
 {
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTReportSelectionWidget
-::reportNodeChanged(vtkMRMLNode* node)
-{
-  Q_D(qSlicerLongPETCTReportSelectionWidget);
-
-  d->ReportNode = d->currentSelectedReportNode();
-  this->updateView();
 }
 
 //-----------------------------------------------------------------------------
@@ -164,6 +153,8 @@ void qSlicerLongPETCTReportSelectionWidget::setReportNode(vtkSmartPointer<vtkMRM
   qvtkReconnect(d->ReportNode.GetPointer(), vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
   d->ReportNode = reportNode;
 
+  this->updateView();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -175,7 +166,7 @@ void qSlicerLongPETCTReportSelectionWidget
   Q_ASSERT(d->LabelDoBInfo);
   Q_ASSERT(d->LabelSexInfo);
 
-  if(d->ReportNode.GetPointer() != NULL)
+  if(d->ReportNode != NULL)
     {
         d->LabelNameInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientName"));
         QDate dob = QDate::fromString(QString(d->ReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
@@ -190,3 +181,12 @@ void qSlicerLongPETCTReportSelectionWidget
         d->LabelSexInfo->setText(noText);
     }
 }
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportSelectionWidget
+::selectionChanged(vtkMRMLNode* node)
+{
+    vtkSmartPointer<vtkMRMLLongPETCTReportNode> reportNode = vtkMRMLLongPETCTReportNode::SafeDownCast(node);
+    this->setReportNode(reportNode);
+}
+
