@@ -98,7 +98,7 @@ qSlicerLongPETCTStudySelectionWidgetPrivate::addRowToTableForStudy(vtkSmartPoint
   Q_Q(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(this->Table);
 
-  QCheckBox* studyIDCheckBox = new QCheckBox();
+  QCheckBox* studyIDCheckBox = new QCheckBox(q);
   studyIDCheckBox->setChecked(study->GetSelected());
 
   QString studyID = study->GetAttribute("DICOM.StudyID");
@@ -188,7 +188,7 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
   this->SliderOpacityPow->setMaximum(3.0); //this->SpinBoxOpacityPow->minimum());
   this->SliderOpacityPow->setSingleStep(0.1); //this->SpinBoxOpacityPow->singleStep());
 
-  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int,int)) );
+  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int)) );
 
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
   //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), q, SIGNAL(gpuRenderingToggled(bool)) );
@@ -234,19 +234,17 @@ void qSlicerLongPETCTStudySelectionWidget
   if(d->ReportNode.GetPointer() == NULL)
     return;
 
+  d->deselectTableAll();
 
   for(int i=0; i < d->ReportNode->GetStudiesCount(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetStudy(i);
       d->addRowToTableForStudy(study);
-
-      qvtkReconnect(study.GetPointer(), vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
-
     }
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row, int column)
+void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->Table);
@@ -275,10 +273,9 @@ void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
   Q_D(qSlicerLongPETCTStudySelectionWidget);
   Q_ASSERT(d->Table);
 
-  std::cout << "STUDY CHECKBOX CLICKED 1" << std::endl;
   QCheckBox* sender =  qobject_cast<QCheckBox*>(QObject::sender());
-  std::cout << "STUDY CHECKBOX CLICKED 1" << std::endl;
-  //d->deselectTableAll();
+
+  d->deselectTableAll();
 
 
   for(int i=0; i < d->ListStudyCheckBoxes.size(); ++i)
@@ -287,19 +284,18 @@ void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
         {
           if(selected)
             {
-              d->selectTableRow(i, true);
+              //d->selectTableRow(i, true);
               emit studySelected(i);
             }
           else
             {
-              d->selectTableRow(i, false);
+              //d->selectTableRow(i, false);
               emit studyDeselected(i);
             }
           break;
         }
     }
 
-  std::cout << "STUDY CHECKBOX CLICKED" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -390,12 +386,13 @@ void qSlicerLongPETCTStudySelectionWidget::setReportNode(vtkMRMLLongPETCTReportN
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
 
-  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkMRMLLongPETCTReportNode::StudiesChangedEvent, this, SLOT(updateView()) );
+  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
   d->ReportNode = reportNode;
 
   this->updateView();
 }
 
+//-----------------------------------------------------------------------------
 vtkMRMLLongPETCTReportNode* qSlicerLongPETCTStudySelectionWidget::reportNode()
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);

@@ -79,7 +79,7 @@ signals:
 
 protected slots:
     void studyCheckBoxClicked(bool selected);
-    void tableCellClicked(int row, int column);
+    void tableCellClicked(int row);
 
 protected:
   QScopedPointer<qSlicerLongPETCTStudySelectionWidgetPrivate> d_ptr;
