@@ -138,7 +138,7 @@ qMRMLNodeComboBox* qSlicerLongPETCTFindingSelectionWidget::mrmlNodeComboBoxFindi
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTFindingSelectionWidget
-::update(vtkMRMLNode* node)
+::updateView()
 {
   //Q_D(qSlicerLongPETCTFindingSelectionWidget);
 }

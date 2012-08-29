@@ -47,7 +47,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
 
 
 public slots:
-  void update(vtkMRMLNode* node);
+  void updateView();
 
 public:
   typedef QWidget Superclass;
