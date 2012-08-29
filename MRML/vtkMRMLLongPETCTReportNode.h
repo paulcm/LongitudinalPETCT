@@ -39,24 +39,20 @@
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
 
 #include "vtkMRMLLongPETCTFindingNode.h"
+#include <vtkSmartPointer.h>
 
 class vtkMRMLLongPETCTStudyNode;
 class vector;
 class string;
 class vtkMRMLColorNode;
 
+
+class vtkEventForwarderCommand;
+
 /// \ingroup Slicer_QtModules_LongPETCTReportNode
 class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : public vtkMRMLNode
 {
   public:   
-
-  enum
-  {
-    StudiesChangedEvent,
-    SelectedStudiesChangedEvent,
-    FindingsChangedEvent,
-    FindingTypesChangedEvent
-  };
 
   static vtkMRMLLongPETCTReportNode *New();
   vtkTypeMacro(vtkMRMLLongPETCTReportNode,vtkMRMLNode);
@@ -125,7 +121,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   int GetIndexOfFindingTypeName(const std::string& typeName);
   int GetIndexOfFindingColorID(int colorID);
 
-  void DeleteFinding(vtkMRMLLongPETCTFindingNode* finding);
+  void RemoveFinding(vtkMRMLLongPETCTFindingNode* finding);
 
 protected:
   vtkMRMLLongPETCTReportNode();
@@ -140,6 +136,9 @@ protected:
   vtkMRMLLongPETCTFindingNode* UserSelectedFinding;
 
   std::vector< vtkMRMLLongPETCTFindingNode::FindingType > FindingTypes;
+
+  vtkSmartPointer<vtkEventForwarderCommand> studyModifiedForwarder;
+  vtkSmartPointer<vtkEventForwarderCommand> findingModifiedForwarder;
 
 };
 

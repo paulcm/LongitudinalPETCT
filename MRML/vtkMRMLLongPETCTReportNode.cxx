@@ -23,7 +23,11 @@ Version:   $Revision: 1.2 $
 
 #include "vtkMRMLLongPETCTFindingNode.h"
 #include <vtkMRMLColorNode.h>
+#include <vtkCallbackCommand.h>
 // STD includes
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
+#include <vtkEventForwarderCommand.h>
 
 #include <cassert>
 
@@ -52,6 +56,12 @@ void vtkMRMLLongPETCTReportNode::Initialize()
 
     this->UserSelectedStudy = NULL;
     this->UserSelectedFinding = NULL;
+
+    this->studyModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
+    studyModifiedForwarder->SetTarget(this);
+    this->findingModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
+    findingModifiedForwarder->SetTarget(this);
+
 
     if (vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.empty())
     {
@@ -139,10 +149,10 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 }
 
 
+
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 {
-  int disabledModify = this->StartModify();
 
   std::string studyDate = study->GetAttribute("DICOM.StudyDate");
   std::string studyTime = study->GetAttribute("DICOM.StudyTime");
@@ -161,11 +171,13 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
           break;
     }
 
+
+  if(studyModifiedForwarder != NULL)
+    study->AddObserver(vtkCommand::ModifiedEvent,this->studyModifiedForwarder);
+
   Studies.insert(Studies.begin()+i, study);
 
-  this->EndModify(disabledModify);
-
-  this->InvokeEvent(vtkMRMLLongPETCTReportNode::StudiesChangedEvent);
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
 
   return static_cast<int>(i);
 }
@@ -173,13 +185,13 @@ int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::AddFinding(vtkMRMLLongPETCTFindingNode* finding)
 {
-  int disabledModify = this->StartModify();
+  if(findingModifiedForwarder != NULL)
+    finding->AddObserver(vtkCommand::ModifiedEvent,this->findingModifiedForwarder);
 
   this->Findings.push_back(finding);
 
-  this->EndModify(disabledModify);
 
-  this->InvokeEvent(vtkMRMLLongPETCTReportNode::FindingsChangedEvent);
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
 
@@ -379,18 +391,14 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfFindingTypeName(const std::string& typ
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType type)
 {
-  int disabledModify = this->StartModify();
-
   int indexOfName = this->GetIndexOfFindingTypeName(type.first);
   int indexOfColor = this->GetIndexOfFindingColorID(type.second);
 
   if(indexOfName == -1 && indexOfName == indexOfColor )
     {
       this->FindingTypes.push_back(type);
-      this->InvokeEvent(FindingTypesChangedEvent);
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
     }
-
-  this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
@@ -402,7 +410,7 @@ void vtkMRMLLongPETCTReportNode::RemoveFindingType(unsigned int index)
   if(index >= vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size() && index < this->FindingTypes.size())
     {
       this->FindingTypes.erase(this->FindingTypes.begin()+index);
-      this->InvokeEvent(FindingTypesChangedEvent);
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
     }
 
   this->EndModify(disabledModify);
@@ -419,7 +427,7 @@ void vtkMRMLLongPETCTReportNode::SetFindingTypeColorID(const std::string& typeNa
     this->FindingTypes.at(index).second = newColorID;
 
   this->EndModify(disabledModify);
-  this->InvokeEvent(FindingTypesChangedEvent);
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
 //----------------------------------------------------------------------------
@@ -438,15 +446,43 @@ std::pair<std::string,int> vtkMRMLLongPETCTReportNode::GetFindingType(int index)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::DeleteFinding(vtkMRMLLongPETCTFindingNode* finding)
+void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* finding)
 {
   int disabledModify = this->StartModify();
 
   int index = this->GetIndexOfFinding(finding);
 
   if(index >= 0 && index < this->GetFindingsCount())
-    this->Findings.erase(this->Findings.begin()+index);
+    {
+      std::cout << "FINDINGS SIZE BEFORE ERASE" << this->GetFindingsCount() << std::endl;
+      std::cout << "FINDING PTR BEFORE ERASE" << finding << std::endl;
+      std::cout << "FINDING REF COUNT BEFORE ERASE" << finding->GetReferenceCount() << std::endl;
 
-  this->EndModify(disabledModify);
-  this->InvokeEvent(FindingsChangedEvent);
+      this->Findings.erase(this->Findings.begin()+index);
+
+      std::cout << "FINDINGS SIZE AFTER ERASE" << this->GetFindingsCount() << std::endl;
+      std::cout << "FINDING PTR AFTER ERASE" << finding << std::endl;
+      std::cout << "FINDING REF COUNT AFTER ERASE" << finding->GetReferenceCount() << std::endl;
+
+
+//      std::cout << "FINDING REF COUNT BEFORE DELETE" << finding->GetReferenceCount() << std::endl;
+//
+//      finding->Delete();
+//
+//      std::cout << "FINDING REF COUNT AFTER DELETE" << finding->GetReferenceCount() << std::endl;
+
+
+      std::cout << "USER SELECTED FINDING PTR BEFORE REASSIGN" << this->GetUserSelectedFinding() << std::endl;
+
+      if(this->GetFindingsCount() > 0 && index > 0)
+        this->SetUserSelectedFinding(this->GetFinding(index-1));
+      else
+        this->SetUserSelectedFinding(NULL);
+
+      std::cout << "USER SELECTED FINDING PTR AFTER REASSIGN" << this->GetUserSelectedFinding() << std::endl;
+
+    }
+
+  this->EndModify(disabledModify); // Setting of new UserSelectedFinding will call Modified()
+ // this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
