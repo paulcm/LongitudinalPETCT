@@ -136,13 +136,22 @@ bool vtkSlicerLongPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* 
   vtkNew<vtkMatrix4x4> referenceIJKToRAS;
   referenceIJKToRAS->DeepCopy(originalIJKToRAS.GetPointer());
 
+
   char* scanOrder =
       const_cast<char*>(vtkMRMLVolumeNode::ComputeScanOrderFromIJKToRAS(
           referenceIJKToRAS.GetPointer()));
-  bool center = vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,
+
+  bool center =vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,
       referenceVolume->GetSpacing(),
       referenceVolume->GetImageData()->GetDimensions(), true,
       referenceIJKToRAS.GetPointer());
+
+  if (!center)
+    {
+      vtkDebugMacro(
+          "vtkSlicerLongPETCTLogic: Centering of reference volume failed!");
+      return false;
+    }
 
   double translation[3];
   translation[0] = referenceIJKToRAS->GetElement(0, 3)
