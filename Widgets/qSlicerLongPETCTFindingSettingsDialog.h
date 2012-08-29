@@ -45,7 +45,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSettingsDi
 {
   Q_OBJECT
   QVTK_OBJECT
-  Q_PROPERTY(bool applied READ applied WRITE setApplied)
+
   Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
   Q_PROPERTY(int colorID READ colorID WRITE setColorID)
   Q_PROPERTY(QString typeName READ typeName WRITE setTypeName)
@@ -64,25 +64,17 @@ public:
   QString typeName();
   void setTypeName(const QString& typeName);
 
-  bool applied();
-  void setApplied(bool applied);
-
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
 
-
-
 public slots:
   void updateView();
-  virtual void show();
 
 protected slots:
-  void applyClicked();
   void colorSelectionButtonClicked();
   void addTypeButtonClicked();
   void removeTypeButtonClicked();
   void selectionChanged(int);
-
 
 protected:
   QScopedPointer<qSlicerLongPETCTFindingSettingsDialogPrivate> d_ptr;
