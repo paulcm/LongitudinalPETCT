@@ -89,9 +89,4 @@ void vtkMRMLLongPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
   Superclass::PrintSelf(os,indent);
 }
 
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTStudyNode::SetSelectedWithoutModified(bool selected)
-{
-  this->Selected = selected;
-}
 

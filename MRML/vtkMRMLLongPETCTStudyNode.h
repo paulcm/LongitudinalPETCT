@@ -51,6 +51,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
 {
   public:   
 
+
   static vtkMRMLLongPETCTStudyNode *New();
   vtkTypeMacro(vtkMRMLLongPETCTStudyNode,vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent);
@@ -78,8 +79,6 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkGetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
 
   vtkBooleanMacro(Selected, int);
-
-  void SetSelectedWithoutModified(bool selected);
 
   void Initialize();
 
