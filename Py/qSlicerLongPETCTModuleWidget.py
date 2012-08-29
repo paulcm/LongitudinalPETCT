@@ -116,6 +116,7 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
     self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
     self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
+    self.findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
     
     findingsLayout.addWidget(self.findingSelectionWidget)
     
@@ -129,12 +130,14 @@ class qSlicerLongPETCTModuleWidget:
     
     # Add Study Slider
     self.studySliderWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
+    self.studySliderWidget.setReportNode(self.reportSelector.currentNode())
     self.layout.addWidget(self.studySliderWidget)
     self.studySliderWidget.connect('sliderValueChanged(int)',self.onSliderWidgetValueChanged)
     
 
     # Add Report Table
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
+    self.reportTableWidget.setReportNode(self.reportSelector.currentNode())
     self.layout.addWidget(self.reportTableWidget) 
 
 
@@ -151,8 +154,6 @@ class qSlicerLongPETCTModuleWidget:
         studyIdx = currentReport.GetIndexOfStudy(currentSelectedStudy)
         self.studySelectionWidget.selectStudyInRow(studyIdx)
       
-        self.reportTableWidget.setReportNode(currentReport)
-        self.studySliderWidget.update(currentReport)
              
         self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
       else:
@@ -165,10 +166,9 @@ class qSlicerLongPETCTModuleWidget:
     if currentReport:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
-        selectedStudy.SetSelectedWithoutModified(True) # no need for update StudySelection widget here
+        selectedStudy.SetSelected(True)
         currentReport.SetUserSelectedStudy(selectedStudy)
-        
-        self.onUpdateSliderAndTableWidgets(currentReport)        
+           
         
         petID = ""
         ctID = ""
@@ -216,7 +216,8 @@ class qSlicerLongPETCTModuleWidget:
           
         #viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
         
-        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())     
+        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
+        self.studySelectionWidget.selectStudyInRow(idx)       
         
         if viewNode:
             viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified)
@@ -227,12 +228,14 @@ class qSlicerLongPETCTModuleWidget:
         self.enableFindingsCollapsibleButton(True)
       else:
         self.enableFindingsCollapsibleButton(False)  
-        
 
+            
+      
+      
   def onStudyDeselected(self, idx):
     currentReport = self.reportSelector.currentNode()
     if currentReport:        
-      currentReport.GetStudy(idx).SetSelectedWithoutModified(False)# no need for update StudySelection widget here
+      currentReport.GetStudy(idx).SetSelected(False)
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       currentReport.SetUserSelectedStudy(lastSelectedStudy)
       
@@ -241,23 +244,25 @@ class qSlicerLongPETCTModuleWidget:
       else:
         self.onUpdateVolumeRendering(None)
       
-      self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())
-      self.onUpdateSliderAndTableWidgets(currentReport)     
+      self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())   
       
       if currentReport.GetUserSelectedStudy():
         self.enableFindingsCollapsibleButton(True)
       else:
-        self.enableFindingsCollapsibleButton(False)    
+        self.enableFindingsCollapsibleButton(False)        
+   
       
       
   def onCurrentReportChanged(self, reportNode):
     self.logic.SetSelectedReportNode = reportNode
+    self.studySliderWidget.setReportNode(reportNode)
+    self.reportTableWidget.setReportNode(reportNode)
+    
     if reportNode:
-          
+ 
       self.enableStudiesCollapsibleButton(True)
 
       self.studySelectionWidget.setReportNode(reportNode)
-      self.studySliderWidget.update(reportNode)
       self.reportTableWidget.setReportNode(reportNode)
       
       if reportNode.GetUserSelectedStudy():
@@ -290,9 +295,6 @@ class qSlicerLongPETCTModuleWidget:
     self.SetBgFgVolumes(ctID, petID)
 
 
-  def onUpdateSliderAndTableWidgets(self, reportNode):
-    self.studySliderWidget.update(reportNode)
-    self.reportTableWidget.setReportNode(reportNode)
 
 
   def onUpdateVolumeRendering(self, volumeNode):
@@ -449,36 +451,38 @@ class qSlicerLongPETCTModuleWidget:
   
   
   def onShowFindingSettingsDialog(self, findingNode):
-    applied = False
-    currentReport = self.reportSelector.currentNode()
-    if currentReport:
-      currentReport.SetUserSelectedFinding(findingNode)
-      dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
-      dialog.setReportNode(currentReport)
-      dialog.exec_()
+          
+    accepted = False
+
+    if findingNode:
+      currentReport = self.reportSelector.currentNode()
+      if currentReport:
+        currentReport.SetUserSelectedFinding(findingNode)
+        dialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog(self.parent)
+        dialog.setReportNode(currentReport)
+        result = dialog.exec_()
       
-      if dialog.property('applied'):
-        findingNode.SetName(dialog.property('findingName'))
-        findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
-        
-      applied =  dialog.property('applied')
+        if result == qt.QDialog.Accepted:
+          name = dialog.property('findingName')
+          if name:
+            findingNode.SetName(dialog.property('findingName'))
+          findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
+          accepted = True
     
-    return applied    
+    return accepted    
     
   def onFindingNodeChanged(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
       currentReport.SetUserSelectedFinding(findingNode)
     
-    self.reportTableWidget.setReportNode(currentReport)
     
   
-  def onFindingNodeToBeDeleted(self, findingNode):
+  def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
-      currentReport.DeleteFinding(findingNode)
-    
-    self.reportTableWidget.setReportNode(currentReport)        
+      currentReport.RemoveFinding(findingNode)
+           
     
     
     #if currentReport:
@@ -513,6 +517,7 @@ class qSlicerLongPETCTModuleWidget:
         self.studySelectionWidget.setProperty('rockView',True)
       else:
         self.studySelectionWidget.setProperty('rockView',False)
+              
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
