@@ -29,6 +29,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkMRMLLongPETCTReportNode.h>
 
+#include <ctkVTKObject.h>
+
 class qSlicerLongPETCTReportTableWidgetPrivate;
 
 class vtkMRMLNode;
@@ -40,19 +42,24 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTReportTableWidget
   : public QTableWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
 
 public:
   typedef QTableWidget Superclass;
   qSlicerLongPETCTReportTableWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTReportTableWidget();
 
+  Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  vtkMRMLLongPETCTReportNode* reportNode();
+
 
 public slots:
-  void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  void updateView();
 
 protected slots:
   void selectStudyColumn(int index);
   void selectFindingRow(int index);
+
 
 
 protected:

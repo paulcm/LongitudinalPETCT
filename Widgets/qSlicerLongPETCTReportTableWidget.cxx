@@ -45,6 +45,7 @@ public:
   virtual ~qSlicerLongPETCTReportTableWidgetPrivate();
   virtual void setupUi(qSlicerLongPETCTReportTableWidget*);
 
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
 };
 
@@ -52,7 +53,7 @@ public:
 qSlicerLongPETCTReportTableWidgetPrivate
 ::qSlicerLongPETCTReportTableWidgetPrivate(
   qSlicerLongPETCTReportTableWidget& object)
-  : q_ptr(&object)
+  : q_ptr(&object), ReportNode(NULL)
 {
 }
 
@@ -67,7 +68,6 @@ qSlicerLongPETCTReportTableWidgetPrivate
 void qSlicerLongPETCTReportTableWidgetPrivate
 ::setupUi(qSlicerLongPETCTReportTableWidget* widget)
 {
-  Q_Q(qSlicerLongPETCTReportTableWidget);
   widget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
 }
 
@@ -90,29 +90,53 @@ qSlicerLongPETCTReportTableWidget
 {
 }
 
-
 //-----------------------------------------------------------------------------
-void qSlicerLongPETCTReportTableWidget
-::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
+void qSlicerLongPETCTReportTableWidget::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
 {
   Q_D(qSlicerLongPETCTReportTableWidget);
 
-  if(reportNode == NULL)
-    return;
+  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
+
+  d->ReportNode = reportNode;
+
+  this->updateView();
+}
+
+
+//-----------------------------------------------------------------------------
+vtkMRMLLongPETCTReportNode* qSlicerLongPETCTReportTableWidget::reportNode()
+{
+  Q_D(qSlicerLongPETCTReportTableWidget);
+
+  return d->ReportNode.GetPointer();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidget
+::updateView()
+{
+  Q_D(qSlicerLongPETCTReportTableWidget);
+
 
   this->clear();
   while (this->columnCount() > 0)
-    this->removeColumn(this->columnCount()-1);
-  while (this->rowCount() > 0)
-    this->removeRow(this->rowCount()-1);
+     this->removeColumn(this->columnCount()-1);
+   while (this->rowCount() > 0)
+     this->removeRow(this->rowCount()-1);
+
+  if(d->ReportNode == NULL)
+    return;
 
 
-  int selectedStudies = reportNode->GetSelectedStudiesCount();
-  int findings = reportNode->GetFindingsCount();
+  int selectedStudies = d->ReportNode->GetSelectedStudiesCount();
+  int findings = d->ReportNode->GetFindingsCount();
+
+  std::cout << "STUDIES " << selectedStudies << std::endl;
+  std::cout << "FINDINGS " << findings << std::endl;
 
   for(int i=0; i < selectedStudies; ++i)
     {
-      vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = reportNode->GetSelectedStudy(i);
+      vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(i);
 
       if(study.GetPointer() == NULL)
         return;
@@ -120,6 +144,8 @@ void qSlicerLongPETCTReportTableWidget
       int newColumnID = this->columnCount();
 
       this->insertColumn(newColumnID);
+
+      std::cout << "INSERTED COLUMN "  << std::endl;
 
       QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
       QString itemText = date.toString(Qt::SystemLocaleShortDate);
@@ -132,11 +158,13 @@ void qSlicerLongPETCTReportTableWidget
       item->setToolTip(itemText);
       this->setHorizontalHeaderItem(newColumnID, item);
 
+      std::cout << "INSERTED HEADER "  << std::endl;
+
      }
 
   for(int i=0; i < findings; ++i)
       {
-        vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = reportNode->GetFinding(i);
+        vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = d->ReportNode->GetFinding(i);
 
         if(finding.GetPointer() == NULL)
           return;
@@ -156,16 +184,19 @@ void qSlicerLongPETCTReportTableWidget
         this->setVerticalHeaderItem(newRowID, item);
       }
 
-  int lastSelectedStudyIndex = reportNode->GetIndexOfSelectedStudy(reportNode->GetUserSelectedStudy());
-  int lastSelectedFindingIndex = reportNode->GetIndexOfFinding(reportNode->GetUserSelectedFinding());
 
-  if(lastSelectedStudyIndex >= 0 && lastSelectedStudyIndex < reportNode->GetSelectedStudiesCount())
+  int lastSelectedStudyIndex = d->ReportNode->GetIndexOfSelectedStudy(d->ReportNode->GetUserSelectedStudy());
+
+  if(lastSelectedStudyIndex >= 0 && lastSelectedStudyIndex < d->ReportNode->GetSelectedStudiesCount())
     this->selectStudyColumn(lastSelectedStudyIndex);
 
-  if(lastSelectedFindingIndex >= 0 && lastSelectedFindingIndex < reportNode->GetFindingsCount())
+  int lastSelectedFindingIndex = d->ReportNode->GetIndexOfFinding(d->ReportNode->GetUserSelectedFinding());
+
+  if(lastSelectedFindingIndex >= 0 && lastSelectedFindingIndex < d->ReportNode->GetFindingsCount())
     this->selectFindingRow(lastSelectedFindingIndex);
 
   this->arrangeColumns();
+
 }
 
 
