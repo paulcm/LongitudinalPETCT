@@ -87,6 +87,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
 
   FindingType GetFindingType();
   void SetFindingType(FindingType type);
+  void SetFindingType(std::string typeName, int colorID);
+
 
 protected:
   vtkMRMLLongPETCTFindingNode();
@@ -94,7 +96,6 @@ protected:
   vtkMRMLLongPETCTFindingNode(const vtkMRMLLongPETCTFindingNode&);
   void operator=(const vtkMRMLLongPETCTFindingNode&);
 
-  void SetFindingType(std::string typeName, int colorID);
 
   std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLAnnotationROINode*> StudyAndROIMap;
   std::map<vtkMRMLAnnotationROINode*,vtkMRMLScalarVolumeNode*> ROIandLabelsMap;

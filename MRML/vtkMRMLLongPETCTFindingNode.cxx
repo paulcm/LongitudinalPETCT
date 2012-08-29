@@ -91,6 +91,8 @@ void vtkMRMLLongPETCTFindingNode::PrintSelf(ostream& os, vtkIndent indent)
 bool vtkMRMLLongPETCTFindingNode::AddROIForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLAnnotationROINode* roi)
 {
     return this->StudyAndROIMap.insert(std::make_pair(study,roi)).second; // "second" points to bool in std::pair return value of insert
+
+    this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
 //----------------------------------------------------------------------------
@@ -99,7 +101,10 @@ vtkMRMLAnnotationROINode* vtkMRMLLongPETCTFindingNode::RemoveROIForStudy(const v
   vtkMRMLAnnotationROINode* roiToRemove = this->GetROIForStudy(study);
 
   if( roiToRemove != NULL)
+    {
       this->StudyAndROIMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
+    }
 
   return roiToRemove;
 }
@@ -171,7 +176,7 @@ void vtkMRMLLongPETCTFindingNode::SetFindingType(std::string typeName, int color
 
 bool vtkMRMLLongPETCTFindingNode::IsDefaultFindingType(FindingType type)
 {
-  for(int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
+  for(unsigned int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
     {
       FindingType tempFindingType = vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.at(i);
       if(tempFindingType.first.compare(type.first) == 0 && tempFindingType.second == type.second)
