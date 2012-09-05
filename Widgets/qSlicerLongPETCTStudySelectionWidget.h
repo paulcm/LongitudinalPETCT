@@ -43,6 +43,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySelectionWid
   Q_PROPERTY(bool gpuRendering READ gpuRendering WRITE setGPURendering)
   Q_PROPERTY(bool rockView READ rockView WRITE setRockView)
   Q_PROPERTY(double opacityPow READ opacityPow WRITE setOpacityPow)
+  Q_PROPERTY(bool centeredSelected READ centeredSelected WRITE setCenteredSelected)
 
 
 public:
@@ -54,11 +55,14 @@ public:
   bool gpuRendering();
   bool rockView();
   double opacityPow();
+  bool centeredSelected();
+
 
   void setVolumeRendering(bool checked);
   void setGPURendering(bool checked);
   void setRockView(bool checked);
   void setOpacityPow(double opacityPow);
+  void setCenteredSelected(bool selected);
 
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
