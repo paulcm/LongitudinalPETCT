@@ -142,3 +142,27 @@ void qSlicerLongPETCTFindingSelectionWidget
 {
   //Q_D(qSlicerLongPETCTFindingSelectionWidget);
 }
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget
+::setSelectionEnabled(bool enabled)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->LabelSelectFinding);
+  Q_ASSERT(d->MRMLNodeComboBoxFinding);
+
+  d->LabelSelectFinding->setEnabled(enabled);
+  d->MRMLNodeComboBoxFinding->setEnabled(enabled);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTFindingSelectionWidget
+::selectionEnabled()
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->LabelSelectFinding);
+  Q_ASSERT(d->MRMLNodeComboBoxFinding);
+
+  return d->LabelSelectFinding->isEnabled() && d->MRMLNodeComboBoxFinding->isEnabled();
+}

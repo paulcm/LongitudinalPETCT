@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>525</width>
-    <height>503</height>
+    <width>313</width>
+    <height>42</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,11 +19,14 @@
    </property>
    <item>
     <layout class="QFormLayout" name="formLayout">
+     <property name="fieldGrowthPolicy">
+      <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+     </property>
      <property name="horizontalSpacing">
-      <number>12</number>
+      <number>8</number>
      </property>
      <item row="0" column="0">
-      <widget class="QLabel" name="LabelSelectReport">
+      <widget class="QLabel" name="LabelSelectFinding">
        <property name="text">
         <string>Select Finding:</string>
        </property>

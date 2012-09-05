@@ -43,6 +43,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
 {
   Q_OBJECT
   Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
+  Q_PROPERTY(bool selectionEnabled READ selectionEnabled WRITE setSelectionEnabled)
 
 
 
@@ -56,6 +57,9 @@ public:
 
   Q_INVOKABLE void setMRMLScene(vtkMRMLScene* mrmlScene);
   vtkMRMLScene* mrmlScene();
+
+  void setSelectionEnabled(bool enabled);
+  bool selectionEnabled();
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxFinding();
 
