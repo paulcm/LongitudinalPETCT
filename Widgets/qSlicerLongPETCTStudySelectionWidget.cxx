@@ -183,10 +183,15 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
   this->WidgetButtonsPanel->setVisible(false);
 
   //this->SliderOpacityPow->setOrientation(Qt::Vertical);
-  this->SliderOpacityPow->setValue(2.0); //this->SpinBoxOpacityPow->value());
-  this->SliderOpacityPow->setMinimum(1.0); //this->SpinBoxOpacityPow->minimum());
-  this->SliderOpacityPow->setMaximum(3.0); //this->SpinBoxOpacityPow->minimum());
-  this->SliderOpacityPow->setSingleStep(0.1); //this->SpinBoxOpacityPow->singleStep());
+  double opcValue = this->SpinBoxOpacityPow->value();
+  double min = this->SpinBoxOpacityPow->minimum();
+  double max = this->SpinBoxOpacityPow->maximum();
+  double step = this->SpinBoxOpacityPow->singleStep();
+
+  this->SliderOpacityPow->setValue(opcValue); //this->SpinBoxOpacityPow->value());
+  this->SliderOpacityPow->setMinimum(min); //this->SpinBoxOpacityPow->minimum());
+  this->SliderOpacityPow->setMaximum(max); //this->SpinBoxOpacityPow->minimum());
+  this->SliderOpacityPow->setSingleStep(step); //this->SpinBoxOpacityPow->singleStep());
 
   QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int)) );
 
@@ -398,6 +403,24 @@ vtkMRMLLongPETCTReportNode* qSlicerLongPETCTStudySelectionWidget::reportNode()
   Q_D(qSlicerLongPETCTStudySelectionWidget);
 
   return d->ReportNode.GetPointer();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTStudySelectionWidget::centeredSelected()
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->CheckBoxStudiesCentered);
+
+  return d->CheckBoxStudiesCentered->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::setCenteredSelected(bool selected)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  Q_ASSERT(d->CheckBoxStudiesCentered);
+
+  return d->CheckBoxStudiesCentered->setChecked(selected);
 }
 
 
