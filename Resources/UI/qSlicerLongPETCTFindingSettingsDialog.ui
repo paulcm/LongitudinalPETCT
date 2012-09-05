@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>427</width>
-    <height>192</height>
+    <height>185</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -36,7 +36,7 @@
     <number>10</number>
    </property>
    <item>
-    <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1,2,0">
+    <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0,0">
      <property name="spacing">
       <number>8</number>
      </property>
@@ -99,7 +99,64 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0" colspan="4">
+     <item row="4" column="3">
+      <widget class="QPushButton" name="ButtonAddType">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongPETCTModule.qrc">
+         <normaloff>:/Icons/add.png</normaloff>:/Icons/add.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="LabelAddType">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string>Add New Type:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QPushButton" name="ButtonColor">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string>Select Color</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QLineEdit" name="LineEditTypeName">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="placeholderText">
+        <string>New type's name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="4">
+      <widget class="Line" name="HorizontalLine">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="4">
       <widget class="ctkExpandButton" name="ExpandButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -118,64 +175,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="3">
-      <widget class="QPushButton" name="ButtonAddType">
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../qSlicerLongPETCTModule.qrc">
-         <normaloff>:/Icons/add.png</normaloff>:/Icons/add.png</iconset>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="LabelAddType">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
-       <property name="text">
-        <string>Add New Type:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="ButtonColor">
-       <property name="styleSheet">
-        <string notr="true">color: #777</string>
-       </property>
-       <property name="text">
-        <string>Select Color</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QLineEdit" name="LineEditTypeName">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="placeholderText">
-        <string>New type's name</string>
-       </property>
-      </widget>
-     </item>
     </layout>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="ButtonBox">
@@ -306,6 +306,22 @@
     <hint type="destinationlabel">
      <x>370</x>
      <y>127</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ExpandButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>HorizontalLine</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>210</x>
+     <y>139</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>87</y>
     </hint>
    </hints>
   </connection>
