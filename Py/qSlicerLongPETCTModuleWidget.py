@@ -1,5 +1,6 @@
 from __main__ import vtk, qt, ctk, slicer
 
+from Editor import EditorWidget
 
 #
 # qSlicerLongPETCTModuleWidget
@@ -23,6 +24,11 @@ class qSlicerLongPETCTModuleWidget:
   def setup(self): 
     # Instantiate and connect widgets ...
 
+    # switch to FourUp Layout
+    lm = slicer.app.layoutManager()
+    if lm:
+      lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
+    
     # reload button
     # (use this during development, but remove it when delivering
     #  your module to users)
@@ -44,6 +50,14 @@ class qSlicerLongPETCTModuleWidget:
     self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
     self.findingsCollapsibleButton = ctk.ctkCollapsibleButton()
     
+    # put all collapsible buttons in a button group so that only one can be uncollapsed at a time
+    self.collapsibleButtonsGroup = qt.QButtonGroup()
+    self.collapsibleButtonsGroup.addButton(self.reportsCollapsibleButton)
+    self.collapsibleButtonsGroup.addButton(self.studiesCollapsibleButton)
+    self.collapsibleButtonsGroup.addButton(self.findingsCollapsibleButton)
+    
+    # show Report selection widget
+    self.reportsCollapsibleButton.setProperty('collapsed',False)
     
     # Reports Collapsible button
     self.reportsCollapsibleButton.text = "Report Selection"
@@ -120,6 +134,28 @@ class qSlicerLongPETCTModuleWidget:
     
     findingsLayout.addWidget(self.findingSelectionWidget)
     
+    # Editor widget in Findings
+    editorWidgetParent = slicer.qMRMLWidget()
+    editorWidgetParent.setLayout(qt.QVBoxLayout())
+    editorWidgetParent.setMRMLScene(slicer.mrmlScene)
+    self.editorWidget = EditorWidget(parent=editorWidgetParent,showVolumesFrame=False)
+    self.editorWidget.setup()
+    self.editorWidget.toolsColor.frame.setVisible(False)
+    
+    self.editorWidget.editLabelMapsFrame.setText("Edit Label Map")
+    self.editorWidget.editLabelMapsFrame.setEnabled(False)
+    
+    if self.reportSelector.currentNode():
+      if self.reportSelector.currentNode().GetUserSelectedFinding():
+        self.editorWidget.editLabelMapsFrame.setEnabled(True)
+        
+        
+    
+    
+    self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
+    
+    self.findingSelectionWidget.layout().addWidget(editorWidgetParent)
+
     
     # Add vertical spacer
     self.layout.addStretch()
@@ -139,6 +175,11 @@ class qSlicerLongPETCTModuleWidget:
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
     self.reportTableWidget.setReportNode(self.reportSelector.currentNode())
     self.layout.addWidget(self.reportTableWidget) 
+
+  def onEditorCollapsed(self,collapsed):
+    self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)
+    
+    self.onEnterEditMode( collapsed != True )
 
 
   def onSliderWidgetValueChanged(self, value):
@@ -364,10 +405,11 @@ class qSlicerLongPETCTModuleWidget:
           if self.studySelectionWidget.property('rockView'):
             viewNode.SetAnimationMode(viewNode.Rock)
       else:
-        self.vrDisplayNode.VisibilityOff()  
+        self.vrDisplayNode.VisibilityOff()
+        self.onStudySelectionWidgetRockView(False)  
         if viewNode:
           viewNode.SetAxisLabelsVisible(0)
-          #viewNode.SetAnimationMode(viewNode.Off)
+          
         
     
     
@@ -437,18 +479,110 @@ class qSlicerLongPETCTModuleWidget:
       self.findingsCollapsibleButton.setProperty('enabled',False)           
 
 
+  def onEnterEditMode(self,enter):
+    currentReport = self.reportSelector.currentNode()
+    
+    if (currentReport != None) & (enter == True):
+      self.editorWidget.toolsColor.colorNode = currentReport.GetColorNode()
+      volNode = currentReport.GetUserSelectedStudy().GetPETVolumeNode()
+          
+      volLogic  = slicer.modules.volumes.logic()
+      mergeNode = volLogic.CreateLabelVolume(volNode,'MergeVolume')
+      mergeNode.SetHideFromEditors(False)          
+      slicer.mrmlScene.AddNode(mergeNode)
+        
+        
+      currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
+          
+      self.SetBgFgVolumes(volNode.GetID(), None, mergeNode.GetID())
+
+      self.editorWidget.editUtil.setLabel(currentReport.GetUserSelectedFinding().GetFindingColorID())
+      self.editorWidget.setMasterNode(volNode)
+      self.editorWidget.setMergeNode(mergeNode)
+    
+    elif enter == False:
+      self.editorWidget.exit()
+    
+
   def onFindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     applied = self.onShowFindingSettingsDialog(findingNode)
   
-    if applied:
+    if (currentReport != None) & (currentReport.GetUserSelectedStudy() != None) & (applied == True):
       currentReport.AddFinding(findingNode)
+      
+      roi = slicer.vtkMRMLAnnotationROINode()
+      roi.SetScene(slicer.mrmlScene)
+      roi.SetHideFromEditors(False)
+      roi.SetName(findingNode.GetName()+"_ROI")
+        
+          
+      if slicer.mrmlScene:
+        slicer.mrmlScene.AddNode(roi)
+        findingNode.SetSegmentationROI(roi)
+          
+        #if self.vrDisplayNode:
+          #self.vrDisplayNode.SetAndObserveROINodeID(self.roi.GetID())
+          #self.vrDisplayNode.SetCroppingEnabled(True)
+      
+      currentStudy = currentReport.GetUserSelectedStudy()
+      
+      if currentStudy:
+        centered = self.studySelectionWidget.property('centeredSelected')
+        if centered:
+          self.centerROIonVolumeNode(roi,currentStudy.GetPETVolumeNode(), currentStudy.GetCenteringTransform())
+        else:
+          self.centerROIonVolumeNode(roi,currentStudy.GetPETVolumeNode(), None)
+             
     else:
       scene = findingNode.GetScene()
       if scene:
         scene.RemoveNode(findingNode)  
     
-  
+    
+  def centerROIonVolumeNode(self, roi, volume, centerTransform):
+    
+    red = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
+    yellow = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow")
+    green = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")
+    roiXYZ = [0,0,0]
+    
+    orientation = "Sagittal"
+    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
+      if red.GetOrientationString() == orientation:
+        roiXYZ[0] = red.GetSliceOffset()
+      elif yellow.GetOrientationString() == orientation:
+        roiXYZ[0] = yellow.GetSliceOffset() 
+      elif green.GetOrientationString() == orientation:
+        roiXYZ[0] = green.GetSliceOffset() 
+    
+    orientation = "Coronal"
+    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
+      if red.GetOrientationString() == orientation:
+        roiXYZ[1] = red.GetSliceOffset()
+      elif yellow.GetOrientationString() == orientation:
+        roiXYZ[1] = yellow.GetSliceOffset() 
+      elif green.GetOrientationString() == orientation:
+        roiXYZ[1] = green.GetSliceOffset() 
+        
+    orientation = "Axial"
+    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
+      if red.GetOrientationString() == orientation:
+        roiXYZ[2] = red.GetSliceOffset()
+      elif yellow.GetOrientationString() == orientation:
+        roiXYZ[2] = yellow.GetSliceOffset() 
+      elif green.GetOrientationString() == orientation:
+        roiXYZ[2] = green.GetSliceOffset()   
+    
+    if centerTransform:
+      roi.SetAndObserveTransformNodeID(centerTransform.GetID())   
+      centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
+      roi.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
+    else:
+      roi.SetXYZ(roiXYZ)
+    
+    roi.SetRadiusXYZ(50,50,50)        
+    
   
   def onShowFindingSettingsDialog(self, findingNode):
           
@@ -473,9 +607,14 @@ class qSlicerLongPETCTModuleWidget:
     
   def onFindingNodeChanged(self, findingNode):
     currentReport = self.reportSelector.currentNode()
+    #self.editorWidget.exit()
     if currentReport:
-      currentReport.SetUserSelectedFinding(findingNode)
+      currentReport.SetUserSelectedFinding(findingNode)   
     
+    if findingNode:
+      self.editorWidget.editLabelMapsFrame.setEnabled(True) 
+    else:
+      self.editorWidget.editLabelMapsFrame.setEnabled(False)
     
   
   def onFindingNodeToBeRemoved(self, findingNode):
@@ -489,15 +628,16 @@ class qSlicerLongPETCTModuleWidget:
      # currentReport.SetUserSelectedFinding(findingNode)
      # findingSettingsDialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog()
      # findingSettingsDialog.update(currentReport)
-     # findingSettingsDialog.execDialog()
-
+     # findingSettingsDialog.execDialog()    
+    
            
   @staticmethod
-  def SetBgFgVolumes(bg, fg):
+  def SetBgFgVolumes(bg = None, fg = None, lbl = None):
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
     selectionNode.SetReferenceActiveVolumeID(bg)
     selectionNode.SetReferenceSecondaryVolumeID(fg)
+    selectionNode.SetReferenceActiveLabelVolumeID(lbl)
     appLogic.PropagateVolumeSelection()
     
     
