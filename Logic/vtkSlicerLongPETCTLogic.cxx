@@ -173,8 +173,12 @@ bool vtkSlicerLongPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* 
   vtkNew<vtkMRMLLinearTransformNode> translationTransform;
   translationTransform->ApplyTransformMatrix(
       translationMatrix.GetPointer());
-  translationTransform->SetHideFromEditors(true);
+  translationTransform->SetHideFromEditors(false);
 
+  std::string pre = "CenteringTransform_";
+  std::string tag = study->GetAttribute("DICOM.StudyDate");
+  std::string name(pre+tag);
+  translationTransform->SetName(name.c_str());
 
   scene->AddNode(translationTransform.GetPointer());
 
@@ -261,17 +265,17 @@ void vtkSlicerLongPETCTLogic::RegisterNodes()
   if(!this->GetMRMLScene())
     return;
 
-  vtkMRMLLongPETCTReportNode *reportNode = vtkMRMLLongPETCTReportNode::New();
-  this->GetMRMLScene()->RegisterNodeClass(reportNode);
-  reportNode->Delete();
+  vtkNew<vtkMRMLLongPETCTReportNode> reportNode;
+  this->GetMRMLScene()->RegisterNodeClass(reportNode.GetPointer());
 
-  vtkMRMLLongPETCTStudyNode *studyNode = vtkMRMLLongPETCTStudyNode::New();
-  this->GetMRMLScene()->RegisterNodeClass(studyNode);
-  studyNode->Delete();
+  vtkNew<vtkMRMLLongPETCTStudyNode> studyNode;
+  this->GetMRMLScene()->RegisterNodeClass(studyNode.GetPointer());
 
-  vtkMRMLLongPETCTFindingNode *findingNode = vtkMRMLLongPETCTFindingNode::New();
-  this->GetMRMLScene()->RegisterNodeClass(findingNode);
-  findingNode->Delete();
+  vtkNew<vtkMRMLLongPETCTFindingNode> findingNode;
+  this->GetMRMLScene()->RegisterNodeClass(findingNode.GetPointer());
+
+  vtkNew<vtkMRMLLongPETCTSegmentationNode> segmentationNode;
+  this->GetMRMLScene()->RegisterNodeClass(segmentationNode.GetPointer());
 
  // assert(this->GetMRMLScene() != 0);
 }
