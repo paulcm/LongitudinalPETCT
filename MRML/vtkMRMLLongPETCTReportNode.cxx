@@ -22,13 +22,13 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTStudyNode.h"
 
 #include "vtkMRMLLongPETCTFindingNode.h"
-#include <vtkMRMLColorNode.h>
 #include <vtkCallbackCommand.h>
 // STD includes
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 #include <vtkEventForwarderCommand.h>
-
+#include <vtkMRMLColorNode.h>
+#include <vtkMRMLColorTableNode.h>
 #include <cassert>
 
 
@@ -50,35 +50,21 @@ vtkMRMLLongPETCTReportNode::~vtkMRMLLongPETCTReportNode()
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::Initialize()
 {
-    int disabledModify = this->StartModify();
 
+    int disabledModify = this->StartModify();
     this->SetHideFromEditors(false);
 
     this->UserSelectedStudy = NULL;
     this->UserSelectedFinding = NULL;
+    this->FindingTypesColorTable = NULL;
 
     this->studyModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
     studyModifiedForwarder->SetTarget(this);
     this->findingModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
     findingModifiedForwarder->SetTarget(this);
 
-
-    if (vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.empty())
-    {
-      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
-          std::make_pair("Tumor", 7));
-      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
-          std::make_pair("Lymph Node", 23));
-      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
-          std::make_pair("Liver", 216));
-      vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.push_back(
-          std::make_pair("Aorta", 191));
-    }
-
-    for(unsigned int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
-      {
-        this->AddFindingType(vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.at(i));
-      }
+    // TODO dynamically
+    this->NumberOfDefaultFindingTypes = 5;
 
     this->EndModify(disabledModify);
 }
@@ -341,109 +327,74 @@ const vtkMRMLColorNode* vtkMRMLLongPETCTReportNode::GetColorNode()
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetFindingTypeColorID(const std::string& typeName)
 {
-  int index = this->GetIndexOfFindingTypeName(typeName);
-
-  if(index == -1)
-    return index;
-
-  return this->FindingTypes.at(index).second;
+  return this->FindingTypesColorTable->GetColorIndexByName(typeName.c_str());
 }
 
 //----------------------------------------------------------------------------
 std::string vtkMRMLLongPETCTReportNode::GetFindingTypeName(int colorID)
 {
-  int index = this->GetIndexOfFindingColorID(colorID);
-
-  if(index == -1)
-    {
-      std::string emptyString;
-      return emptyString;
-    }
-  return this->FindingTypes.at(index).first;
-}
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetIndexOfFindingColorID(int colorID)
-{
-  for(unsigned int i=0; i < this->FindingTypes.size(); ++i)
-    {
-      if(this->FindingTypes.at(i).second == colorID)
-        return static_cast<int>(i);
-    }
-
-  return -1;
-}
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetIndexOfFindingTypeName(const std::string& typeName)
-{
-  for(unsigned int i=0; i < this->FindingTypes.size(); ++i)
-    {
-      if(this->FindingTypes.at(i).first.compare(typeName) == 0)
-        return static_cast<int>(i);
-    }
-
-  return -1;
+  return this->FindingTypesColorTable->GetColorName(colorID);
 }
 
 
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType type)
+void vtkMRMLLongPETCTReportNode::AddFindingType(std::string name, double color[4])
 {
-  int indexOfName = this->GetIndexOfFindingTypeName(type.first);
-  int indexOfColor = this->GetIndexOfFindingColorID(type.second);
+  int size = this->FindingTypesColorTable->GetNumberOfColors();
+  this->FindingTypesColorTable->SetNumberOfColors(size+1);
 
-  if(indexOfName == -1 && indexOfName == indexOfColor )
-    {
-      this->FindingTypes.push_back(type);
-      this->InvokeEvent(vtkCommand::ModifiedEvent);
-    }
-}
+  this->FindingTypesColorTable->SetColor(size,name.c_str(),color[0],color[1],color[2],color[3]);
 
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::RemoveFindingType(unsigned int index)
-{
-  int disabledModify = this->StartModify();
-
-
-  if(index >= vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size() && index < this->FindingTypes.size())
-    {
-      this->FindingTypes.erase(this->FindingTypes.begin()+index);
-      this->InvokeEvent(vtkCommand::ModifiedEvent);
-    }
-
-  this->EndModify(disabledModify);
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::SetFindingTypeColorID(const std::string& typeName, int newColorID)
-{
-  int disabledModify = this->StartModify();
-
-  int index = this->GetIndexOfFindingTypeName(typeName);
-
-  if(index >= 0 && index < static_cast<int>(this->FindingTypes.size()))
-    this->FindingTypes.at(index).second = newColorID;
-
-  this->EndModify(disabledModify);
   this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
 //----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::RemoveFindingType(int index)
+{
+
+  if(index >= this->FindingTypesColorTable->GetNumberOfColors())
+    return;
+
+  vtkNew<vtkMRMLColorTableNode> workingCopy;
+  workingCopy->Copy(this->FindingTypesColorTable);
+
+  workingCopy->SetNumberOfColors(this->FindingTypesColorTable->GetNumberOfColors()-1);
+
+  int count = 0;
+
+  for(int i=0; i < this->FindingTypesColorTable->GetNumberOfColors(); ++i)
+    {
+      if( i == index)
+        continue;
+
+      const char* name = this->FindingTypesColorTable->GetColorName(i);
+
+      double color[4];
+      this->FindingTypesColorTable->GetColor(i,color);
+
+      workingCopy->SetColor(count++,name,color[0],color[1],color[2],color[3]);
+    }
+
+  this->FindingTypesColorTable->Copy(workingCopy.GetPointer());
+
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
+
+}
+
+
+//----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetFindingTypesCount()
 {
-  return this->FindingTypes.size();
+  return this->FindingTypesColorTable->GetNumberOfColors();
 }
 
 //----------------------------------------------------------------------------
-std::pair<std::string,int> vtkMRMLLongPETCTReportNode::GetFindingType(int index)
+int vtkMRMLLongPETCTReportNode::GetNumberOfDefaultFindingTypes()
 {
-  if(index >= 0 && index < static_cast<int>(this->FindingTypes.size()))
-    return this->FindingTypes.at(index);
-
-  return std::make_pair("None",-1);
+  return this->NumberOfDefaultFindingTypes;
 }
+
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* finding)

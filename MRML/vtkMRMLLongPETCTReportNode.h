@@ -45,6 +45,7 @@ class vtkMRMLLongPETCTStudyNode;
 class vector;
 class string;
 class vtkMRMLColorNode;
+class vtkMRMLColorTableNode;
 
 
 class vtkEventForwarderCommand;
@@ -105,23 +106,22 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   vtkGetMacro(UserSelectedFinding,vtkMRMLLongPETCTFindingNode*);
   vtkSetMacro(UserSelectedFinding,vtkMRMLLongPETCTFindingNode*);
 
+  vtkGetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
+  vtkSetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
+
+
   const vtkMRMLColorNode* GetColorNode();
 
   int GetFindingTypesCount();
-  void AddFindingType(vtkMRMLLongPETCTFindingNode::FindingType type);
-  void RemoveFindingType(unsigned int index);
+  void AddFindingType(std::string name, double color[4]);
+  void RemoveFindingType(int index);
 
   std::string GetFindingTypeName(int colorID);
   int GetFindingTypeColorID(const std::string& typeName);
 
-  std::pair<std::string,int> GetFindingType(int index);
-
-  void SetFindingTypeColorID(const std::string& typeName, int newColorID);
-
-  int GetIndexOfFindingTypeName(const std::string& typeName);
-  int GetIndexOfFindingColorID(int colorID);
-
   void RemoveFinding(vtkMRMLLongPETCTFindingNode* finding);
+
+  int GetNumberOfDefaultFindingTypes();
 
 protected:
   vtkMRMLLongPETCTReportNode();
@@ -135,10 +135,13 @@ protected:
   vtkMRMLLongPETCTStudyNode* UserSelectedStudy;
   vtkMRMLLongPETCTFindingNode* UserSelectedFinding;
 
-  std::vector< vtkMRMLLongPETCTFindingNode::FindingType > FindingTypes;
-
   vtkSmartPointer<vtkEventForwarderCommand> studyModifiedForwarder;
   vtkSmartPointer<vtkEventForwarderCommand> findingModifiedForwarder;
+
+  vtkMRMLColorTableNode* FindingTypesColorTable;
+
+private:
+  int NumberOfDefaultFindingTypes;
 
 };
 
