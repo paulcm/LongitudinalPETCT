@@ -43,6 +43,7 @@ class vector;
 class vtkMRMLLongPETCTStudyNode;
 class vtkMRMLAnnotationROINode;
 class vtkMRMLScalarVolumeNode;
+class vtkMRMLLongPETCTSegmentationNode;
 
 #include <vtkMRMLAnnotationROINode.h>
 #include <vtkNew.h>
@@ -51,12 +52,6 @@ class vtkMRMLScalarVolumeNode;
 class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : public vtkMRMLNode
 {
   public:   
-
-  typedef std::pair<std::string,int> FindingType;
-
-  static std::vector<FindingType> DefaultFindingTypes;
-  static bool IsDefaultFindingType(FindingType type);
-
 
   static vtkMRMLLongPETCTFindingNode *New();
   vtkTypeMacro(vtkMRMLLongPETCTFindingNode,vtkMRMLNode);
@@ -76,18 +71,20 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Finding";};
 
-  bool AddROIForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLAnnotationROINode* roi);
-  vtkMRMLAnnotationROINode* RemoveROIForStudy(const vtkMRMLLongPETCTStudyNode* study);
 
-  bool AddLabelMapForROI(vtkMRMLAnnotationROINode* roi, vtkMRMLScalarVolumeNode* labelMapVolume);
-  vtkMRMLScalarVolumeNode* RemoveLabelMapForROI(const vtkMRMLAnnotationROINode* roi);
+  bool AddSegmentationForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTSegmentationNode* segmentation);
+  vtkMRMLLongPETCTSegmentationNode* RemoveSegmentationForStudy(const vtkMRMLLongPETCTStudyNode* study);
 
-  vtkMRMLAnnotationROINode* GetROIForStudy(const vtkMRMLLongPETCTStudyNode* study);
-  vtkMRMLScalarVolumeNode* GetLabelMapVolumeForROI(const vtkMRMLAnnotationROINode* roi);
+  vtkMRMLLongPETCTSegmentationNode* GetSegmentationForStudy(const vtkMRMLLongPETCTStudyNode* study);
 
-  FindingType GetFindingType();
-  void SetFindingType(FindingType type);
-  void SetFindingType(std::string typeName, int colorID);
+  vtkGetMacro(TypeName, const char*);
+  vtkSetMacro(TypeName, const char*);
+
+  vtkGetMacro(ColorID, int);
+  vtkSetMacro(ColorID, int);
+
+  vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
+  vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
 
 protected:
@@ -96,11 +93,11 @@ protected:
   vtkMRMLLongPETCTFindingNode(const vtkMRMLLongPETCTFindingNode&);
   void operator=(const vtkMRMLLongPETCTFindingNode&);
 
+  std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLLongPETCTSegmentationNode*> StudyToSegmentationMap;
+  vtkMRMLAnnotationROINode* SegmentationROI;
 
-  std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLAnnotationROINode*> StudyAndROIMap;
-  std::map<vtkMRMLAnnotationROINode*,vtkMRMLScalarVolumeNode*> ROIandLabelsMap;
-
-  FindingType Type;
+  const char* TypeName;
+  int ColorID;
 
 };
 

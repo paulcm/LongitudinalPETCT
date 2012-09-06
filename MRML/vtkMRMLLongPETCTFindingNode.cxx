@@ -31,9 +31,6 @@ Version:   $Revision: 1.2 $
 // STD includes
 
 
-std::vector< vtkMRMLLongPETCTFindingNode::FindingType > vtkMRMLLongPETCTFindingNode::DefaultFindingTypes = std::vector< std::pair<std::string,int> >();
-
-
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 
@@ -41,8 +38,8 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->Type.first = "Tumor";
-  this->Type.second = 7;
+  this->TypeName = "Tumor";
+  this->ColorID = 0;
 
 }
 
@@ -87,103 +84,41 @@ void vtkMRMLLongPETCTFindingNode::PrintSelf(ostream& os, vtkIndent indent)
   Superclass::PrintSelf(os,indent);
 }
 
-//----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTFindingNode::AddROIForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLAnnotationROINode* roi)
-{
-    return this->StudyAndROIMap.insert(std::make_pair(study,roi)).second; // "second" points to bool in std::pair return value of insert
 
-    this->InvokeEvent(vtkCommand::ModifiedEvent);
+//----------------------------------------------------------------------------
+bool vtkMRMLLongPETCTFindingNode::AddSegmentationForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTSegmentationNode* segmentation)
+{
+  bool ok = this->StudyToSegmentationMap.insert(std::make_pair(study,segmentation)).second;
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
+
+  return ok;
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLAnnotationROINode* vtkMRMLLongPETCTFindingNode::RemoveROIForStudy(const vtkMRMLLongPETCTStudyNode* study)
+vtkMRMLLongPETCTSegmentationNode* vtkMRMLLongPETCTFindingNode::RemoveSegmentationForStudy(const vtkMRMLLongPETCTStudyNode* study)
 {
-  vtkMRMLAnnotationROINode* roiToRemove = this->GetROIForStudy(study);
+  vtkMRMLLongPETCTSegmentationNode* segmentationToRemove = this->GetSegmentationForStudy(study);
 
-  if( roiToRemove != NULL)
+  if( segmentationToRemove != NULL )
+    this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
+
+  return segmentationToRemove;
+}
+
+
+//----------------------------------------------------------------------------
+vtkMRMLLongPETCTSegmentationNode* vtkMRMLLongPETCTFindingNode::GetSegmentationForStudy(const vtkMRMLLongPETCTStudyNode* study)
+{
+  vtkMRMLLongPETCTSegmentationNode* segmentation = NULL;
+
+  if(this->StudyToSegmentationMap.find(const_cast<vtkMRMLLongPETCTStudyNode*>(study)) != this->StudyToSegmentationMap.end())
     {
-      this->StudyAndROIMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
-      this->InvokeEvent(vtkCommand::ModifiedEvent);
+      segmentation = this->StudyToSegmentationMap[const_cast<vtkMRMLLongPETCTStudyNode*>(study)];
     }
 
-  return roiToRemove;
+  return segmentation;
 }
 
 
-//----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTFindingNode::AddLabelMapForROI(vtkMRMLAnnotationROINode* roi, vtkMRMLScalarVolumeNode* labelMapVolume)
-{
-    return this->ROIandLabelsMap.insert(std::make_pair(roi,labelMapVolume)).second; // "second" points to bool in std::pair return value of insert
-}
-
-//----------------------------------------------------------------------------
-vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::RemoveLabelMapForROI(const vtkMRMLAnnotationROINode* roi)
-{
-  vtkMRMLScalarVolumeNode* labelMapVolumeToRemove = this->GetLabelMapVolumeForROI(roi);
-
-  if( labelMapVolumeToRemove != NULL )
-    this->ROIandLabelsMap.erase(const_cast<vtkMRMLAnnotationROINode*>(roi));
-
-  return labelMapVolumeToRemove;
-}
-
-
-
-//----------------------------------------------------------------------------
-vtkMRMLAnnotationROINode* vtkMRMLLongPETCTFindingNode::GetROIForStudy(const vtkMRMLLongPETCTStudyNode* study)
-{
-  vtkMRMLAnnotationROINode* roi = NULL;
-
-  if(this->StudyAndROIMap.find(const_cast<vtkMRMLLongPETCTStudyNode*>(study)) != this->StudyAndROIMap.end())
-    {
-        roi = this->StudyAndROIMap[const_cast<vtkMRMLLongPETCTStudyNode*>(study)];
-    }
-
-  return roi;
-}
-
-//----------------------------------------------------------------------------
-vtkMRMLScalarVolumeNode* vtkMRMLLongPETCTFindingNode::GetLabelMapVolumeForROI(const vtkMRMLAnnotationROINode* roi)
-{
-  vtkMRMLScalarVolumeNode* labelMapVolume = NULL;
-
-  if(this->ROIandLabelsMap.find(const_cast<vtkMRMLAnnotationROINode*>(roi)) != this->ROIandLabelsMap.end())
-    {
-      labelMapVolume = this->ROIandLabelsMap[const_cast<vtkMRMLAnnotationROINode*>(roi)];
-    }
-
-  return labelMapVolume;
-}
-
-//----------------------------------------------------------------------------
-vtkMRMLLongPETCTFindingNode::FindingType vtkMRMLLongPETCTFindingNode::GetFindingType()
-{
-  return this->Type;
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::SetFindingType(FindingType type)
-{
-  this->SetFindingType(type.first, type.second);
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongPETCTFindingNode::SetFindingType(std::string typeName, int colorID)
-{
-  this->Type.first = typeName;
-  this->Type.second = colorID;
-}
-
-bool vtkMRMLLongPETCTFindingNode::IsDefaultFindingType(FindingType type)
-{
-  for(unsigned int i=0; i < vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.size(); ++i)
-    {
-      FindingType tempFindingType = vtkMRMLLongPETCTFindingNode::DefaultFindingTypes.at(i);
-      if(tempFindingType.first.compare(type.first) == 0 && tempFindingType.second == type.second)
-        return true;
-    }
-
-  return false;
-}
 
 
