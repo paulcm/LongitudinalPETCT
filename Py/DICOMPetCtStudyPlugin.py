@@ -404,9 +404,11 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
       
       colorLogic = slicer.modules.colors.logic()
       defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
+      colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
       
       reportNode.SetAttribute('ColorNodeID',defaultColorNodeID)
-      
+      logic = slicer.modules.longpetct.logic()
+      reportNode.SetFindingTypesColorTable(logic.GetDefaultFindingTypesColorTable(colorNode))
         
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
