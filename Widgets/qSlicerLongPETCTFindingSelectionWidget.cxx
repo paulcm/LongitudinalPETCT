@@ -166,3 +166,14 @@ bool qSlicerLongPETCTFindingSelectionWidget
 
   return d->LabelSelectFinding->isEnabled() && d->MRMLNodeComboBoxFinding->isEnabled();
 }
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget
+::setEditorWidget(QWidget* editorWidget)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->FormLayout);
+
+  d->FormLayout->setWidget(1,QFormLayout::SpanningRole,editorWidget);
+}

@@ -62,6 +62,7 @@ public:
   bool selectionEnabled();
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxFinding();
+  Q_INVOKABLE void setEditorWidget(QWidget* editorWidget);
 
 signals:
   void FindingNodeAddedByUser(vtkMRMLNode* node);
