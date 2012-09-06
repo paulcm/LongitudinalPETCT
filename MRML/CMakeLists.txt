@@ -15,6 +15,8 @@ set(${KIT}_SRCS
   vtkMRML${MODULE_NAME}FindingNode.h
   vtkMRML${MODULE_NAME}ReportNode.cxx
   vtkMRML${MODULE_NAME}ReportNode.h
+  vtkMRML${MODULE_NAME}SegmentationNode.cxx
+  vtkMRML${MODULE_NAME}SegmentationNode.h
   )
 
 set(${KIT}_TARGET_LIBRARIES
