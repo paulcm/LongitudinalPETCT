@@ -38,10 +38,21 @@ class qSlicerLongPETCTModuleWidget:
     #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
+    self.tempObserverEditorTag = 0
 
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.vrDisplayNode = None
+
+    self.tempCroppedVol = slicer.vtkMRMLScalarVolumeNode()
+    self.tempCroppedVol.SetName("TempCroppedVolume")
+    self.tempCroppedVol.SetHideFromEditors(False)
+    slicer.mrmlScene.AddNode(self.tempCroppedVol)
+    
+    self.tempLabelVol = slicer.vtkMRMLScalarVolumeNode()
+    self.tempLabelVol.SetName("TempLabelVolume")
+    self.tempLabelVol.SetHideFromEditors(False)
+    slicer.mrmlScene.AddNode(self.tempLabelVol)
 
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
@@ -154,7 +165,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
     
-    self.findingSelectionWidget.layout().addWidget(editorWidgetParent)
+    self.findingSelectionWidget.setEditorWidget(editorWidgetParent)
 
     
     # Add vertical spacer
@@ -390,6 +401,7 @@ class qSlicerLongPETCTModuleWidget:
               if self.vrDisplayNode:
                 if self.vrDisplayNode.GetVolumePropertyNode():
                   self.vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
+                  self.vrDisplayNode.Modified()
                 
     
   
@@ -479,29 +491,62 @@ class qSlicerLongPETCTModuleWidget:
       self.findingsCollapsibleButton.setProperty('enabled',False)           
 
 
+  def onSegmentationROIModified(self, caller, event):
+    
+    currentReport = self.reportSelector.currentNode()
+      
+      
+    self.tempCroppedVol.Copy(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
+    self.tempCroppedVol.SetName("TempCroppedVolume") 
+    
+    cropLogic = slicer.modules.cropvolume.logic()
+    croppingROI = slicer.vtkMRMLAnnotationROINode()
+    croppingROI.Copy(currentReport.GetUserSelectedFinding().GetSegmentationROI())
+    croppingROI.SetAndObserveTransformNodeID(None)
+    cropLogic.CropVoxelBased(croppingROI,currentReport.GetUserSelectedStudy().GetPETVolumeNode(),self.tempCroppedVol)
+
+    volLogic  = slicer.modules.volumes.logic()    
+    
+    createdLabelVol = volLogic.CreateLabelVolume(slicer.mrmlScene, self.tempCroppedVol,'TempLabelVolume')
+    self.tempLabelVol.Copy(createdLabelVol)   
+    self.tempLabelVol.SetName("TempLabelVolume")
+    slicer.mrmlScene.RemoveNode(createdLabelVol)
+          
+    
+              
+    appLogic = slicer.app.applicationLogic()
+    selectionNode = appLogic.GetSelectionNode()
+    selectionNode.SetReferenceActiveVolumeID(self.tempCroppedVol.GetID())
+    selectionNode.SetReferenceSecondaryVolumeID(None)
+    selectionNode.SetReferenceActiveLabelVolumeID(self.tempLabelVol.GetID())
+    if caller == self:
+      appLogic.PropagateVolumeSelection()
+    
+
+    self.editorWidget.setMasterNode(self.tempCroppedVol) 
+    self.editorWidget.setMergeNode(self.tempLabelVol)      
+
   def onEnterEditMode(self,enter):
     currentReport = self.reportSelector.currentNode()
     
     if (currentReport != None) & (enter == True):
+      
+      self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
+         
       self.editorWidget.toolsColor.colorNode = currentReport.GetColorNode()
       volNode = currentReport.GetUserSelectedStudy().GetPETVolumeNode()
-          
-      volLogic  = slicer.modules.volumes.logic()
-      mergeNode = volLogic.CreateLabelVolume(volNode,'MergeVolume')
-      mergeNode.SetHideFromEditors(False)          
-      slicer.mrmlScene.AddNode(mergeNode)
-        
-        
-      currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
-          
-      self.SetBgFgVolumes(volNode.GetID(), None, mergeNode.GetID())
+      #currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
+      self.editorWidget.enter()
+      self.editorWidget.toolsColor.colorNode = currentReport.GetFindingTypesColorTable()
+      self.editorWidget.editUtil.setLabel(currentReport.GetUserSelectedFinding().GetColorID())
 
-      self.editorWidget.editUtil.setLabel(currentReport.GetUserSelectedFinding().GetFindingColorID())
-      self.editorWidget.setMasterNode(volNode)
-      self.editorWidget.setMergeNode(mergeNode)
+      self.tempObserverEditorTag = currentReport.GetUserSelectedFinding().GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)
+      
     
     elif enter == False:
       self.editorWidget.exit()
+      currentReport.GetUserSelectedFinding().GetSegmentationROI().RemoveObserver(self.tempObserverEditorTag)
+      self.SetBgFgVolumes(currentReport.GetUserSelectedStudy().GetCTVolumeNode().GetID(), currentReport.GetUserSelectedStudy().GetPETVolumeNode().GetID(), None)
     
 
   def onFindingNodeCreated(self, findingNode):
@@ -514,7 +559,7 @@ class qSlicerLongPETCTModuleWidget:
       roi = slicer.vtkMRMLAnnotationROINode()
       roi.SetScene(slicer.mrmlScene)
       roi.SetHideFromEditors(False)
-      roi.SetName(findingNode.GetName()+"_ROI")
+      roi.SetName(findingNode.GetName()+"_ROI")   
         
           
       if slicer.mrmlScene:
@@ -533,11 +578,12 @@ class qSlicerLongPETCTModuleWidget:
           self.centerROIonVolumeNode(roi,currentStudy.GetPETVolumeNode(), currentStudy.GetCenteringTransform())
         else:
           self.centerROIonVolumeNode(roi,currentStudy.GetPETVolumeNode(), None)
-             
+               
     else:
       scene = findingNode.GetScene()
       if scene:
         scene.RemoveNode(findingNode)  
+    
     
     
   def centerROIonVolumeNode(self, roi, volume, centerTransform):
@@ -600,7 +646,10 @@ class qSlicerLongPETCTModuleWidget:
           name = dialog.property('findingName')
           if name:
             findingNode.SetName(dialog.property('findingName'))
-          findingNode.SetFindingType(dialog.property('typeName'),dialog.property('colorID'))
+          findingNode.SetTypeName(dialog.property('typeName'))
+          findingNode.SetColorID(dialog.property('colorID'))
+          print "TYPENAME:" + findingNode.GetTypeName()
+          print "COLORID:" + str(findingNode.GetColorID())
           accepted = True
     
     return accepted    
