@@ -28,6 +28,7 @@
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
 #include <vtkMRMLLongPETCTFindingNode.h>
+#include <vtkMRMLLongPETCTSegmentationNode.h>
 
 // STD includes
 #include <cassert>
@@ -54,6 +55,8 @@
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLLinearTransformNode.h>
+#include <vtkMRMLColorTableNode.h>
+#include <vtkMRMLColorLogic.h>
 
 const QString vtkSlicerLongPETCTLogic::DATABASEDIRECTORY = "DatabaseDirectory";
 const QString vtkSlicerLongPETCTLogic::DATABASECONNECTIONNAME = "LongPETCT";
@@ -265,15 +268,19 @@ void vtkSlicerLongPETCTLogic::RegisterNodes()
   if(!this->GetMRMLScene())
     return;
 
+  std::cout << "REPORT" << std::endl;
   vtkNew<vtkMRMLLongPETCTReportNode> reportNode;
   this->GetMRMLScene()->RegisterNodeClass(reportNode.GetPointer());
 
+  std::cout << "STUDY" << std::endl;
   vtkNew<vtkMRMLLongPETCTStudyNode> studyNode;
   this->GetMRMLScene()->RegisterNodeClass(studyNode.GetPointer());
 
+  std::cout << "FINDING" << std::endl;
   vtkNew<vtkMRMLLongPETCTFindingNode> findingNode;
   this->GetMRMLScene()->RegisterNodeClass(findingNode.GetPointer());
 
+  std::cout << "SEGMENTATION" << std::endl;
   vtkNew<vtkMRMLLongPETCTSegmentationNode> segmentationNode;
   this->GetMRMLScene()->RegisterNodeClass(segmentationNode.GetPointer());
 
@@ -355,14 +362,6 @@ bool vtkSlicerLongPETCTLogic::IsRequiredDataInDICOMDatabase(const QString& patie
 //---------------------------------------------------------------------------
 void vtkSlicerLongPETCTLogic::Initialize()
 {
-  static bool initialized = false;
-
-  if(!initialized)
-    {
-      this->DICOMDatabase = NULL;
-
-      initialized = true; // so initialization can be perfomed only once
-    }
 }
 
 //---------------------------------------------------------------------------
@@ -529,7 +528,41 @@ void vtkSlicerLongPETCTLogic::AddReportNode(vtkMRMLLongPETCTReportNode* reportNo
 {
   if(reportNode)
     ReportNodes.push_back(reportNode);
-
-  std::cout << "//////////// ReportNode added to logic" << std::endl;
 //  std::cout << "Report Node Name: " << reportNode->GetName() << " Studies Count: " << reportNode->GetStudyCount() << std::endl;
+}
+
+//---------------------------------------------------------------------------
+vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable(vtkMRMLColorNode* defaultEditorColorNode)
+{
+  if(this->GetMRMLScene() == NULL)
+    return NULL;
+
+  vtkNew<vtkMRMLColorTableNode> colorTable;
+
+  colorTable->SetType(vtkMRMLColorTableNode::User);
+  colorTable->SetNumberOfColors(5);
+
+  double color[4];
+
+  defaultEditorColorNode->GetColor(7,color);
+  colorTable->SetColor(0,"Tumor",color[0],color[1],color[2],color[3]);
+
+  defaultEditorColorNode->GetColor(23,color);
+  colorTable->SetColor(1,"Lymph Node",color[0],color[1],color[2],color[3]);
+
+  defaultEditorColorNode->GetColor(216,color);
+  colorTable->SetColor(2,"Liver",color[0],color[1],color[2],color[3]);
+
+  defaultEditorColorNode->GetColor(105,color);
+  colorTable->SetColor(3,"Cerebellum",color[0],color[1],color[2],color[3]);
+
+  defaultEditorColorNode->GetColor(191,color);
+  colorTable->SetColor(4,"Aorta",color[0],color[1],color[2],color[3]);
+
+  colorTable->SetName("LongitudinalPETCT ");
+  colorTable->SetScene(this->GetMRMLScene());
+  colorTable->SetHideFromEditors(false);
+  this->GetMRMLScene()->AddNode(colorTable.GetPointer());
+
+  return colorTable.GetPointer();
 }

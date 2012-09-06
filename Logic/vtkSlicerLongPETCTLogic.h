@@ -45,6 +45,8 @@ class ctkDICOMDatabase;
 class vtkMRMLLongPETCTReportNode;
 class vtkMRMLLongPETCTStudyNode;
 class vtkMRMLVolumeNode;
+class vtkMRMLColorNode;
+class vtkMRMLColorTableNode;
 class vtkMRMLScene;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -96,6 +98,8 @@ public:
   vtkGetMacro(SelectedReportNode, vtkMRMLLongPETCTReportNode*);
   vtkSetMacro(SelectedReportNode, vtkMRMLLongPETCTReportNode*);
 
+
+  vtkMRMLColorTableNode* GetDefaultFindingTypesColorTable(vtkMRMLColorNode* defaultEditorColorNode);
 
 protected:
 
