@@ -1,7 +1,7 @@
 from __main__ import vtk, qt, ctk, slicer
 
 from Editor import EditorWidget
-
+from SlicerLongPETCTModuleViewHelper import SlicerLongPETCTModuleViewHelper as ViewHelper
 #
 # qSlicerLongPETCTModuleWidget
 #
@@ -53,7 +53,10 @@ class qSlicerLongPETCTModuleWidget:
     self.tempLabelVol.SetName("TempLabelVolume")
     self.tempLabelVol.SetHideFromEditors(False)
     slicer.mrmlScene.AddNode(self.tempLabelVol)
-
+    
+    self.selectedPETWindow = 0.0
+    self.selectedPETLevel = 0.0
+    
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
     # instanciate all collapsible buttons
@@ -339,14 +342,17 @@ class qSlicerLongPETCTModuleWidget:
     ctID = ""
       
     if userSelectedStudy:
-      if userSelectedStudy.GetPETVolumeNode():
-        petID = userSelectedStudy.GetPETVolumeNode().GetID()
+      petVolume = userSelectedStudy.GetPETVolumeNode()
+      if petVolume:
+        petID = petVolume.GetID()
+        petDisplayNode = petVolume.GetScalarVolumeDisplayNode()
+        if petDisplayNode:
+          self.selectedPETWindow = petDisplayNode.GetWindow()
+          self.selectedPETLevel = petDisplayNode.GetLevel()
       if userSelectedStudy.GetCTVolumeNode():
         ctID = userSelectedStudy.GetCTVolumeNode().GetID()
 
-    self.SetBgFgVolumes(ctID, petID)
-
-
+    ViewHelper.SetBgFgLblVolumes(ctID,petID)
 
 
   def onUpdateVolumeRendering(self, volumeNode):
@@ -458,7 +464,7 @@ class qSlicerLongPETCTModuleWidget:
       
       if currentStudy:
         self.onUpdateVolumeRendering(currentStudy.GetPETVolumeNode())
-        self.SetBgFgVolumes(currentStudy.GetCTVolumeNode().GetID(), currentStudy.GetPETVolumeNode().GetID())     
+        ViewHelper.SetBgFgLblVolumes(currentStudy.GetCTVolumeNode().GetID(), currentStudy.GetPETVolumeNode().GetID())     
         
   def onStudySelectionWidgetGPUVolumeRendering(self, useGPU):
   
@@ -512,15 +518,10 @@ class qSlicerLongPETCTModuleWidget:
     self.tempLabelVol.SetName("TempLabelVolume")
     slicer.mrmlScene.RemoveNode(createdLabelVol)
           
+    propagate = caller == self
     
-              
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceActiveVolumeID(self.tempCroppedVol.GetID())
-    selectionNode.SetReferenceSecondaryVolumeID(None)
-    selectionNode.SetReferenceActiveLabelVolumeID(self.tempLabelVol.GetID())
-    if caller == self:
-      appLogic.PropagateVolumeSelection()
+    ViewHelper.SetBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(), propagate)  
+    
     
 
     self.editorWidget.setMasterNode(self.tempCroppedVol) 
@@ -532,7 +533,8 @@ class qSlicerLongPETCTModuleWidget:
     if (currentReport != None) & (enter == True):
       
       self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
-         
+      ViewHelper.SetBackgroundWindowLevel(self.selectedPETWindow,self.selectedPETLevel)
+      
       self.editorWidget.toolsColor.colorNode = currentReport.GetColorNode()
       volNode = currentReport.GetUserSelectedStudy().GetPETVolumeNode()
       #currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
@@ -540,14 +542,35 @@ class qSlicerLongPETCTModuleWidget:
       self.editorWidget.toolsColor.colorNode = currentReport.GetFindingTypesColorTable()
       self.editorWidget.editUtil.setLabel(currentReport.GetUserSelectedFinding().GetColorID())
 
-      self.tempObserverEditorTag = currentReport.GetUserSelectedFinding().GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)
+      self.tempObserverEditorTag = currentReport.GetUserSelectedFinding().GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified, False)
       
     
     elif enter == False:
       self.editorWidget.exit()
       currentReport.GetUserSelectedFinding().GetSegmentationROI().RemoveObserver(self.tempObserverEditorTag)
-      self.SetBgFgVolumes(currentReport.GetUserSelectedStudy().GetCTVolumeNode().GetID(), currentReport.GetUserSelectedStudy().GetPETVolumeNode().GetID(), None)
-    
+      ViewHelper.SetBgFgLblVolumes(currentReport.GetUserSelectedStudy().GetCTVolumeNode().GetID(), currentReport.GetUserSelectedStudy().GetPETVolumeNode().GetID(),None, True)
+      ViewHelper.SetForegroundWindowLevel(self.selectedPETWindow,self.selectedPETLevel)
+     
+      currentFinding = currentReport.GetUserSelectedFinding()
+      if currentFinding:
+        findingROI = currentFinding.GetSegmentationROI()
+        if findingROI:
+          roiXYZ = [0.,0.,0.]
+          findingROI.GetXYZ(roiXYZ)
+     
+          if (self.studySelectionWidget.property('centeredSelected') == True) & (currentReport.GetUserSelectedFinding != None):
+            centeringMatrix = vtk.vtkMatrix4x4()
+            currentStudy = currentReport.GetUserSelectedStudy() 
+            if currentStudy:
+              centeringTransform = currentStudy.GetCenteringTransform()
+              if centeringTransform:
+                centeringTransform.GetMatrixTransformToWorld(centeringMatrix)
+             
+                roiXYZ = [roiXYZ[0],roiXYZ[1],roiXYZ[2],1.0]
+                centeringMatrix.MultiplyPoint(roiXYZ,roiXYZ)
+                roiXYZ = [roiXYZ[0],roiXYZ[1],roiXYZ[2]]
+          
+          ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
 
   def onFindingNodeCreated(self, findingNode):
     currentReport = self.reportSelector.currentNode()
@@ -588,37 +611,7 @@ class qSlicerLongPETCTModuleWidget:
     
   def centerROIonVolumeNode(self, roi, volume, centerTransform):
     
-    red = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
-    yellow = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow")
-    green = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")
-    roiXYZ = [0,0,0]
-    
-    orientation = "Sagittal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[0] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[0] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[0] = green.GetSliceOffset() 
-    
-    orientation = "Coronal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[1] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[1] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[1] = green.GetSliceOffset() 
-        
-    orientation = "Axial"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[2] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[2] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[2] = green.GetSliceOffset()   
+    roiXYZ = ViewHelper.getSliceNodesCrossingPositionRAS()
     
     if centerTransform:
       roi.SetAndObserveTransformNodeID(centerTransform.GetID())   
@@ -678,16 +671,7 @@ class qSlicerLongPETCTModuleWidget:
      # findingSettingsDialog = slicer.modulewidget.qSlicerLongPETCTFindingSettingsDialog()
      # findingSettingsDialog.update(currentReport)
      # findingSettingsDialog.execDialog()    
-    
-           
-  @staticmethod
-  def SetBgFgVolumes(bg = None, fg = None, lbl = None):
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceActiveVolumeID(bg)
-    selectionNode.SetReferenceSecondaryVolumeID(fg)
-    selectionNode.SetReferenceActiveLabelVolumeID(lbl)
-    appLogic.PropagateVolumeSelection()
+     
     
     
     #red = slicer.util.getNode('vtkMRMLSliceNodeRed')
