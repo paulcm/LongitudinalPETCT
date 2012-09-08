@@ -1,6 +1,7 @@
 
 SET(KIT_PYTHON_SCRIPTS
   qSlicerLongPETCTModuleWidget.py
+  SlicerLongPETCTModuleViewHelper.py
   DICOMPetCtStudyPlugin.py
   )
 
