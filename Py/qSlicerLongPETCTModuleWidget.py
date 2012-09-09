@@ -238,8 +238,14 @@ class qSlicerLongPETCTModuleWidget:
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(0)
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetWindowLevel(350,40)
+          
         
         if firstDisplayPet:
+          petDisplayNode = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode()
+          if petDisplayNode:
+            petDisplayNode.SetAutoWindowLevel(0)
+            petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
+            
           selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat");
           compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
           for compositeNode in compositeNodes.values():
@@ -345,10 +351,6 @@ class qSlicerLongPETCTModuleWidget:
       petVolume = userSelectedStudy.GetPETVolumeNode()
       if petVolume:
         petID = petVolume.GetID()
-        petDisplayNode = petVolume.GetScalarVolumeDisplayNode()
-        if petDisplayNode:
-          self.selectedPETWindow = petDisplayNode.GetWindow()
-          self.selectedPETLevel = petDisplayNode.GetLevel()
       if userSelectedStudy.GetCTVolumeNode():
         ctID = userSelectedStudy.GetCTVolumeNode().GetID()
 
@@ -499,9 +501,9 @@ class qSlicerLongPETCTModuleWidget:
 
   def onSegmentationROIModified(self, caller, event):
     
+    
     currentReport = self.reportSelector.currentNode()
-      
-      
+           
     self.tempCroppedVol.Copy(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
     self.tempCroppedVol.SetName("TempCroppedVolume") 
     
@@ -517,39 +519,51 @@ class qSlicerLongPETCTModuleWidget:
     self.tempLabelVol.Copy(createdLabelVol)   
     self.tempLabelVol.SetName("TempLabelVolume")
     slicer.mrmlScene.RemoveNode(createdLabelVol)
-          
+       
     propagate = caller == self
+        
+    ViewHelper.SetBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(),propagate)  
+       
     
-    ViewHelper.SetBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(), propagate)  
-    
-    
-
     self.editorWidget.setMasterNode(self.tempCroppedVol) 
-    self.editorWidget.setMergeNode(self.tempLabelVol)      
+    self.editorWidget.setMergeNode(self.tempLabelVol)     
 
+  
   def onEnterEditMode(self,enter):
     currentReport = self.reportSelector.currentNode()
-    
+    tempWindow = -1
+    tempLevel = -1
+        
     if (currentReport != None) & (enter == True):
       
-      self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
-      ViewHelper.SetBackgroundWindowLevel(self.selectedPETWindow,self.selectedPETLevel)
+      tempWindow = self.selectedPETWindow
+      tempLevel = self.selectedPETLevel
       
-      self.editorWidget.toolsColor.colorNode = currentReport.GetColorNode()
-      volNode = currentReport.GetUserSelectedStudy().GetPETVolumeNode()
-      #currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
+      print "TEMPWINDOW/LEVEL: " + str(tempWindow) + "/" + str(tempLevel)
+      
+      self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
+      
+        
+      if (tempWindow != -1) & (tempLevel != -1):
+        ViewHelper.SetBackgroundWindowLevel(tempWindow,tempLevel)
+      
       self.editorWidget.enter()
       self.editorWidget.toolsColor.colorNode = currentReport.GetFindingTypesColorTable()
+      volNode = currentReport.GetUserSelectedStudy().GetPETVolumeNode()
+      #currentReport.GetUserSelectedFinding().AddLabelMapForStudy(currentReport.GetUserSelectedStudy(),mergeNode)
+      
       self.editorWidget.editUtil.setLabel(currentReport.GetUserSelectedFinding().GetColorID())
 
-      self.tempObserverEditorTag = currentReport.GetUserSelectedFinding().GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified, False)
+      self.tempObserverEditorTag = currentReport.GetUserSelectedFinding().GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)
       
     
     elif enter == False:
       self.editorWidget.exit()
       currentReport.GetUserSelectedFinding().GetSegmentationROI().RemoveObserver(self.tempObserverEditorTag)
       ViewHelper.SetBgFgLblVolumes(currentReport.GetUserSelectedStudy().GetCTVolumeNode().GetID(), currentReport.GetUserSelectedStudy().GetPETVolumeNode().GetID(),None, True)
-      ViewHelper.SetForegroundWindowLevel(self.selectedPETWindow,self.selectedPETLevel)
+      if (tempWindow != -1) & (tempLevel != -1):
+        ViewHelper.SetForegroundWindowLevel(tempWindow,tempLevel)
+        print "TEMPWINDOW/LEVEL: " + str(tempWindow) + "/" + str(tempLevel)
      
       currentFinding = currentReport.GetUserSelectedFinding()
       if currentFinding:
@@ -682,6 +696,12 @@ class qSlicerLongPETCTModuleWidget:
     #print "VOLSP" + str(volumeNode.GetSpacing())
     #print "PRESSP" + str(red.GetPrescribedSliceSpacing())
 
+  def petDisplayNodeModified(self, caller, event):
+    petDisplayNode = caller
+    if petDisplayNode:
+      self.selectedPETWindow = petDisplayNode.GetWindow()
+      self.selectedPETLevel = petDisplayNode.GetLevel()
+      #print "WINDOW/LEVEL MODIFIED"
 
   def viewNodeModified(self, caller, event):
     viewNode = slicer.util.getNode('vtkMRMLViewNode1')
