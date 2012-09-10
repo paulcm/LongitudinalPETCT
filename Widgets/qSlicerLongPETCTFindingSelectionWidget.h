@@ -44,6 +44,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
   Q_OBJECT
   Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
   Q_PROPERTY(bool selectionEnabled READ selectionEnabled WRITE setSelectionEnabled)
+  Q_PROPERTY(bool roiVisibility READ roiVisibility WRITE setROIVisibility)
 
 
 
@@ -61,11 +62,15 @@ public:
   void setSelectionEnabled(bool enabled);
   bool selectionEnabled();
 
+  void setROIVisibility(bool visibility);
+  bool roiVisibility();
+
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxFinding();
   Q_INVOKABLE void setEditorWidget(QWidget* editorWidget);
 
 signals:
-  void FindingNodeAddedByUser(vtkMRMLNode* node);
+  void findingNodeAddedByUser(vtkMRMLNode* node);
+  void roiVisibilityChanged(bool visible);
 
 protected:
   QScopedPointer<qSlicerLongPETCTFindingSelectionWidgetPrivate> d_ptr;

@@ -82,10 +82,10 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
   this->MRMLNodeComboBoxFinding->setNodeTypes(QStringList("vtkMRMLLongPETCTFindingNode"));
 
   QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(update(vtkMRMLNode*)) );
-  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(FindingNodeAddedByUser(vtkMRMLNode*)) );
+  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(findingNodeAddedByUser(vtkMRMLNode*)) );
+  QObject::connect( this->CheckBoxROIVisiblity, SIGNAL(toggled(bool)), q, SIGNAL(roiVisibilityChanged(bool)) );
 }
-
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 // qSlicerLongPETCTFindingSelectionWidget methods
 
 //-----------------------------------------------------------------------------
@@ -165,6 +165,26 @@ bool qSlicerLongPETCTFindingSelectionWidget
   Q_ASSERT(d->MRMLNodeComboBoxFinding);
 
   return d->LabelSelectFinding->isEnabled() && d->MRMLNodeComboBoxFinding->isEnabled();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget
+::setROIVisibility(bool visibility)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->CheckBoxROIVisiblity);
+
+  d->CheckBoxROIVisiblity->setChecked(visibility);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTFindingSelectionWidget
+::roiVisibility()
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->CheckBoxROIVisiblity);
+
+  return d->CheckBoxROIVisiblity->isChecked();
 }
 
 

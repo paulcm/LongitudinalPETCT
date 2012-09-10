@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>313</width>
-    <height>42</height>
+    <width>319</width>
+    <height>53</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QFormLayout::FieldsStayAtSizeHint</enum>
      </property>
      <property name="horizontalSpacing">
-      <number>8</number>
+      <number>12</number>
      </property>
      <item row="0" column="0">
       <widget class="QLabel" name="LabelSelectFinding">
@@ -33,14 +33,58 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxFinding" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+       <property name="spacing">
+        <number>12</number>
        </property>
-      </widget>
+       <item>
+        <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxFinding" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Maximum</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="ctkCheckBox" name="CheckBoxROIVisiblity">
+         <property name="text">
+          <string>ROI visibility</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+         <property name="indicatorIcon" stdset="0">
+          <iconset resource="../qSlicerLongPETCTModule.qrc">
+           <normaloff>:/Icons/VisibleOn.png</normaloff>
+           <normalon>:/Icons/VisibleOff.png</normalon>:/Icons/VisibleOn.png</iconset>
+         </property>
+         <property name="indicatorIconSize" stdset="0">
+          <size>
+           <width>21</width>
+           <height>21</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -53,7 +97,14 @@
    <header>qmrmlnodecombobox.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>ctkCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>ctkCheckBox.h</header>
+  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../qSlicerLongPETCTModule.qrc"/>
+ </resources>
  <connections/>
 </ui>
