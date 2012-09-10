@@ -1,10 +1,12 @@
 <RCC>
-    <qresource prefix="/">
-    	<file>Icons/LongPETCT.png</file>
-        <file>Icons/GPURendering.png</file>
-        <file>Icons/ViewRock.png</file>
-        <file>Icons/VolumeRendering.png</file>
-        <file>Icons/add.png</file>
-        <file>Icons/delete.png</file>
-    </qresource>
+  <qresource prefix="/">
+    <file>Icons/LongPETCT.png</file>
+    <file>Icons/VisibleOff.png</file>
+    <file>Icons/VisibleOn.png</file>
+    <file>Icons/GPURendering.png</file>
+    <file>Icons/ViewRock.png</file>
+    <file>Icons/VolumeRendering.png</file>
+    <file>Icons/add.png</file>
+    <file>Icons/delete.png</file>
+  </qresource>
 </RCC>
