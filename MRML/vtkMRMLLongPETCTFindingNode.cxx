@@ -39,7 +39,7 @@ vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
   this->TypeName = "Tumor";
-  this->ColorID = 0;
+  this->ColorID = 1;
 
 }
 
@@ -117,6 +117,19 @@ vtkMRMLLongPETCTSegmentationNode* vtkMRMLLongPETCTFindingNode::GetSegmentationFo
     }
 
   return segmentation;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTFindingNode::GetColorID()
+{
+  return this->ColorID;
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTFindingNode::SetColorID(int id)
+{
+  this->ColorID = id;
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
 

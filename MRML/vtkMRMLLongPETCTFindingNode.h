@@ -80,12 +80,14 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkGetMacro(TypeName, const char*);
   vtkSetMacro(TypeName, const char*);
 
-  vtkGetMacro(ColorID, int);
-  vtkSetMacro(ColorID, int);
+  //vtkGetMacro(ColorID, int);
+  //vtkSetMacro(ColorID, int);
 
   vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
   vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
+  int GetColorID();
+  void SetColorID(int id);
 
 protected:
   vtkMRMLLongPETCTFindingNode();
