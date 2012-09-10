@@ -199,4 +199,62 @@ class SlicerLongPETCTModuleViewHelper( object ):
       centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
       roi.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
     else:
-      roi.SetXYZ(roiXYZ)
+      roi.SetXYZ(roiXYZ)      
+      
+      
+  @staticmethod
+  def pasteFromCroppedToMainLabelVolume(croppedLblVolume, mainLblVolume, colorID):
+    
+    if (croppedLblVolume != None) & (mainLblVolume != None):
+      croppedImgData = croppedLblVolume.GetImageData()
+      mainImageData = mainLblVolume.GetImageData()
+      
+      if (croppedImgData != None) & (mainImageData != None):
+      
+        rastoijk = vtk.vtkMatrix4x4()
+        mainLblVolume.GetRASToIJKMatrix(rastoijk)
+      
+        croppedLblRASOrigin = croppedLblVolume.GetOrigin()
+        croppedLblRASOrigin = [croppedLblRASOrigin[0],croppedLblRASOrigin[1],croppedLblRASOrigin[2],1.0]
+    
+        croppedLblIJKShiftedOrigin = rastoijk.MultiplyDoublePoint(croppedLblRASOrigin)
+        croppedLblIJKShiftedOrigin = [ int(croppedLblIJKShiftedOrigin[0] + 0.5), int(croppedLblIJKShiftedOrigin[1] + 0.5), int(croppedLblIJKShiftedOrigin[2] + 0.5)]
+        
+        dims = croppedImgData.GetDimensions()
+        
+        for x in range(0,dims[0]):
+          for y in range(0,dims[1]):
+            for z in range(0,dims[2]):
+              p = croppedImgData.GetScalarComponentAsDouble(x,y,z,0)
+              if p == colorID:
+                mainImageData.SetScalarComponentFromDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0,p)
+                
+                
+  @staticmethod
+  def pasteFromMainToCroppedLabelVolume(mainLblVolume, croppedLblVolume, colorID):
+    
+    if (mainLblVolume != None) & (croppedLblVolume != None):
+      mainImageData = mainLblVolume.GetImageData()
+      croppedImgData = croppedLblVolume.GetImageData()
+      
+      
+      if (mainImageData != None) & (croppedImgData != None):
+      
+        rastoijk = vtk.vtkMatrix4x4()
+        mainLblVolume.GetRASToIJKMatrix(rastoijk)
+      
+        croppedLblRASOrigin = croppedLblVolume.GetOrigin()
+        croppedLblRASOrigin = [croppedLblRASOrigin[0],croppedLblRASOrigin[1],croppedLblRASOrigin[2],1.0]
+    
+        croppedLblIJKShiftedOrigin = rastoijk.MultiplyDoublePoint(croppedLblRASOrigin)
+        croppedLblIJKShiftedOrigin = [ int(croppedLblIJKShiftedOrigin[0] + 0.5), int(croppedLblIJKShiftedOrigin[1] + 0.5), int(croppedLblIJKShiftedOrigin[2] + 0.5)]
+        
+        dims = croppedImgData.GetDimensions()
+        
+        for x in range(0,dims[0]):
+          for y in range(0,dims[1]):
+            for z in range(0,dims[2]):
+              p = mainImageData.GetScalarComponentAsDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0)                             
+              if p == colorID:
+                croppedImgData.SetScalarComponentFromDouble(x,y,z,0,p)
+                
