@@ -131,8 +131,6 @@ void qSlicerLongPETCTReportTableWidget
   int selectedStudies = d->ReportNode->GetSelectedStudiesCount();
   int findings = d->ReportNode->GetFindingsCount();
 
-  std::cout << "STUDIES " << selectedStudies << std::endl;
-  std::cout << "FINDINGS " << findings << std::endl;
 
   for(int i=0; i < selectedStudies; ++i)
     {
@@ -145,7 +143,6 @@ void qSlicerLongPETCTReportTableWidget
 
       this->insertColumn(newColumnID);
 
-      std::cout << "INSERTED COLUMN "  << std::endl;
 
       QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
       QString itemText = date.toString(Qt::SystemLocaleShortDate);
@@ -157,8 +154,6 @@ void qSlicerLongPETCTReportTableWidget
 
       item->setToolTip(itemText);
       this->setHorizontalHeaderItem(newColumnID, item);
-
-      std::cout << "INSERTED HEADER "  << std::endl;
 
      }
 
