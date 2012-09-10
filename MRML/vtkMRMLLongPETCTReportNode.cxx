@@ -64,7 +64,7 @@ void vtkMRMLLongPETCTReportNode::Initialize()
     findingModifiedForwarder->SetTarget(this);
 
     // TODO dynamically
-    this->NumberOfDefaultFindingTypes = 5;
+    this->NumberOfDefaultFindingTypes = 6;
 
     this->EndModify(disabledModify);
 }

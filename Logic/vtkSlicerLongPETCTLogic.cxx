@@ -540,24 +540,27 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   vtkNew<vtkMRMLColorTableNode> colorTable;
 
   colorTable->SetType(vtkMRMLColorTableNode::User);
-  colorTable->SetNumberOfColors(5);
+  colorTable->SetNumberOfColors(6);
 
   double color[4];
 
+  defaultEditorColorNode->GetColor(0,color);
+  colorTable->SetColor(0,"None",color[0],color[1],color[2],color[3]);
+
   defaultEditorColorNode->GetColor(7,color);
-  colorTable->SetColor(0,"Tumor",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(1,"Tumor",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(23,color);
-  colorTable->SetColor(1,"Lymph Node",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(2,"Lymph Node",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(216,color);
-  colorTable->SetColor(2,"Liver",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(3,"Liver",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(105,color);
-  colorTable->SetColor(3,"Cerebellum",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(4,"Cerebellum",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(191,color);
-  colorTable->SetColor(4,"Aorta",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(5,"Aorta",color[0],color[1],color[2],color[3]);
 
   colorTable->SetName("LongitudinalPETCT ");
   colorTable->SetScene(this->GetMRMLScene());
