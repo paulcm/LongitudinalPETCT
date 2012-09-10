@@ -75,6 +75,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   void SetROIRadius(double roiRadius[3]);
   void GetROIRadius(double radius[3]);
 
+  vtkGetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
+  vtkSetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
 
   void Initialize();
 
