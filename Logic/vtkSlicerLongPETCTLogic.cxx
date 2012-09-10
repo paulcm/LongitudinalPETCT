@@ -51,12 +51,14 @@
 #include <vtkNew.h>
 #include <vtkMatrix4x4.h>
 #include <vtkImageData.h>
+#include <vtkLookupTable.h>
 
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 #include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLColorTableNode.h>
 #include <vtkMRMLColorLogic.h>
+
 
 const QString vtkSlicerLongPETCTLogic::DATABASEDIRECTORY = "DatabaseDirectory";
 const QString vtkSlicerLongPETCTLogic::DATABASECONNECTIONNAME = "LongPETCT";
@@ -362,6 +364,7 @@ bool vtkSlicerLongPETCTLogic::IsRequiredDataInDICOMDatabase(const QString& patie
 //---------------------------------------------------------------------------
 void vtkSlicerLongPETCTLogic::Initialize()
 {
+  this->DICOMDatabase = NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -537,10 +540,14 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   if(this->GetMRMLScene() == NULL)
     return NULL;
 
+  //vtkSmartPointer<vtkMRMLColorTableNode> colorTable = vtkMRMLColorLogic::CopyNode(defaultEditorColorNode,"LongitudinalPETCT_ColorTable");
   vtkNew<vtkMRMLColorTableNode> colorTable;
+  //colorTable->Copy(defaultEditorColorNode);
 
   colorTable->SetType(vtkMRMLColorTableNode::User);
+  colorTable->SetSaveWithScene(true);
   colorTable->SetNumberOfColors(6);
+  colorTable->GetLookupTable()->SetTableRange(0.,6.);
 
   double color[4];
 
@@ -551,7 +558,7 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   colorTable->SetColor(1,"Tumor",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(23,color);
-  colorTable->SetColor(2,"Lymph Node",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(2,"LymphNode",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(216,color);
   colorTable->SetColor(3,"Liver",color[0],color[1],color[2],color[3]);
@@ -562,7 +569,7 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   defaultEditorColorNode->GetColor(191,color);
   colorTable->SetColor(5,"Aorta",color[0],color[1],color[2],color[3]);
 
-  colorTable->SetName("LongitudinalPETCT ");
+  colorTable->SetName("LongitudinalPETCT_ColorTable");
   colorTable->SetScene(this->GetMRMLScene());
   colorTable->SetHideFromEditors(false);
   this->GetMRMLScene()->AddNode(colorTable.GetPointer());
