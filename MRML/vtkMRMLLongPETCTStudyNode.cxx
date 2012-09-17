@@ -22,6 +22,11 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTStudyNode.h"
 
 #include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLLinearTransformNode.h>
+#include <vtkMRMLAnnotationROINode.h>
+
+#include <vtkNew.h>
+#include <vtkMatrix4x4.h>
 
 // STD includes
 
@@ -40,11 +45,16 @@ void vtkMRMLLongPETCTStudyNode::Initialize()
 {
   this->SetHideFromEditors(true);
   this->Selected = false;
+  this->CenteredVolumes = true;
 
   this->PETVolumeNode = NULL;
   this->CTVolumeNode = NULL;
+  this->PETLabelVolumeNode = NULL;
 
   this->CenteringTransform = NULL;
+  this->SegmentationROI = NULL;
+
+
 
 }
 
@@ -88,5 +98,73 @@ void vtkMRMLLongPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os,indent);
 }
+
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTStudyNode::ObserveCenteringTransform(bool observe)
+{
+  if(observe && this->CenteringTransform != NULL)
+    {
+      if(this->PETVolumeNode != NULL && this->PETVolumeNode->GetParentTransformNode() != this->CenteringTransform)
+        this->PETVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
+      if(this->CTVolumeNode != NULL && this->CTVolumeNode->GetParentTransformNode() != this->CenteringTransform)
+        this->CTVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
+      if(this->PETLabelVolumeNode != NULL && this->PETLabelVolumeNode->GetParentTransformNode() != this->CenteringTransform)
+        this->PETLabelVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
+      if(this->SegmentationROI != NULL && this->SegmentationROI->GetParentTransformNode() != this->CenteringTransform)
+        this->SegmentationROI->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
+    }
+  else
+    {
+      if(this->PETVolumeNode)
+        this->PETVolumeNode->SetAndObserveTransformNodeID(NULL);
+      if(this->CTVolumeNode)
+        this->CTVolumeNode->SetAndObserveTransformNodeID(NULL);
+      if(this->PETLabelVolumeNode)
+        this->PETLabelVolumeNode->SetAndObserveTransformNodeID(NULL);
+      if(this->SegmentationROI)
+        this->SegmentationROI->SetAndObserveTransformNodeID(NULL);
+    }
+}
+
+void vtkMRMLLongPETCTStudyNode::SetSegmentationROI(vtkMRMLAnnotationROINode* roi)
+{
+    this->SegmentationROI = roi;
+
+    if(this->CenteredVolumes)
+      {
+        if(this->SegmentationROI->GetParentTransformNode() != this->CenteringTransform)
+          {
+            std::cout << "SETTING CENTERING TRANSFORM" << std::endl;
+
+            if(this->SegmentationROI->GetParentTransformNode() != NULL)
+              std::cout << "OLD CENTERING TRANSFORM: " << this->SegmentationROI->GetParentTransformNode()->GetName() << "NEW: " << this->CenteringTransform->GetName() << std::endl;
+
+            this->SegmentationROI->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
+            this->InvokeEvent(vtkCommand::ModifiedEvent);
+            std::cout << "SETTING CENTERING TRANSFORM " << std::endl;
+          }
+      }
+    else
+      {
+        std::cout << "SETTING ROI WITHOUT CENTERING TRANSFORM." << std::endl;
+        this->SegmentationROI->SetAndObserveTransformNodeID(NULL);
+        this->InvokeEvent(vtkCommand::ModifiedEvent);
+      }
+}
+
+
+void vtkMRMLLongPETCTStudyNode::SetCenteredVolumes(bool centered)
+{
+  if(this->CenteredVolumes == centered)
+    return;
+
+  this->CenteredVolumes = centered;
+
+  this->ObserveCenteringTransform(centered);
+}
+
+
+
 
 
