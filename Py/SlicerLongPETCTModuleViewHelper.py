@@ -33,7 +33,6 @@ class SlicerLongPETCTModuleViewHelper( object ):
     if propagate:
       appLogic.PropagateVolumeSelection()
 
-
   @staticmethod
   def SetForegroundWindowLevel(window, level):
     appLogic = slicer.app.applicationLogic()
@@ -205,6 +204,8 @@ class SlicerLongPETCTModuleViewHelper( object ):
   @staticmethod
   def pasteFromCroppedToMainLabelVolume(croppedLblVolume, mainLblVolume, colorID):
     
+    pasted = False
+    
     if (croppedLblVolume != None) & (mainLblVolume != None):
       croppedImgData = croppedLblVolume.GetImageData()
       mainImageData = mainLblVolume.GetImageData()
@@ -222,16 +223,21 @@ class SlicerLongPETCTModuleViewHelper( object ):
         
         dims = croppedImgData.GetDimensions()
         
-        for x in range(0,dims[0]):
-          for y in range(0,dims[1]):
-            for z in range(0,dims[2]):
+        for x in range(0,dims[0],1):
+          for y in range(0,dims[1],1):
+            for z in range(0,dims[2],1):
               p = croppedImgData.GetScalarComponentAsDouble(x,y,z,0)
               if p == colorID:
                 mainImageData.SetScalarComponentFromDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0,p)
-                
+                if pasted == False:
+                  pasted = True    
+              
+    return pasted                
                 
   @staticmethod
   def pasteFromMainToCroppedLabelVolume(mainLblVolume, croppedLblVolume, colorID):
+    
+    pasted = False
     
     if (mainLblVolume != None) & (croppedLblVolume != None):
       mainImageData = mainLblVolume.GetImageData()
@@ -251,10 +257,40 @@ class SlicerLongPETCTModuleViewHelper( object ):
         
         dims = croppedImgData.GetDimensions()
         
-        for x in range(0,dims[0]):
-          for y in range(0,dims[1]):
-            for z in range(0,dims[2]):
+        for x in range(0,dims[0],1):
+          for y in range(0,dims[1],1):
+            for z in range(0,dims[2],1):
               p = mainImageData.GetScalarComponentAsDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0)                             
               if p == colorID:
                 croppedImgData.SetScalarComponentFromDouble(x,y,z,0,p)
+                if pasted == False:
+                  pasted = True
+                  
+    return pasted    
+  
+  @staticmethod
+  def getROIPositionInRAS(roi):
+    xyz = [0.,0.,0.]
+    if roi:
+      roi.GetXYZ(xyz)
+      
+      xyz = [xyz[0],xyz[1],xyz[2],1.0]
+      
+      roiTransform = roi.GetParentTransformNode()
+      
+      if roiTransform:
+        matrix = vtk.vtkMatrix4x4()
+        roiTransform.GetMatrixTransformToWorld(matrix)
+        
+        xyz = matrix.MultiplyDoublePoint(xyz)
+      
+      xyz = [xyz[0],xyz[1],xyz[2]]  
+  
+    return xyz  
+        
+        
+        
+        
+        
+        
                 
