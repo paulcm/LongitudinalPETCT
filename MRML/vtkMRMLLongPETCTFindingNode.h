@@ -41,11 +41,11 @@ class map;
 class vector;
 
 class vtkMRMLLongPETCTStudyNode;
-class vtkMRMLAnnotationROINode;
 class vtkMRMLScalarVolumeNode;
 class vtkMRMLLongPETCTSegmentationNode;
+class vtkMRMLAnnotationROINode;
 
-#include <vtkMRMLAnnotationROINode.h>
+
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 /// \ingroup Slicer_QtModules_LongPETCTFindingNode
@@ -83,11 +83,11 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   //vtkGetMacro(ColorID, int);
   //vtkSetMacro(ColorID, int);
 
-  vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
-  vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
-
   int GetColorID();
   void SetColorID(int id);
+
+  vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
+  vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
 protected:
   vtkMRMLLongPETCTFindingNode();
@@ -96,6 +96,7 @@ protected:
   void operator=(const vtkMRMLLongPETCTFindingNode&);
 
   std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLLongPETCTSegmentationNode*> StudyToSegmentationMap;
+
   vtkMRMLAnnotationROINode* SegmentationROI;
 
   const char* TypeName;

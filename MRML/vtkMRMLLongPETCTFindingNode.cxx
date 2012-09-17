@@ -40,6 +40,7 @@ vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
   this->SetHideFromEditors(false);
   this->TypeName = "Tumor";
   this->ColorID = 1;
+  this->SegmentationROI = NULL;
 
 }
 
@@ -100,7 +101,10 @@ vtkMRMLLongPETCTSegmentationNode* vtkMRMLLongPETCTFindingNode::RemoveSegmentatio
   vtkMRMLLongPETCTSegmentationNode* segmentationToRemove = this->GetSegmentationForStudy(study);
 
   if( segmentationToRemove != NULL )
-    this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
+    {
+      this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
+    }
 
   return segmentationToRemove;
 }
