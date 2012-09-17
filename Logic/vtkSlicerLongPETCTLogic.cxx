@@ -96,9 +96,10 @@ bool vtkSlicerLongPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* 
 
   vtkMRMLScalarVolumeNode* petVolume = study->GetPETVolumeNode();
   vtkMRMLScalarVolumeNode* ctVolume = study->GetCTVolumeNode();
+  vtkMRMLScalarVolumeNode* petLabelVolume = study->GetPETLabelVolumeNode();
 
-  if (petVolume == NULL || ctVolume == NULL || petVolume->GetImageData() == NULL
-      || ctVolume->GetImageData() == NULL)
+  if (petVolume == NULL || ctVolume == NULL || petLabelVolume == NULL || petVolume->GetImageData() == NULL
+      || ctVolume->GetImageData() == NULL || petLabelVolume->GetImageData() == NULL)
     {
       vtkDebugMacro(
           "vtkSlicerLongPETCTLogic: PETVolume and/or CTVolume to be centered have NULL value or their image data is NULL");
@@ -187,10 +188,11 @@ bool vtkSlicerLongPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* 
 
   scene->AddNode(translationTransform.GetPointer());
 
-  referenceVolume->SetAndObserveTransformNodeID(
+  petVolume->SetAndObserveTransformNodeID(
       translationTransform->GetID());
-  secondaryVolume->SetAndObserveTransformNodeID(
+  ctVolume->SetAndObserveTransformNodeID(
       translationTransform->GetID());
+  petLabelVolume->SetAndObserveTransformNodeID(translationTransform->GetID());
 
   study->SetCenteringTransform(translationTransform.GetPointer());
 
