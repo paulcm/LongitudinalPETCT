@@ -408,7 +408,8 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
       
       reportNode.SetAttribute('ColorNodeID',defaultColorNodeID)
       logic = slicer.modules.longpetct.logic()
-      reportNode.SetFindingTypesColorTable(logic.GetDefaultFindingTypesColorTable(colorNode))
+      colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
+      reportNode.SetFindingTypesColorTable(colorTable)
         
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
@@ -420,6 +421,11 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
         
+          volLogic  = slicer.modules.volumes.logic() 
+          petLabelVolume = slicer.vtkMRMLScalarVolumeNode()
+          petLabelVolume.Copy(petScalarVolume)
+          petLabelVolume = volLogic.CreateLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")
+          
           
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
@@ -437,6 +443,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyNode.SetAttribute('DICOM.StudyTime',studyTime)
           studyNode.SetPETVolumeNode(petScalarVolume)
           studyNode.SetCTVolumeNode(ctScalarVolume)
+          studyNode.SetPETLabelVolumeNode(petLabelVolume)
           studyNode.SetScene(slicer.mrmlScene) 
         
           slicer.mrmlScene.AddNode(studyNode)
