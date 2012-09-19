@@ -191,6 +191,9 @@ class qSlicerLongPETCTModuleWidget:
     # Add Report Table
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
     self.reportTableWidget.setReportNode(self.reportSelector.currentNode())
+    self.reportTableWidget.connect('studyClicked(int)',self.onReportTableStudyClicked)
+    self.reportTableWidget.connect('findingClicked(int)',self.onReportTableFindingClicked)
+                       
     self.layout.addWidget(self.reportTableWidget) 
 
   def onEditorCollapsed(self,collapsed):
@@ -211,11 +214,9 @@ class qSlicerLongPETCTModuleWidget:
       if currentSelectedStudy:
         self.setCurrentStudy(currentSelectedStudy)
        
-      
         studyIdx = currentReport.GetIndexOfStudy(currentSelectedStudy)
         self.studySelectionWidget.selectStudyInRow(studyIdx)
-      
-             
+                   
         self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
       else:
         self.onUpdateVolumeRendering(None)
@@ -270,8 +271,7 @@ class qSlicerLongPETCTModuleWidget:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
         selectedStudy.SetSelected(True)
-        self.setCurrentStudy(selectedStudy)
-           
+        self.setCurrentStudy(selectedStudy)           
         
         petID = ""
         ctID = ""
@@ -833,6 +833,16 @@ class qSlicerLongPETCTModuleWidget:
             else:
               roi.SetVisibility(0)
                       
+                      
+  def onReportTableStudyClicked(self,index):
+    if self.studySliderWidget:
+      self.studySliderWidget.changeValue(index)
+      
+  def onReportTableFindingClicked(self,index):
+    if self.findingSelector:
+      self.findingSelector.setCurrentNodeIndex(index)
+      
+                       
              
   def getCurrentReport(self):
     return self.reportSelector.currentNode()  
