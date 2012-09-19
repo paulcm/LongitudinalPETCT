@@ -38,7 +38,6 @@ class SlicerLongPETCTModuleViewHelper( object ):
     appLogic = slicer.app.applicationLogic()
     selectionNode = appLogic.GetSelectionNode()
     fgVolumeNodeID = selectionNode.GetSecondaryVolumeID()
-    print fgVolumeNodeID
     fgVolumeNode = slicer.mrmlScene.GetNodeByID(fgVolumeNodeID)
     
     if fgVolumeNode:
@@ -156,7 +155,8 @@ class SlicerLongPETCTModuleViewHelper( object ):
         yellow.SetSliceOffset(crossingRAS[2])
       if green.GetOrientationString() == orientation:
         green.SetSliceOffset(crossingRAS[2])
-        
+    
+    #print "SLICES X-ING RAS POSITION: " + str(yellow.GetSliceOffset()) + " " + str(green.GetSliceOffset()) + " "  + str(red.GetSliceOffset())  
         
   
   @staticmethod
@@ -227,10 +227,10 @@ class SlicerLongPETCTModuleViewHelper( object ):
           for y in range(0,dims[1],1):
             for z in range(0,dims[2],1):
               p = croppedImgData.GetScalarComponentAsDouble(x,y,z,0)
-              if p == colorID:
-                mainImageData.SetScalarComponentFromDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0,p)
-                if pasted == False:
-                  pasted = True    
+              #if p == colorID:
+              mainImageData.SetScalarComponentFromDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0,p)
+              if pasted == False:
+                pasted = True    
               
     return pasted                
                 
@@ -266,7 +266,34 @@ class SlicerLongPETCTModuleViewHelper( object ):
                 if pasted == False:
                   pasted = True
                   
-    return pasted    
+    return pasted 
+  
+  
+  @staticmethod
+  def containsSegmentation(lblVolume, colorID):
+    
+    contains = False
+    
+    if lblVolume:
+      imgData = lblVolume.GetImageData()
+      
+      if imgData:
+        dims = imgData.GetDimensions()
+        
+        for x in range(0,dims[0],1):
+          for y in range(0,dims[1],1):
+            for z in range(0,dims[2],1):
+              p = imgData.GetScalarComponentAsDouble(x,y,z,0)                             
+              if p == colorID:
+                contains = True
+                break
+            if contains:
+              break
+          if contains:
+            break
+          
+    return contains          
+           
   
   @staticmethod
   def getROIPositionInRAS(roi):
@@ -285,7 +312,9 @@ class SlicerLongPETCTModuleViewHelper( object ):
         xyz = matrix.MultiplyDoublePoint(xyz)
       
       xyz = [xyz[0],xyz[1],xyz[2]]  
-  
+      
+      #print "ROI RAS POSITION: " + str(xyz)
+      
     return xyz  
         
         
