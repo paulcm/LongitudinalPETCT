@@ -2,6 +2,7 @@ from __main__ import vtk, qt, ctk, slicer
 
 from Editor import EditorWidget
 from SlicerLongPETCTModuleViewHelper import SlicerLongPETCTModuleViewHelper as ViewHelper
+import sys as SYS
 #
 # qSlicerLongPETCTModuleWidget
 #
@@ -39,6 +40,7 @@ class qSlicerLongPETCTModuleWidget:
     self.reloadButton.connect('clicked()', self.onReload)
 
     self.tempObserverEditorTag = -1
+    self.segmentationROIOldPosition = [0.,0.,0.]
     self.tempCroppedLblVolObserverTag = -1
 
     self.logic  = slicer.modules.longpetct.logic()
@@ -192,8 +194,7 @@ class qSlicerLongPETCTModuleWidget:
     self.layout.addWidget(self.reportTableWidget) 
 
   def onEditorCollapsed(self,collapsed):
-    self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)
-    
+    self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
     self.onEnterEditMode( collapsed != True )
 
 
@@ -221,8 +222,7 @@ class qSlicerLongPETCTModuleWidget:
         
   def setCurrentStudy(self, study):
 
-    currentReport = self.getCurrentReport()
-   
+    currentReport = self.getCurrentReport()   
     currentFinding = self.getCurrentFinding()
     
     if currentReport:
@@ -233,13 +233,36 @@ class qSlicerLongPETCTModuleWidget:
         currentSegROI = currentFinding.GetSegmentationROI()
       
         if (currentStudy != None) & ( currentSegROI != None) :
-          print "SETTING SEG ROI"
           currentStudy.SetSegmentationROI(currentSegROI)
+          self.updateSegmentationROIPosition()
+          
         elif currentStudy:
           currentStudy.SetSegmentationROI(None)
         
         #print "SETTING " + str(currentStudy.GetSegmentationROI().GetName()) + " UNDER " + str(currentStudy.GetCenteringTransform().GetName())   
         #currentStudy.ObserveCenteringTransform(self.studySelectionWidget.property('centeredSelected')) 
+
+  def updateSegmentationROIPosition(self):
+    currentStudy = self.getCurrentStudy()
+    currentFinding = self.getCurrentFinding()
+    
+    if (currentStudy != None) & (currentFinding != None):
+      currentSegmentation = currentFinding.GetSegmentationForStudy(currentStudy)
+          
+      if currentSegmentation:
+        xyz = [0.,0.,0.]
+        radius = [0.,0.,0.]
+            
+        currentSegmentation.GetROIxyz(xyz)
+        currentSegmentation.GetROIRadius(radius)
+        
+        if currentStudy.GetSegmentationROI() != None:
+          currentStudy.GetSegmentationROI().SetXYZ(xyz)
+          currentStudy.GetSegmentationROI().SetRadiusXYZ(radius)
+            
+          xyzRAS = ViewHelper.getROIPositionInRAS(currentStudy.GetSegmentationROI())
+            
+          ViewHelper.setSliceNodesCrossingPositionRAS(xyzRAS)
 
   def onStudySelected(self, idx):
     currentReport = self.reportSelector.currentNode()
@@ -525,6 +548,18 @@ class qSlicerLongPETCTModuleWidget:
 
   def onSegmentationROIModified(self, caller, event):
     
+    if caller != self:
+      minFloat = SYS.float_info.min
+      xyz = [minFloat,minFloat,minFloat]
+      
+      caller.GetXYZ(xyz)
+ 
+      if (xyz[0] == self.segmentationROIOldPosition[0]) & (xyz[1] == self.segmentationROIOldPosition[1]) & (xyz[2] == self.segmentationROIOldPosition[2]):
+        return
+    
+      else:
+        self.segmentationROIOldPosition = xyz
+    
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
@@ -567,6 +602,11 @@ class qSlicerLongPETCTModuleWidget:
       
     if (currentStudy != None) & (currentFinding != None) & (enter == True):
      
+      self.reportsCollapsibleButton.setProperty('enabled',False)
+      self.studiesCollapsibleButton.setProperty('enabled',False)
+      self.studySliderWidget.setProperty('enabled',False)
+      self.reportTableWidget.setProperty('enabled',False)
+     
       self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
       
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
@@ -580,23 +620,26 @@ class qSlicerLongPETCTModuleWidget:
     
       self.editorWidget.enter()
     
-      self.tempObserverEditorTag = currentFinding.GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)
-      
+      self.tempObserverEditorTag = currentFinding.GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
       self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
       
       self.editorWidget.exit()      
       self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
-      
-    
+
       if self.studySelectionWidget.property('centeredSelected'):
         currentFinding.GetSegmentationROI().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransform().GetID())
       
       self.updateBgFgToUserSelectedStudy(currentStudy)
       
-      roiXYZ = ViewHelper.getROIPositionInRAS(currentStudy.GetSegmentationROI())
+      roiXYZ = ViewHelper.getROIPositionInRAS(currentFinding.GetSegmentationROI())
       ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
+      
+      self.reportsCollapsibleButton.setProperty('enabled',True)
+      self.studiesCollapsibleButton.setProperty('enabled',True)
+      self.studySliderWidget.setProperty('enabled',True)
+      self.reportTableWidget.setProperty('enabled',True)
                  
   def pasteFromCroppedToMainLblVolume(self, caller, event):
     
@@ -628,9 +671,21 @@ class qSlicerLongPETCTModuleWidget:
             
       pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolume(), currentFinding.GetColorID())    
     
-      if pasted == False:
+      if segmentationROI:
+        xyz = [0.,0.,0.]
+        radius = [0.,0.,0.]
+        
+        segmentationROI.GetXYZ(xyz)
+        segmentationROI.GetRadiusXYZ(radius)
+        
+        studySeg.SetROIxyz(xyz)
+        studySeg.SetROIRadius(radius)
+        
+        
+      if ViewHelper.containsSegmentation(studySeg.GetLabelVolume(),currentFinding.GetColorID()) == False:
         currentFinding.RemoveSegmentationForStudy(currentStudy)
         slicer.mrmlScene.RemoveNode(studySeg)
+
     
     if self.tempCroppedLblVolObserverTag != -1:      
       self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag) 
@@ -728,16 +783,17 @@ class qSlicerLongPETCTModuleWidget:
    
     
   def onFindingNodeChanged(self, findingNode):
-
     currentReport = self.getCurrentReport()
     #self.editorWidget.exit()
     if currentReport:
+      # for segmentation roi updates
       currentReport.SetUserSelectedFinding(findingNode)   
-    if findingNode:
+    if findingNode:      
       self.editorWidget.editLabelMapsFrame.setEnabled(True)
       segROI = findingNode.GetSegmentationROI()
       if (segROI != None) & (self.getCurrentStudy() != None):
         self.getCurrentStudy().SetSegmentationROI(segROI)
+        self.updateSegmentationROIPosition()
     
     else:
       self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -746,15 +802,13 @@ class qSlicerLongPETCTModuleWidget:
     
     self.onManageFindingROIsVisibility()
   
-  def onFindingROIVisibilityChanged(self, visible):
-    
+  def onFindingROIVisibilityChanged(self, visible): 
     currentFinding = self.getCurrentFinding()
     if currentFinding:
       currentROI = currentFinding.GetSegmentationROI()
       if currentROI:
         currentROI.SetVisibility(visible)
 
-  
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
