@@ -53,12 +53,19 @@ public:
   vtkMRMLLongPETCTReportNode* reportNode();
 
 
+
+signals:
+  void studyClicked(int idx);
+  void findingClicked(int idx);
+
 public slots:
   void updateView();
 
 protected slots:
   void selectStudyColumn(int index);
   void selectFindingRow(int index);
+
+  void segmentationCellClicked(int row, int column);
 
 
 

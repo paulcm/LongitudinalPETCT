@@ -73,7 +73,13 @@ qSlicerLongPETCTReportTableWidgetPrivate
 void qSlicerLongPETCTReportTableWidgetPrivate
 ::setupUi(qSlicerLongPETCTReportTableWidget* widget)
 {
+  Q_Q(qSlicerLongPETCTReportTableWidget);
+
   widget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+  widget->setSelectionMode(QAbstractItemView::NoSelection);
+
+  QObject::connect(q, SIGNAL(cellClicked(int,int)), q,SLOT(segmentationCellClicked(int,int)));
+
 }
 
 //-----------------------------------------------------------------------------
@@ -87,6 +93,9 @@ qSlicerLongPETCTReportTableWidget
 {
   Q_D(qSlicerLongPETCTReportTableWidget);
   d->setupUi(this);
+
+
+
 }
 
 //-----------------------------------------------------------------------------
@@ -127,6 +136,8 @@ qSlicerLongPETCTReportTableWidget::prepareHorizontalHeaders()
   if (d->ReportNode == NULL)
     return;
 
+  bool empty = this->columnCount() == 0;
+
   int diff = d->ReportNode->GetSelectedStudiesCount() - this->columnCount();
 
   for (int i = 0; i < std::abs(diff); ++i)
@@ -138,6 +149,15 @@ qSlicerLongPETCTReportTableWidget::prepareHorizontalHeaders()
       else if (diff < 0)
         this->removeColumn(newColumnID - 1);
     }
+
+  if(empty & this->columnCount() > 0)
+    {
+      QHeaderView* horizontalHeaderView = this->horizontalHeader();
+      if(horizontalHeaderView != NULL)
+        {
+          QObject::connect(horizontalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(studyClicked(int)));
+        }
+      }
 }
 
 //-----------------------------------------------------------------------------
@@ -149,6 +169,8 @@ qSlicerLongPETCTReportTableWidget::prepareVerticalHeaders()
 
   if (d->ReportNode == NULL)
     return;
+
+  bool empty = this->rowCount() == 0;
 
   int diff = d->ReportNode->GetFindingsCount() - this->rowCount();
 
@@ -168,6 +190,15 @@ qSlicerLongPETCTReportTableWidget::prepareVerticalHeaders()
       else if (diff < 0)
         this->removeRow(newRowID - 1);
     }
+
+  if(empty & this->rowCount() > 0)
+     {
+       QHeaderView* verticalHeaderView = this->verticalHeader();
+       if(verticalHeaderView != NULL)
+         {
+           QObject::connect(verticalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(findingClicked(int)));
+         }
+     }
 }
 
 //-----------------------------------------------------------------------------
@@ -256,10 +287,7 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
 
                   if(label != NULL)
                     {
-                      std::cout << "RESETTING CELL WIDGET: " << i << " : " << j << std::endl;
                       label->setStyleSheet("background-color:" + findingColor.name());
-
-                      std::cout << label->styleSheet().toStdString().c_str() << std::endl;
                     }
 
                 }
@@ -306,17 +334,14 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 
   if(lastSelectedStudyIndex != -1 && lastSelectedFindingIndex != -1)
     {
-      std::cout << "GETTING CELL WIDGET in ROW: " << lastSelectedFindingIndex << " COL: " << lastSelectedStudyIndex << std::endl;
       QLabel* selCellWidget = qobject_cast<QLabel*>(this->cellWidget(lastSelectedFindingIndex,lastSelectedStudyIndex));
       if(selCellWidget != NULL)
         {
-          std::cout << "SETTING RED BORDER"<< std::endl;
           QString styleSheet = selCellWidget->styleSheet();
           styleSheet = styleSheet + "; border: 3px solid #FF0000";
           selCellWidget->setStyleSheet(styleSheet);
         }
     }
-
 }
 
 
@@ -371,6 +396,15 @@ void qSlicerLongPETCTReportTableWidget
 {
   Superclass::resizeEvent(event);
   this->arrangeColumns();
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidget
+::segmentationCellClicked(int row, int column)
+{
+  emit studyClicked(column);
+  emit findingClicked(row);
 }
 
 
