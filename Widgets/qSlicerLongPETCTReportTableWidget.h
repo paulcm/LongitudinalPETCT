@@ -68,6 +68,13 @@ protected:
   virtual void resizeEvent(QResizeEvent* event);
   void arrangeColumns();
 
+  void prepareHorizontalHeaders();
+  void prepareVerticalHeaders();
+
+  void updateHorizontalHeaders();
+  void updateVerticalHeaders();
+
+
 private:
   Q_DECLARE_PRIVATE(qSlicerLongPETCTReportTableWidget);
   Q_DISABLE_COPY(qSlicerLongPETCTReportTableWidget);
