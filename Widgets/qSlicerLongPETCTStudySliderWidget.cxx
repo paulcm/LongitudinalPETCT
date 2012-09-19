@@ -80,8 +80,6 @@ public:
       double wdt = static_cast<double>(width());
 
       int val = static_cast<int>(min + (max - min) * pos / wdt + 0.5);
-
-      std::cout << "VALUE: " << val << std::endl;
       return val;
     }
 
@@ -142,7 +140,6 @@ void qSlicerLongPETCTStudySliderWidgetPrivate
   this->Ui_qSlicerLongPETCTStudySliderWidget::setupUi(widget);
 
   this->Slider = new qSlicerLongPETCTJumpSlider(widget);
-
 
   this->Layout->addWidget(this->Slider);
 
@@ -247,6 +244,19 @@ vtkMRMLLongPETCTReportNode* qSlicerLongPETCTStudySliderWidget::reportNode()
 
   return d->ReportNode.GetPointer();
 }
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySliderWidget::changeValue(int value)
+{
+  Q_D(qSlicerLongPETCTStudySliderWidget);
+  Q_ASSERT(d->Slider);
+
+  if(value >= d->Slider->minimum() && value <= d->Slider->maximum())
+    d->Slider->setValue(value);
+}
+
+
+
 
 
 

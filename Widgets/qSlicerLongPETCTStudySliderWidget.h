@@ -55,6 +55,7 @@ signals:
 
 public slots:
   void updateView();
+  void changeValue(int value);
 
 protected slots:
 
