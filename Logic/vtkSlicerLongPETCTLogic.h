@@ -63,6 +63,8 @@ public:
 
   static bool CenterStudyVolumeNodes(vtkMRMLLongPETCTStudyNode* study, vtkMRMLScene* scene);
 
+  const char* GetDirectoryOfDICOMSeries(const char* sopInstanceUID);
+
   /**
    * Returns a list with UIDs of all patients from the DICOM database with PET/CT studies.
    *

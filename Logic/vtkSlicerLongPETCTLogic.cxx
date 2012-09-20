@@ -43,6 +43,8 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QMap>
+#include <QFileInfo>
+#include <QDir>
 
 // DCMTK includes
 #include <dcmtk/dcmdata/dcfilefo.h>
@@ -577,4 +579,23 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   this->GetMRMLScene()->AddNode(colorTable.GetPointer());
 
   return colorTable.GetPointer();
+}
+
+const char*
+vtkSlicerLongPETCTLogic::GetDirectoryOfDICOMSeries(const char* sopInstanceUID)
+{
+  QString directoryPath = "";
+  ctkDICOMDatabase* tempDatabase = this->GetDICOMDatabase();
+
+  if (tempDatabase)
+    {
+      QString fileForInstance = tempDatabase->fileForInstance(sopInstanceUID);
+      QFileInfo fileInfo(fileForInstance);
+      QDir directory = fileInfo.absoluteDir();
+
+      if(directory.exists())
+        directoryPath.append(directory.absolutePath());
+    }
+
+  return directoryPath.toStdString().c_str();
 }
