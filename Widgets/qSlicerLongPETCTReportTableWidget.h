@@ -52,6 +52,9 @@ public:
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
 
+  Q_INVOKABLE void updateSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding, double max, double mean, double min);
+
+
 
 
 signals:

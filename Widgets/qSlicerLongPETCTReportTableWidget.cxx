@@ -408,6 +408,28 @@ void qSlicerLongPETCTReportTableWidget
 }
 
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidget::
+updateSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding, double max, double mean, double min)
+{
+  Q_D(qSlicerLongPETCTReportTableWidget);
+
+  if(d->ReportNode == NULL)
+    return;
+
+  int col = d->ReportNode->GetIndexOfSelectedStudy(study);
+  int row = d->ReportNode->GetIndexOfFinding(finding);
+
+  QLabel* cellWidget = qobject_cast<QLabel*>(this->cellWidget(row,col));
+
+  if(cellWidget != NULL)
+    {
+      QStringList tooltip;
+      tooltip << "SUVMax: " << QString().setNum(max) << "\nSUVMean: " << QString().setNum(mean) << "\nSUVMin: " << QString().setNum(min);
+      cellWidget->setToolTip(tooltip.join(""));
+    }
+
+}
 
 
 
