@@ -81,7 +81,6 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
 
   this->MRMLNodeComboBoxFinding->setNodeTypes(QStringList("vtkMRMLLongPETCTFindingNode"));
 
-  QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(update(vtkMRMLNode*)) );
   QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(findingNodeAddedByUser(vtkMRMLNode*)) );
   QObject::connect( this->CheckBoxROIVisiblity, SIGNAL(toggled(bool)), q, SIGNAL(roiVisibilityChanged(bool)) );
 }
