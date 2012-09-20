@@ -399,41 +399,24 @@ int vtkMRMLLongPETCTReportNode::GetNumberOfDefaultFindingTypes()
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* finding)
 {
-  int disabledModify = this->StartModify();
-
   int index = this->GetIndexOfFinding(finding);
 
   if(index >= 0 && index < this->GetFindingsCount())
     {
-      std::cout << "FINDINGS SIZE BEFORE ERASE" << this->GetFindingsCount() << std::endl;
-      std::cout << "FINDING PTR BEFORE ERASE" << finding << std::endl;
-      std::cout << "FINDING REF COUNT BEFORE ERASE" << finding->GetReferenceCount() << std::endl;
-
       this->Findings.erase(this->Findings.begin()+index);
-
-      std::cout << "FINDINGS SIZE AFTER ERASE" << this->GetFindingsCount() << std::endl;
-      std::cout << "FINDING PTR AFTER ERASE" << finding << std::endl;
-      std::cout << "FINDING REF COUNT AFTER ERASE" << finding->GetReferenceCount() << std::endl;
-
-
-//      std::cout << "FINDING REF COUNT BEFORE DELETE" << finding->GetReferenceCount() << std::endl;
+//        std::cout << "FINDING REF COUNT BEFORE DELETE" << finding->GetReferenceCount() << std::endl;
 //
 //      finding->Delete();
 //
 //      std::cout << "FINDING REF COUNT AFTER DELETE" << finding->GetReferenceCount() << std::endl;
-
-
-      std::cout << "USER SELECTED FINDING PTR BEFORE REASSIGN" << this->GetUserSelectedFinding() << std::endl;
 
       if(this->GetFindingsCount() > 0 && index > 0)
         this->SetUserSelectedFinding(this->GetFinding(index-1));
       else
         this->SetUserSelectedFinding(NULL);
 
-      std::cout << "USER SELECTED FINDING PTR AFTER REASSIGN" << this->GetUserSelectedFinding() << std::endl;
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
 
     }
 
-  this->EndModify(disabledModify); // Setting of new UserSelectedFinding will call Modified()
- // this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
