@@ -376,6 +376,16 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
     if svNode:
       svNode.SetName(loadable.name)
+      
+      instanceUIDs = ""
+      for file in loadable.files:
+        uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
+        if uid == "":
+          uid = "Unknown"
+        instanceUIDs += uid + " "
+      instanceUIDs = instanceUIDs[:-1]  # strip last space
+      svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
+      
       svNode.SetScene(slicer.mrmlScene)
       slicer.mrmlScene.AddNode(svNode)
     
