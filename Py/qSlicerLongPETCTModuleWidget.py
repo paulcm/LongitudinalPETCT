@@ -3,6 +3,8 @@ from __main__ import vtk, qt, ctk, slicer
 from Editor import EditorWidget
 from SlicerLongPETCTModuleViewHelper import SlicerLongPETCTModuleViewHelper as ViewHelper
 import sys as SYS
+
+import thread as Thread
 #
 # qSlicerLongPETCTModuleWidget
 #
@@ -60,6 +62,9 @@ class qSlicerLongPETCTModuleWidget:
     
     self.selectedPETWindow = 0.0
     self.selectedPETLevel = 0.0
+    
+    self.lockSUVComputation = Thread.allocate_lock()
+    self.cliNode = None
     
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
@@ -146,7 +151,7 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onFindingROIVisibilityChanged)
     
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
-    self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
+    #self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
     self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
     self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
     self.findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
@@ -240,9 +245,7 @@ class qSlicerLongPETCTModuleWidget:
         elif currentStudy:
           currentStudy.SetSegmentationROI(None)
         
-        #print "SETTING " + str(currentStudy.GetSegmentationROI().GetName()) + " UNDER " + str(currentStudy.GetCenteringTransform().GetName())   
-        #currentStudy.ObserveCenteringTransform(self.studySelectionWidget.property('centeredSelected')) 
-
+       
   def updateSegmentationROIPosition(self):
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
@@ -432,10 +435,7 @@ class qSlicerLongPETCTModuleWidget:
       if self.vrDisplayNode:
         self.vrDisplayNode.VisibilityOff()  
       
-      
-    #viewNode = slicer.util.getNode('vtkMRMLViewNode1')
-    #print "YELLOW" + str(yellow.GetFieldOfView())
-    #print "GREEN" + str(green.GetFieldOfView())
+
   
   def onStudySelectionWidgetOpacityPow(self, pow):
     currentReport = self.reportSelector.currentNode()
@@ -571,7 +571,6 @@ class qSlicerLongPETCTModuleWidget:
       cropLogic = slicer.modules.cropvolume.logic()
       croppingROI = slicer.vtkMRMLAnnotationROINode()
       croppingROI.Copy(currentFinding.GetSegmentationROI())
-      #croppingROI.SetAndObserveTransformNodeID(None)
       cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETVolumeNode(),self.tempCroppedVol)
 
       #///
@@ -584,8 +583,12 @@ class qSlicerLongPETCTModuleWidget:
       createdLabelVol = volLogic.CreateLabelVolume(slicer.mrmlScene, self.tempCroppedVol,'TempLabelVolume')
    
 
+      #if self.tempLabelVol.GetScalarVolumeDisplayNode():
+        #slicer.mrmlScene.RemoveNode(tempLabelVol.GetScalarVolumeDisplayNode())
+      
       self.tempLabelVol.Copy(createdLabelVol)   
       self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
+      
       slicer.mrmlScene.RemoveNode(createdLabelVol)
       
       propagate = caller == self
@@ -627,6 +630,8 @@ class qSlicerLongPETCTModuleWidget:
       
       self.editorWidget.exit()      
       self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
+      
+      self.calculateSUVs()      
 
       if self.studySelectionWidget.property('centeredSelected'):
         currentFinding.GetSegmentationROI().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransform().GetID())
@@ -693,13 +698,11 @@ class qSlicerLongPETCTModuleWidget:
     return pasted 
   
 
-  def onFindingNodeCreated(self, findingNode):
+  def setupFindingNode(self, findingNode):
+
     currentStudy = self.getCurrentStudy()
-    applied = self.onShowFindingSettingsDialog(findingNode)
-  
     
-    if (currentStudy != None) & (findingNode != None) & (applied == True):
-      self.getCurrentReport().AddFinding(findingNode)
+    if (currentStudy != None) & (findingNode != None):
       
       if findingNode.GetSegmentationROI() == None:
         roi = slicer.vtkMRMLAnnotationROINode()
@@ -724,9 +727,7 @@ class qSlicerLongPETCTModuleWidget:
           currentStudy.SetSegmentationROI(roi)
             
       centered = self.studySelectionWidget.property('centeredSelected')
-      #currentStudy.ObserveCenteringTransform(centered)
-      
-      roiXYZ = ViewHelper.getSliceNodesCrossingPositionRAS()
+      roiXYZ = ViewHelper.getSliceNodesCrossingPositionRAS()      
       
       roi = currentStudy.GetSegmentationROI()
       
@@ -738,14 +739,6 @@ class qSlicerLongPETCTModuleWidget:
             roi.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
         else:
           roi.SetXYZ(roiXYZ)    
-                     
-    else:
-      scene = findingNode.GetScene()
-      if scene:
-        scene.RemoveNode(findingNode)  
-           
-    self.onManageFindingROIsVisibility()
-    
   
   def onShowFindingSettingsDialog(self, findingNode):
           
@@ -769,8 +762,7 @@ class qSlicerLongPETCTModuleWidget:
         name = self.findingSettingsDialog.property('findingName')
         typename = self.findingSettingsDialog.property('typeName')
         colorID = self.findingSettingsDialog.property('colorID')
-
-        
+       
         if result == qt.QDialog.Accepted:
           if name:
             findingNode.SetName(name)
@@ -783,24 +775,39 @@ class qSlicerLongPETCTModuleWidget:
    
     
   def onFindingNodeChanged(self, findingNode):
+
     currentReport = self.getCurrentReport()
-    #self.editorWidget.exit()
+    
     if currentReport:
+            
+      idx = currentReport.GetIndexOfFinding(findingNode)
+      
+      if idx == -1:
+        applied = self.onShowFindingSettingsDialog(findingNode)
+        if applied:
+          self.getCurrentReport().AddFinding(findingNode)
+          self.setupFindingNode(findingNode)
+        else:
+          self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          slicer.mrmlScene.RemoveNode(findingNode)
+          self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          
       # for segmentation roi updates
       currentReport.SetUserSelectedFinding(findingNode)   
-    if findingNode:      
+    if findingNode:
       self.editorWidget.editLabelMapsFrame.setEnabled(True)
       segROI = findingNode.GetSegmentationROI()
       if (segROI != None) & (self.getCurrentStudy() != None):
         self.getCurrentStudy().SetSegmentationROI(segROI)
         self.updateSegmentationROIPosition()
-    
+  
     else:
       self.editorWidget.editLabelMapsFrame.setEnabled(False)
       if self.getCurrentStudy():
-        self.getCurrentStudy().SetSegmentationROI(None)
+        self.getCurrentStudy().SetSegmentationROI(None)    
     
     self.onManageFindingROIsVisibility()
+
   
   def onFindingROIVisibilityChanged(self, visible): 
     currentFinding = self.getCurrentFinding()
@@ -831,8 +838,7 @@ class qSlicerLongPETCTModuleWidget:
             if (currentFinding != None) & (self.getCurrentReport().GetIndexOfFinding(currentFinding) == x):
               roi.SetVisibility(self.findingSelectionWidget.property('roiVisibility'))
             else:
-              roi.SetVisibility(0)
-                      
+              roi.SetVisibility(0)                   
                       
   def onReportTableStudyClicked(self,index):
     if self.studySliderWidget:
@@ -862,13 +868,11 @@ class qSlicerLongPETCTModuleWidget:
     return None    
                  
     
-
   def petDisplayNodeModified(self, caller, event):
     petDisplayNode = caller
     if petDisplayNode:
       self.selectedPETWindow = petDisplayNode.GetWindow()
       self.selectedPETLevel = petDisplayNode.GetLevel()
-      #print "WINDOW/LEVEL MODIFIED"
 
   def viewNodeModified(self, caller, event):
     viewNode = slicer.util.getNode('vtkMRMLViewNode1')
@@ -877,7 +881,71 @@ class qSlicerLongPETCTModuleWidget:
         self.studySelectionWidget.setProperty('rockView',True)
       else:
         self.studySelectionWidget.setProperty('rockView',False)
-              
+   
+  def calculateSUVs(self):
+    
+    currentStudy = self.getCurrentStudy()
+    currentFinding = self.getCurrentFinding()
+        
+    if currentStudy:
+         
+      instanceUIDs = currentStudy.GetPETVolumeNode().GetAttribute('DICOM.instanceUIDs')
+      instanceUID  = instanceUIDs.split(" ",1)[0]
+      petDir = slicer.modules.longpetct.logic().GetDirectoryOfDICOMSeries(instanceUID)
+
+      if petDir:
+        parameters = {}
+        parameters['PETDICOMPath'] = petDir
+        parameters['PETVolume'] = currentStudy.GetPETVolumeNode().GetID()
+        parameters['VOIVolume'] = currentStudy.GetPETLabelVolumeNode().GetID()
+        parameters['ColorTable'] = self.getCurrentReport().GetFindingTypesColorTable().GetID()
+        parameters['OutputCSV'] = "/Users/Paul/Desktop/SUV_CSV.csv"
+      
+
+        #result[0] = cliNode.GetParameterAsString('SUVMax')
+        #result[1] = cliNode.GetParameterAsString('SUVMean')
+        #result[2] = cliNode.GetParameterAsString('SUVMin')
+        
+        self.runSUVAndUpdateTable(parameters)
+        #node = slicer.vtkMRMLCommandLineModuleNode()
+        #args = (node,parameters)
+        #Thread.start_new_thread( qSlicerLongPETCTModuleWidget.runSUVAndUpdateTable(parameters) self.runSUVAndUpdateTable, args )
+      
+  def runSUVAndUpdateTable(self, parameters):
+    
+    success = False
+    currentStudy = self.getCurrentStudy()
+    currentFinding = self.getCurrentFinding()
+    
+    #locked = self.lockSUVComputation.acquire() # mutex for cli module
+    
+    if (parameters != None):# & (locked == True):
+      self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = True)
+      if self.cliNode.GetStatusString() == 'Completed':
+        success = True
+    
+    if (success == True) & (currentStudy != None) & (currentFinding != None):
+      labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
+      max = self.cliNode.GetParameterAsString('SUVMax')
+      mean = self.cliNode.GetParameterAsString('SUVMean')
+      min = self.cliNode.GetParameterAsString('SUVMin')
+      
+      splitter = ', '
+      labelValues = labelValues.split(splitter)
+      max = max.split(splitter)
+      mean = mean.split(splitter)
+      min = min.split(splitter)
+      
+      idx = labelValues.index(str(currentFinding.GetColorID()))
+      
+         
+      if self.reportTableWidget:
+        self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,float(max[idx]),float(mean[idx]),float(min[idx]))   
+    #self.lockSUVComputation.release()  
+    
+    return success  
+      
+                        
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
