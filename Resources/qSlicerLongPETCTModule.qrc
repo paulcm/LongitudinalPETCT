@@ -8,5 +8,6 @@
     <file>Icons/VolumeRendering.png</file>
     <file>Icons/add.png</file>
     <file>Icons/delete.png</file>
+    <file>Icons/help.png</file>
   </qresource>
 </RCC>
