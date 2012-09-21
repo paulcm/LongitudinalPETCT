@@ -118,7 +118,7 @@ void qSlicerLongPETCTFindingSettingsDialogPrivate
   if(index >= 0 && index < this->ComboBoxType->count())
     this->ComboBoxType->setCurrentIndex(index);
   else
-    this->ComboBoxType->setCurrentIndex(0);
+    this->ComboBoxType->setCurrentIndex(-1);
 }
 
 
@@ -186,7 +186,7 @@ QString qSlicerLongPETCTFindingSettingsDialog::typeName()
   if(d->ReportNode == NULL)
     return empty;
 
-  int index = d->ComboBoxType->currentIndex();
+  int index = d->ComboBoxType->currentIndex() + 1; // +1 because "None" is not in list
 
   if(index >= 0 && index < d->ReportNode->GetFindingTypesCount())
     return QString(d->ReportNode->GetFindingTypeName(index).c_str());
@@ -206,7 +206,7 @@ void qSlicerLongPETCTFindingSettingsDialog::setTypeName(const QString& name)
       return;
     }
 
-  int index = d->ReportNode->GetFindingTypeColorID(name.toStdString());
+  int index = d->ReportNode->GetFindingTypeColorID(name.toStdString()) -1; // -1 because "None" is not in list
 
   if(index >= 0 && index < d->ComboBoxType->count())
     d->ComboBoxType->setCurrentIndex(index);
@@ -224,7 +224,7 @@ int qSlicerLongPETCTFindingSettingsDialog::colorID()
   if(d->ReportNode == NULL)
     return -1;
 
-  int index = d->ComboBoxType->currentIndex();
+  int index = d->ComboBoxType->currentIndex() +1; // +1 because "None" is not in list
 
   return index;
 
@@ -242,7 +242,7 @@ void qSlicerLongPETCTFindingSettingsDialog::setColorID(int colorID)
       return;
     }
 
-  int index = colorID;
+  int index = colorID -1; // -1 because "None" is not in list
 
   if(index >= 0 && index < d->ComboBoxType->count())
     d->ComboBoxType->setCurrentIndex(index);
@@ -291,13 +291,11 @@ void qSlicerLongPETCTFindingSettingsDialog
 
   this->setFindingName(d->ReportNode->GetUserSelectedFinding()->GetName());
 
-
-
   vtkMRMLColorTableNode* colorTableNode = d->ReportNode->GetFindingTypesColorTable();
 
   double col[3];
 
-  for(int i=0; i < colorTableNode->GetNumberOfColors(); ++i)
+  for(int i=1; i < colorTableNode->GetNumberOfColors(); ++i) // i = 1 because "None" is not selectable
     {
       QString findingType = d->ReportNode->GetFindingTypeName(i).c_str();
 
@@ -307,7 +305,17 @@ void qSlicerLongPETCTFindingSettingsDialog
       d->addFindingTypeToComboBox(findingType, color);
     }
 
-  d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetColorID());
+  bool findingHasSegmentation = d->ReportNode->GetUserSelectedFinding()->HasSegmentation();
+
+  d->ComboBoxType->setDisabled(findingHasSegmentation);
+  d->ButtonRemove->setDisabled(findingHasSegmentation);
+
+  if(findingHasSegmentation)
+    d->ExpandButton->setChecked(false);
+
+  d->ExpandButton->setDisabled(findingHasSegmentation);
+
+  d->selectFindingType(d->ReportNode->GetUserSelectedFinding()->GetColorID()-1); // -1 because of "None" not in list
 }
 
 
@@ -374,14 +382,23 @@ void qSlicerLongPETCTFindingSettingsDialog::removeTypeButtonClicked()
   if(d->ReportNode == NULL)
     return;
 
-  int index = d->ComboBoxType->currentIndex();
+  int index = d->ComboBoxType->currentIndex() + 1; // +1 because of "None" color
 
   if(index >= d->ReportNode->GetNumberOfDefaultFindingTypes() && index < d->ReportNode->GetFindingTypesCount())
     {
-      d->ReportNode->RemoveFindingType(index);
 
-      if(index > 0)
-        d->ComboBoxType->setCurrentIndex(index-1);
+      if(d->ReportNode->IsFindingTypeInUse(index))
+        QMessageBox::information(NULL,"Removing Finding Type","The selected Type has been used for an active Finding and can not be removed!");
+
+      else
+        {
+          d->ReportNode->RemoveLastFindingType();
+
+          index = index -1; // restore index for combobox
+
+          if(index > 0)
+            d->ComboBoxType->setCurrentIndex(index-1); // select new last entry
+        }
     }
 }
 
@@ -439,10 +456,10 @@ void qSlicerLongPETCTFindingSettingsDialog::selectionChanged(int index)
   if(d->ReportNode.GetPointer() == NULL)
     return;
 
-  if(index >= d->ReportNode->GetNumberOfDefaultFindingTypes())
-    d->ButtonRemove->setDisabled(true);
+  if(index >= d->ReportNode->GetNumberOfDefaultFindingTypes()-1 && index == d->ComboBoxType->count()-1)
+    d->ButtonRemove->setEnabled(true);
   else
-    d->ButtonRemove->setDisabled(false);
+    d->ButtonRemove->setEnabled(false);
 }
 
 
