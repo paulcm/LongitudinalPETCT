@@ -137,5 +137,12 @@ void vtkMRMLLongPETCTFindingNode::SetColorID(int id)
 }
 
 
+//----------------------------------------------------------------------------
+bool vtkMRMLLongPETCTFindingNode::HasSegmentation()
+{
+  return this->StudyToSegmentationMap.size() > 0 ? true : false;
+}
+
+
 
 
