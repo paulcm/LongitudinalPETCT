@@ -350,10 +350,10 @@ void vtkMRMLLongPETCTReportNode::AddFindingType(std::string name, double color[4
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTReportNode::RemoveFindingType(int index)
+void vtkMRMLLongPETCTReportNode::RemoveLastFindingType()
 {
 
-  if(index >= this->FindingTypesColorTable->GetNumberOfColors())
+  if(this->IsFindingTypeInUse(this->FindingTypesColorTable->GetNumberOfColors()-1) || this->FindingTypesColorTable->GetNumberOfColors() == this->GetNumberOfDefaultFindingTypes())
     return;
 
   vtkNew<vtkMRMLColorTableNode> workingCopy;
@@ -363,25 +363,30 @@ void vtkMRMLLongPETCTReportNode::RemoveFindingType(int index)
 
   int count = 0;
 
-  for(int i=0; i < this->FindingTypesColorTable->GetNumberOfColors(); ++i)
+  for(int i=0; i < this->FindingTypesColorTable->GetNumberOfColors()-1; ++i)
     {
-      if( i == index)
-        continue;
-
       const char* name = this->FindingTypesColorTable->GetColorName(i);
 
       double color[4];
       this->FindingTypesColorTable->GetColor(i,color);
-
-      workingCopy->SetColor(count++,name,color[0],color[1],color[2],color[3]);
+      workingCopy->SetColor(i,name,color[0],color[1],color[2],color[3]);
     }
 
   this->FindingTypesColorTable->Copy(workingCopy.GetPointer());
 
   this->InvokeEvent(vtkCommand::ModifiedEvent);
-
 }
 
+bool vtkMRMLLongPETCTReportNode::IsFindingTypeInUse(int colorID)
+{
+  for(int i=0; i < this->Findings.size(); ++i)
+    {
+      if(this->GetFinding(i)->GetColorID() == colorID)
+        return true;
+    }
+
+  return false;
+}
 
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::GetFindingTypesCount()
