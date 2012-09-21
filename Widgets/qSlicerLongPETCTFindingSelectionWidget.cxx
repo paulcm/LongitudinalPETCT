@@ -83,6 +83,8 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
 
   QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(findingNodeAddedByUser(vtkMRMLNode*)) );
   QObject::connect( this->CheckBoxROIVisiblity, SIGNAL(toggled(bool)), q, SIGNAL(roiVisibilityChanged(bool)) );
+  QObject::connect( this->ButtonHelp, SIGNAL(clicked()), q, SIGNAL(helpRequested()) );
+  QObject::connect( this->ButtonAddSegmentationToFinding, SIGNAL(clicked()), q, SIGNAL(addSegmentationToFinding()) );
 }
   //-----------------------------------------------------------------------------
 // qSlicerLongPETCTFindingSelectionWidget methods
@@ -186,6 +188,15 @@ bool qSlicerLongPETCTFindingSelectionWidget
   return d->CheckBoxROIVisiblity->isChecked();
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget
+::hideAddButton(bool hide)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->ButtonAddSegmentationToFinding);
+
+  d->ButtonAddSegmentationToFinding->setHidden(hide);
+}
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTFindingSelectionWidget
@@ -193,6 +204,10 @@ void qSlicerLongPETCTFindingSelectionWidget
 {
   Q_D(qSlicerLongPETCTFindingSelectionWidget);
   Q_ASSERT(d->FormLayout);
+  Q_ASSERT(d->ButtonAddSegmentationToFinding);
+
+  d->ButtonAddSegmentationToFinding->setVisible(false);
 
   d->FormLayout->setWidget(1,QFormLayout::SpanningRole,editorWidget);
+  d->FormLayout->setWidget(2,QFormLayout::SpanningRole,d->ButtonAddSegmentationToFinding);
 }

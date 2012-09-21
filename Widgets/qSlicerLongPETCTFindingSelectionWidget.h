@@ -48,9 +48,6 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
 
 
 
-public slots:
-  void updateView();
-
 public:
   typedef QWidget Superclass;
   qSlicerLongPETCTFindingSelectionWidget(QWidget *parent=0);
@@ -71,6 +68,12 @@ public:
 signals:
   void findingNodeAddedByUser(vtkMRMLNode* node);
   void roiVisibilityChanged(bool visible);
+  void helpRequested();
+  void addSegmentationToFinding();
+
+public slots:
+  void updateView();
+  void hideAddButton(bool hide);
 
 protected:
   QScopedPointer<qSlicerLongPETCTFindingSelectionWidgetPrivate> d_ptr;
