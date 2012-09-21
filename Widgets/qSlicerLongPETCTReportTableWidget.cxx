@@ -317,6 +317,12 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 {
   Q_D(qSlicerLongPETCTReportTableWidget);
 
+  if(d->ReportNode == NULL)
+    {
+      this->clear();
+      return;
+    }
+
   this->prepareHorizontalHeaders();
   this->prepareVerticalHeaders();
   this->updateVerticalHeaders();
