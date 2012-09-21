@@ -263,9 +263,9 @@ void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row)
         }
       else
         {
-          static bool unseen = true;
-          if(unseen)
-            QMessageBox::information(NULL,"Longitudinal PET/CT Analysis","By clicking into a row the study is loaded into the view. This is only possible if the study has been checked into the workflow first.");
+          //static bool unseen = true;
+          //if(unseen)
+            //QMessageBox::information(NULL,"Longitudinal PET/CT Analysis","By clicking into a row the study is loaded into the view. This is only possible if the study has been checked into the workflow first.");
 
           d->deselectTableAll();
         }
