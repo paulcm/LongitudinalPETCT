@@ -43,7 +43,7 @@ class qSlicerLongPETCTModuleWidget:
 
     self.tempObserverEditorTag = -1
     self.segmentationROIOldPosition = [0.,0.,0.]
-    self.tempCroppedLblVolObserverTag = -1
+    #self.tempCroppedLblVolObserverTag = -1
 
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
@@ -65,6 +65,8 @@ class qSlicerLongPETCTModuleWidget:
     
     self.lockSUVComputation = Thread.allocate_lock()
     self.cliNode = None
+    
+    self.findingsInfoMessageBox = None
     
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
@@ -95,7 +97,6 @@ class qSlicerLongPETCTModuleWidget:
     
       
     reportsLayout.addWidget(self.reportSelectionWidget)
-    
     
     # Studies Collapsible button    
     self.studiesCollapsibleButton.text = "Study Selection"
@@ -130,10 +131,11 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.connect('gpuRenderingToggled(bool)',self.onStudySelectionWidgetGPUVolumeRendering)
     self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
 
-
     # Findings Collapsible button
     self.findingsCollapsibleButton.text = "Findings"
     self.findingsCollapsibleButton.setProperty('collapsed',True)
+    self.findingsCollapsibleButton.connect('contentsCollapsed(bool)', self.onShowFindingsInfoMessageBox)      
+    
     
     if self.reportSelector.currentNode():
       if self.reportSelector.currentNode().GetUserSelectedStudy():
@@ -149,12 +151,15 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelectionWidget = slicer.modulewidget.qSlicerLongPETCTFindingSelectionWidget()    
     self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
     self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onFindingROIVisibilityChanged)
+    self.findingSelectionWidget.connect('helpRequested()', self.onFindingSelectionHelp)
+    self.findingSelectionWidget.connect('addSegmentationToFinding()', self.onCollapseEditor)
     
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
     #self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
     self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
     self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
     self.findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
+    
     
     # Editor widget in Findings
     editorWidgetParent = slicer.qMRMLWidget()
@@ -164,7 +169,7 @@ class qSlicerLongPETCTModuleWidget:
     self.editorWidget.setup()
     self.editorWidget.toolsColor.frame.setVisible(False)
     
-    self.editorWidget.editLabelMapsFrame.setText("Edit Label Map")
+    self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
     self.editorWidget.editLabelMapsFrame.setEnabled(False)
     
     findingsLayout.addWidget(self.findingSelectionWidget)
@@ -173,38 +178,39 @@ class qSlicerLongPETCTModuleWidget:
       if self.reportSelector.currentNode().GetUserSelectedFinding():
         self.editorWidget.editLabelMapsFrame.setEnabled(True)
         
-    
     self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
     
     self.findingSelectionWidget.setEditorWidget(editorWidgetParent)
 
-    
     # Add vertical spacer
     self.layout.addStretch()
     
     self.separator = qt.QFrame()
     self.separator.setFrameStyle(qt.QFrame.HLine | qt.QFrame.Sunken)
     self.layout.addWidget(self.separator)
-    
+
     # Add Study Slider
     self.studySliderWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
     self.studySliderWidget.setReportNode(self.reportSelector.currentNode())
     self.layout.addWidget(self.studySliderWidget)
     self.studySliderWidget.connect('sliderValueChanged(int)',self.onSliderWidgetValueChanged)
     
-
     # Add Report Table
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
     self.reportTableWidget.setReportNode(self.reportSelector.currentNode())
     self.reportTableWidget.connect('studyClicked(int)',self.onReportTableStudyClicked)
-    self.reportTableWidget.connect('findingClicked(int)',self.onReportTableFindingClicked)
-                       
+    self.reportTableWidget.connect('findingClicked(int)',self.onReportTableFindingClicked)                 
     self.layout.addWidget(self.reportTableWidget) 
-
+    
   def onEditorCollapsed(self,collapsed):
     self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
     self.onEnterEditMode( collapsed != True )
-
+    
+    self.findingSelectionWidget.hideAddButton(collapsed)
+    
+ 
+  def onCollapseEditor(self):
+    self.editorWidget.editLabelMapsFrame.setProperty('collapsed', True)
 
   def onSliderWidgetValueChanged(self, value):
     currentStudy = self.getCurrentStudy()
@@ -624,14 +630,20 @@ class qSlicerLongPETCTModuleWidget:
       self.editorWidget.enter()
     
       self.tempObserverEditorTag = currentFinding.GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
-      self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
+      #self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
       
       self.editorWidget.exit()      
-      self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
+      pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
       
-      self.calculateSUVs()      
+      studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
+      
+      if studySeg:
+        self.calculateSUVs()      
+        
+      
+        
 
       if self.studySelectionWidget.property('centeredSelected'):
         currentFinding.GetSegmentationROI().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransform().GetID())
@@ -692,8 +704,8 @@ class qSlicerLongPETCTModuleWidget:
         slicer.mrmlScene.RemoveNode(studySeg)
 
     
-    if self.tempCroppedLblVolObserverTag != -1:      
-      self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag) 
+    #if self.tempCroppedLblVolObserverTag != -1:      
+      #self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag) 
             
     return pasted 
   
@@ -777,26 +789,33 @@ class qSlicerLongPETCTModuleWidget:
   def onFindingNodeChanged(self, findingNode):
 
     currentReport = self.getCurrentReport()
-    
+        
     if currentReport:
             
       idx = currentReport.GetIndexOfFinding(findingNode)
       
       if idx == -1:
         applied = self.onShowFindingSettingsDialog(findingNode)
+        print "APPLIED: " + str(applied)
+        #       & (findingNode != None):
         if applied:
-          self.getCurrentReport().AddFinding(findingNode)
-          self.setupFindingNode(findingNode)
+          currentReport.AddFinding(findingNode)
+          currentReport.SetUserSelectedFinding(findingNode)       
+          self.setupFindingNode(currentReport.GetUserSelectedFinding())
+          
         else:
           self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           slicer.mrmlScene.RemoveNode(findingNode)
+          currentReport.SetUserSelectedFinding(self.findingSelector.currentNode())
           self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          return
           
-      # for segmentation roi updates
-      currentReport.SetUserSelectedFinding(findingNode)   
-    if findingNode:
+      else:
+        currentReport.SetUserSelectedFinding(findingNode) 
+        
+    if currentReport.GetUserSelectedFinding():
       self.editorWidget.editLabelMapsFrame.setEnabled(True)
-      segROI = findingNode.GetSegmentationROI()
+      segROI = currentReport.GetUserSelectedFinding().GetSegmentationROI()
       if (segROI != None) & (self.getCurrentStudy() != None):
         self.getCurrentStudy().SetSegmentationROI(segROI)
         self.updateSegmentationROIPosition()
@@ -807,15 +826,21 @@ class qSlicerLongPETCTModuleWidget:
         self.getCurrentStudy().SetSegmentationROI(None)    
     
     self.onManageFindingROIsVisibility()
+    
 
   
   def onFindingROIVisibilityChanged(self, visible): 
+    print "D1"
     currentFinding = self.getCurrentFinding()
+    print "D1b"
     if currentFinding:
+      print "D2"
       currentROI = currentFinding.GetSegmentationROI()
       if currentROI:
+        print "D3"
         currentROI.SetVisibility(visible)
-
+    print "D4"
+     
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
@@ -861,10 +886,14 @@ class qSlicerLongPETCTModuleWidget:
     return None    
   
   def getCurrentFinding(self):
+    print "T1"
     currentReport = self.getCurrentReport()
+    print "T2"
     if currentReport:
+      print "T3a"
       return currentReport.GetUserSelectedFinding()
     
+    print "T3b"
     return None    
                  
     
@@ -945,7 +974,34 @@ class qSlicerLongPETCTModuleWidget:
     
     return success  
       
-                        
+  def onShowFindingsInfoMessageBox(self, findingsCollapsed = False):
+    if findingsCollapsed == False:
+      if self.findingsInfoMessageBox == None:
+        self.findingsInfoMessageBox = ctk.ctkMessageBox()
+        self.findingsInfoMessageBox.setModal(True)
+        self.findingsInfoMessageBox.setIcon(qt.QMessageBox.Information)
+        self.findingsInfoMessageBox.setWindowTitle('Longitudinal PET/CT Analysis Module')
+        self.findingsInfoMessageBox.setText('How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4.Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.')
+        self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',True)
+        self.findingsInfoMessageBox.setDontShowAgain(False)
+      
+      self.findingsInfoMessageBox.setVisible(True)
+   
+  def onFindingSelectionHelp(self):
+    
+    dontShowAgainSetting = False
+    
+    if self.findingsInfoMessageBox:
+      self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',False)
+      dontShowAgainSetting = self.findingsInfoMessageBox.property('dontShowAgain')
+      self.findingsInfoMessageBox.setProperty('dontShowAgain',False)
+            
+    self.onShowFindingsInfoMessageBox()
+    
+    if self.findingsInfoMessageBox:
+      self.findingsInfoMessageBox.setProperty('dontShowAgain',dontShowAgainSetting)
+      self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',True)
+    
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
