@@ -85,10 +85,10 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
   
     time = datetime.now()  
     petFileLists = self.findPetSeriesImageFiles()
-    print "TIME TO FIND ALL PET FILES: " + str(datetime.now() - time)
+    # "TIME TO FIND ALL PET FILES: " + str(datetime.now() - time)
     time = datetime.now()
     ctFileLists = map(self.findCtSeriesFilesForPetSeries, petFileLists)
-    print "TIME TO FIND ALL CT FILES: " + str(datetime.now() - time)
+    #print "TIME TO FIND ALL CT FILES: " + str(datetime.now() - time)
     time = datetime.now()
     
     counter = 0
@@ -121,7 +121,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
                 counter += 1
         i += 1           
               
-    print "TIME TO GENERATE ALL LOADABLES: " + str(datetime.now() - time)
+    #print "TIME TO GENERATE ALL LOADABLES: " + str(datetime.now() - time)
     time = datetime.now()
     
     if counter > 0:
@@ -141,7 +141,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     
       loadables = [loadable]
     
-    print "TIME TO CREATE MAIN LOADABLE: " + str(datetime.now() - time)
+    #print "TIME TO CREATE MAIN LOADABLE: " + str(datetime.now() - time)
     time = datetime.now()      
     
     return loadables
