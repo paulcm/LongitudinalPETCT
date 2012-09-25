@@ -52,6 +52,8 @@ public:
 
   vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
+  void setCellWidgetToolTip(int row, int col, const QString& toolTip);
+
 };
 
 // --------------------------------------------------------------------------
@@ -80,6 +82,18 @@ void qSlicerLongPETCTReportTableWidgetPrivate
 
   QObject::connect(q, SIGNAL(cellClicked(int,int)), q,SLOT(segmentationCellClicked(int,int)));
 
+}
+
+// --------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidgetPrivate
+::setCellWidgetToolTip(int row, int col, const QString& tooltip)
+{
+  Q_Q(qSlicerLongPETCTReportTableWidget);
+
+  QLabel* cellWidget = qobject_cast<QLabel*>(q->cellWidget(row,col));
+
+  if(cellWidget != NULL)
+      cellWidget->setToolTip(tooltip);
 }
 
 //-----------------------------------------------------------------------------
@@ -426,15 +440,30 @@ updateSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFinding
   int col = d->ReportNode->GetIndexOfSelectedStudy(study);
   int row = d->ReportNode->GetIndexOfFinding(finding);
 
-  QLabel* cellWidget = qobject_cast<QLabel*>(this->cellWidget(row,col));
-
-  if(cellWidget != NULL)
+  if(col != -1 && row != -1)
     {
       QStringList tooltip;
       tooltip << "SUVMax: " << QString().setNum(max) << "\nSUVMean: " << QString().setNum(mean) << "\nSUVMin: " << QString().setNum(min);
-      cellWidget->setToolTip(tooltip.join(""));
-    }
 
+      d->setCellWidgetToolTip(row, col, tooltip.join(""));
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+qSlicerLongPETCTReportTableWidget::clearSegmentationSUVs(
+    vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding)
+{
+  Q_D(qSlicerLongPETCTReportTableWidget);
+
+  if (d->ReportNode == NULL)
+    return;
+
+  int col = d->ReportNode->GetIndexOfSelectedStudy(study);
+  int row = d->ReportNode->GetIndexOfFinding(finding);
+
+  if(col != -1 && row != -1)
+    d->setCellWidgetToolTip(row,col,"");
 }
 
 
