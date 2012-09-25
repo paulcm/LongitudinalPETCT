@@ -63,8 +63,9 @@ class qSlicerLongPETCTModuleWidget:
     self.selectedPETWindow = 0.0
     self.selectedPETLevel = 0.0
     
-    self.lockSUVComputation = Thread.allocate_lock()
     self.cliNode = None
+    self.timerUpdateTable = qt.QTimer()
+    self.timerUpdateTable.connect('timeout()',self.onUpdateSUVTable)
     
     self.findingsInfoMessageBox = None
     
@@ -575,8 +576,11 @@ class qSlicerLongPETCTModuleWidget:
       self.tempCroppedVol.SetName("LongitudinalPETCT_CroppedVolume") 
     
       cropLogic = slicer.modules.cropvolume.logic()
+      
+      # temporary ROI in order to not invoke modified events with original roi
       croppingROI = slicer.vtkMRMLAnnotationROINode()
       croppingROI.Copy(currentFinding.GetSegmentationROI())
+      
       cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETVolumeNode(),self.tempCroppedVol)
 
       #///
@@ -640,7 +644,11 @@ class qSlicerLongPETCTModuleWidget:
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
       
       if studySeg:
-        self.calculateSUVs()      
+        self.calculateSUVs()
+      else:
+        if self.reportTableWidget:
+          self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)   
+            
         
       
         
@@ -720,7 +728,7 @@ class qSlicerLongPETCTModuleWidget:
         roi = slicer.vtkMRMLAnnotationROINode()
         roi.SetScene(slicer.mrmlScene)
         roi.SetHideFromEditors(False)
-        roi.SetName(currentStudy.GetName()+"_ROI")  
+        roi.SetName(findingNode.GetName()+"_ROI")  
         roi.SetVisibility(self.findingSelectionWidget.property('roiVisibility')) 
         
         r = 50.0
@@ -796,11 +804,11 @@ class qSlicerLongPETCTModuleWidget:
       
       if idx == -1:
         applied = self.onShowFindingSettingsDialog(findingNode)
-        print "APPLIED: " + str(applied)
         #       & (findingNode != None):
         if applied:
           currentReport.AddFinding(findingNode)
-          currentReport.SetUserSelectedFinding(findingNode)       
+          currentReport.SetUserSelectedFinding(findingNode)
+          findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
           self.setupFindingNode(currentReport.GetUserSelectedFinding())
           
         else:
@@ -830,16 +838,11 @@ class qSlicerLongPETCTModuleWidget:
 
   
   def onFindingROIVisibilityChanged(self, visible): 
-    print "D1"
     currentFinding = self.getCurrentFinding()
-    print "D1b"
     if currentFinding:
-      print "D2"
       currentROI = currentFinding.GetSegmentationROI()
       if currentROI:
-        print "D3"
         currentROI.SetVisibility(visible)
-    print "D4"
      
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
@@ -872,8 +875,7 @@ class qSlicerLongPETCTModuleWidget:
   def onReportTableFindingClicked(self,index):
     if self.findingSelector:
       self.findingSelector.setCurrentNodeIndex(index)
-      
-                       
+                             
              
   def getCurrentReport(self):
     return self.reportSelector.currentNode()  
@@ -886,14 +888,10 @@ class qSlicerLongPETCTModuleWidget:
     return None    
   
   def getCurrentFinding(self):
-    print "T1"
     currentReport = self.getCurrentReport()
-    print "T2"
     if currentReport:
-      print "T3a"
       return currentReport.GetUserSelectedFinding()
     
-    print "T3b"
     return None    
                  
     
@@ -910,6 +908,34 @@ class qSlicerLongPETCTModuleWidget:
         self.studySelectionWidget.setProperty('rockView',True)
       else:
         self.studySelectionWidget.setProperty('rockView',False)
+          
+  
+  def findingNodeModified(self, caller, event):
+    findingNode = caller
+    
+    if findingNode:
+      # Update Finding's segmentation ROI name
+      findingROI = findingNode.GetSegmentationROI()
+      
+      if findingROI:
+        findingROI.SetName(findingNode.GetName()+"_ROI")
+      
+      # Update Finding's Segmentation names
+      currentReport = self.getCurrentReport()
+      
+      if currentReport:
+        studiesCount = currentReport.GetSelectedStudiesCount()
+        
+        for i in range(0,studiesCount,1):
+          study = currentReport.GetSelectedStudy(i)
+          
+          if study:
+            seg = findingNode.GetSegmentationForStudy(study)
+            petVolume = study.GetPETVolumeNode()
+            
+            if (seg != None) & (petVolume != None):
+              seg.SetName(findingNode.GetName()+"_Segmentation_"+petVolume.GetName())        
+                
    
   def calculateSUVs(self):
     
@@ -935,44 +961,49 @@ class qSlicerLongPETCTModuleWidget:
         #result[1] = cliNode.GetParameterAsString('SUVMean')
         #result[2] = cliNode.GetParameterAsString('SUVMin')
         
-        self.runSUVAndUpdateTable(parameters)
+        self.runCLI(parameters)
         #node = slicer.vtkMRMLCommandLineModuleNode()
         #args = (node,parameters)
         #Thread.start_new_thread( qSlicerLongPETCTModuleWidget.runSUVAndUpdateTable(parameters) self.runSUVAndUpdateTable, args )
       
-  def runSUVAndUpdateTable(self, parameters):
+  def runCLI(self, parameters):
+        
+    if (parameters != None):
+      self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = False)
+      self.timerUpdateTable.start(500)
+      
+
+  def onUpdateSUVTable(self):
     
-    success = False
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
-    #locked = self.lockSUVComputation.acquire() # mutex for cli module
-    
-    if (parameters != None):# & (locked == True):
-      self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = True)
+    if (currentStudy != None) & (currentFinding != None):
+      
       if self.cliNode.GetStatusString() == 'Completed':
-        success = True
-    
-    if (success == True) & (currentStudy != None) & (currentFinding != None):
-      labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
-      max = self.cliNode.GetParameterAsString('SUVMax')
-      mean = self.cliNode.GetParameterAsString('SUVMean')
-      min = self.cliNode.GetParameterAsString('SUVMin')
       
-      splitter = ', '
-      labelValues = labelValues.split(splitter)
-      max = max.split(splitter)
-      mean = mean.split(splitter)
-      min = min.split(splitter)
+        self.timerUpdateTable.stop()
+        
+        labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
+        max = self.cliNode.GetParameterAsString('SUVMax')
+        mean = self.cliNode.GetParameterAsString('SUVMean')
+        min = self.cliNode.GetParameterAsString('SUVMin')
       
-      idx = labelValues.index(str(currentFinding.GetColorID()))
+        splitter = ', '
+        labelValues = labelValues.split(splitter)
+        max = max.split(splitter)
+        mean = mean.split(splitter)
+        min = min.split(splitter)
       
+        idx = labelValues.index(str(currentFinding.GetColorID()))
+               
+        if self.reportTableWidget:
+          self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,float(max[idx]),float(mean[idx]),float(min[idx]))   
+      
+      elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
+        qt.QMessageBox.warning(None,'SUV Computation Error','ERROR')
+        self.timerUpdateTable.stop()
          
-      if self.reportTableWidget:
-        self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,float(max[idx]),float(mean[idx]),float(min[idx]))   
-    #self.lockSUVComputation.release()  
-    
-    return success  
       
   def onShowFindingsInfoMessageBox(self, findingsCollapsed = False):
     if findingsCollapsed == False:
@@ -980,28 +1011,16 @@ class qSlicerLongPETCTModuleWidget:
         self.findingsInfoMessageBox = ctk.ctkMessageBox()
         self.findingsInfoMessageBox.setModal(True)
         self.findingsInfoMessageBox.setIcon(qt.QMessageBox.Information)
-        self.findingsInfoMessageBox.setWindowTitle('Longitudinal PET/CT Analysis Module')
-        self.findingsInfoMessageBox.setText('How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4.Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.')
+        self.findingsInfoMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+        self.findingsInfoMessageBox.setText(ViewHelper.findingInfoMessage())
         self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',True)
         self.findingsInfoMessageBox.setDontShowAgain(False)
       
       self.findingsInfoMessageBox.setVisible(True)
    
   def onFindingSelectionHelp(self):
-    
-    dontShowAgainSetting = False
-    
-    if self.findingsInfoMessageBox:
-      self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',False)
-      dontShowAgainSetting = self.findingsInfoMessageBox.property('dontShowAgain')
-      self.findingsInfoMessageBox.setProperty('dontShowAgain',False)
-            
-    self.onShowFindingsInfoMessageBox()
-    
-    if self.findingsInfoMessageBox:
-      self.findingsInfoMessageBox.setProperty('dontShowAgain',dontShowAgainSetting)
-      self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',True)
-    
+    ViewHelper.showInformationMessageBox(ViewHelper.moduleDialogTitle(), ViewHelper.findingInfoMessage())
+
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
