@@ -210,4 +210,7 @@ void qSlicerLongPETCTFindingSelectionWidget
 
   d->FormLayout->setWidget(1,QFormLayout::SpanningRole,editorWidget);
   d->FormLayout->setWidget(2,QFormLayout::SpanningRole,d->ButtonAddSegmentationToFinding);
+
+  int minWidth = editorWidget->minimumWidth();
+  this->setMinimumWidth(minWidth);
 }
