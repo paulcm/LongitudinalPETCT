@@ -13,7 +13,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
   # TODO: add a capability to control the level of messages
   @staticmethod
   def Info( message ):
-    print("[Reporting " + time.strftime( "%m/%d/%Y %H:%M:%S" ) + "]: INFO: " + str( message ))
+    print("[LongPETCT " + time.strftime( "%m/%d/%Y %H:%M:%S" ) + "]: INFO: " + str( message ))
     sys.stdout.flush()
 
 
@@ -155,8 +155,6 @@ class SlicerLongPETCTModuleViewHelper( object ):
         yellow.SetSliceOffset(crossingRAS[2])
       if green.GetOrientationString() == orientation:
         green.SetSliceOffset(crossingRAS[2])
-    
-    #print "SLICES X-ING RAS POSITION: " + str(yellow.GetSliceOffset()) + " " + str(green.GetSliceOffset()) + " "  + str(red.GetSliceOffset())  
         
   
   @staticmethod
@@ -312,14 +310,20 @@ class SlicerLongPETCTModuleViewHelper( object ):
         xyz = matrix.MultiplyDoublePoint(xyz)
       
       xyz = [xyz[0],xyz[1],xyz[2]]  
-      
-      #print "ROI RAS POSITION: " + str(xyz)
-      
+            
     return xyz  
         
-        
-        
-        
-        
-        
+      
+  @staticmethod
+  def showInformationMessageBox(windowTitle, informationMessage):
+    qt.QMessageBox.information(None, windowTitle, informationMessage)    
+  
+  @staticmethod
+  def moduleDialogTitle():
+    return 'Longitudinal PET/CT Analysis Module'       
+       
+  @staticmethod
+  def findingInfoMessage():
+    return 'How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4.Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.'       
+          
                 
