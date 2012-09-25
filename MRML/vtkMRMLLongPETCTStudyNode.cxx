@@ -135,19 +135,12 @@ void vtkMRMLLongPETCTStudyNode::SetSegmentationROI(vtkMRMLAnnotationROINode* roi
       {
         if(this->SegmentationROI->GetParentTransformNode() != this->CenteringTransform)
           {
-            std::cout << "SETTING CENTERING TRANSFORM" << std::endl;
-
-            if(this->SegmentationROI->GetParentTransformNode() != NULL)
-              std::cout << "OLD CENTERING TRANSFORM: " << this->SegmentationROI->GetParentTransformNode()->GetName() << "NEW: " << this->CenteringTransform->GetName() << std::endl;
-
             this->SegmentationROI->SetAndObserveTransformNodeID(this->CenteringTransform->GetID());
             this->InvokeEvent(vtkCommand::ModifiedEvent);
-            std::cout << "SETTING CENTERING TRANSFORM " << std::endl;
           }
       }
     else
       {
-        std::cout << "SETTING ROI WITHOUT CENTERING TRANSFORM." << std::endl;
         this->SegmentationROI->SetAndObserveTransformNodeID(NULL);
         this->InvokeEvent(vtkCommand::ModifiedEvent);
       }

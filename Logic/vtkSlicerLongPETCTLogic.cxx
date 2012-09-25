@@ -274,19 +274,15 @@ void vtkSlicerLongPETCTLogic::RegisterNodes()
   if(!this->GetMRMLScene())
     return;
 
-  std::cout << "REPORT" << std::endl;
   vtkNew<vtkMRMLLongPETCTReportNode> reportNode;
   this->GetMRMLScene()->RegisterNodeClass(reportNode.GetPointer());
 
-  std::cout << "STUDY" << std::endl;
   vtkNew<vtkMRMLLongPETCTStudyNode> studyNode;
   this->GetMRMLScene()->RegisterNodeClass(studyNode.GetPointer());
 
-  std::cout << "FINDING" << std::endl;
   vtkNew<vtkMRMLLongPETCTFindingNode> findingNode;
   this->GetMRMLScene()->RegisterNodeClass(findingNode.GetPointer());
 
-  std::cout << "SEGMENTATION" << std::endl;
   vtkNew<vtkMRMLLongPETCTSegmentationNode> segmentationNode;
   this->GetMRMLScene()->RegisterNodeClass(segmentationNode.GetPointer());
 
@@ -535,7 +531,6 @@ void vtkSlicerLongPETCTLogic::AddReportNode(vtkMRMLLongPETCTReportNode* reportNo
 {
   if(reportNode)
     ReportNodes.push_back(reportNode);
-//  std::cout << "Report Node Name: " << reportNode->GetName() << " Studies Count: " << reportNode->GetStudyCount() << std::endl;
 }
 
 //---------------------------------------------------------------------------

@@ -38,7 +38,7 @@ vtkMRMLLongPETCTSegmentationNode::vtkMRMLLongPETCTSegmentationNode()
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTSegmentationNode::Initialize()
 {
-  this->SetHideFromEditors(true);
+  this->SetHideFromEditors(false);
 
   this->LabelVolume = NULL;
 

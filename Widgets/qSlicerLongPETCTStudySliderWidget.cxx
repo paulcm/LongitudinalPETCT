@@ -184,7 +184,6 @@ void qSlicerLongPETCTStudySliderWidget
     return;
 
   int studiesCount = d->ReportNode->GetSelectedStudiesCount();
-  std::cout << "STUDIES COUNT" << studiesCount << std::endl;
 
   if(studiesCount < 2)
     {
