@@ -8,6 +8,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
+  qSlicerLongPETCTAnalysisSettingsWidget.cxx
+  qSlicerLongPETCTAnalysisSettingsWidget.h
   qSlicerLongPETCTColorSelectionDialog.cxx
   qSlicerLongPETCTColorSelectionDialog.h
   qSlicerLongPETCTFindingSelectionWidget.cxx
@@ -25,6 +27,7 @@ set(${KIT}_SRCS
   )
 
 set(${KIT}_MOC_SRCS
+  qSlicerLongPETCTAnalysisSettingsWidget.h
   qSlicerLongPETCTColorSelectionDialog.h
   qSlicerLongPETCTFindingSelectionWidget.h
   qSlicerLongPETCTFindingSettingsDialog.h
@@ -36,6 +39,7 @@ set(${KIT}_MOC_SRCS
 
 # UI files
 set(${KIT}_UI_SRCS
+  ../Resources/UI/qSlicerLongPETCTAnalysisSettingsWidget.ui
   ../Resources/UI/qSlicerLongPETCTColorSelectionDialog.ui
   ../Resources/UI/qSlicerLongPETCTFindingSelectionWidget.ui
   ../Resources/UI/qSlicerLongPETCTFindingSettingsDialog.ui
