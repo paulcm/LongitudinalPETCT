@@ -305,10 +305,12 @@ void qSlicerLongPETCTFindingSettingsDialog
       d->addFindingTypeToComboBox(findingType, color);
     }
 
-  bool findingHasSegmentation = d->ReportNode->GetUserSelectedFinding()->HasSegmentation();
+  bool findingHasSegmentation = d->ReportNode->GetUserSelectedFinding()->GetSegmentationsCount() > 0;
 
   d->ComboBoxType->setDisabled(findingHasSegmentation);
-  d->ButtonRemove->setDisabled(findingHasSegmentation);
+
+  if(findingHasSegmentation)
+    d->ButtonRemove->setDisabled(true);
 
   if(findingHasSegmentation)
     d->ExpandButton->setChecked(false);
