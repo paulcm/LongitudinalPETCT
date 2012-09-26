@@ -49,6 +49,10 @@ void vtkMRMLLongPETCTSegmentationNode::Initialize()
   this->ROIRadius[0] = 0.;
   this->ROIRadius[1] = 0.;
   this->ROIRadius[2] = 0.;
+
+  this->SUVMax = 0.;
+  this->SUVMean = 0.;
+  this->SUVMin = 0.;
 }
 
 //----------------------------------------------------------------------------
@@ -64,8 +68,7 @@ void vtkMRMLLongPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
 
   Superclass::ReadXMLAttributes(atts);
 
-
-    this->EndModify(disabledModify);
+  this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
@@ -129,5 +132,15 @@ void vtkMRMLLongPETCTSegmentationNode::GetROIRadius(double radius[3])
   radius[2] = this->ROIRadius[2];
 }
 
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTSegmentationNode::SetSUVs(double max, double mean, double min)
+{
+  int disabledModify = this->StartModify();
 
+  this->SetSUVMax(max);
+  this->SetSUVMean(mean);
+  this->SetSUVMin(min);
+
+  this->EndModify(disabledModify);
+}
 

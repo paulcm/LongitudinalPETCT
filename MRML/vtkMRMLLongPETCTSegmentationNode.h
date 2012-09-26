@@ -68,15 +68,21 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Segmentation";};
 
-
   void SetROIxyz(double roiXYZ[3]);
   void GetROIxyz(double xyz[3]);
 
   void SetROIRadius(double roiRadius[3]);
   void GetROIRadius(double radius[3]);
 
+  void SetSUVs(double max, double mean, double min);
+
   vtkGetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
   vtkSetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
+
+  vtkGetMacro(SUVMax,double);
+  vtkGetMacro(SUVMean,double);
+  vtkGetMacro(SUVMin,double);
+
 
   void Initialize();
 
@@ -86,11 +92,19 @@ protected:
   vtkMRMLLongPETCTSegmentationNode(const vtkMRMLLongPETCTSegmentationNode&);
   void operator=(const vtkMRMLLongPETCTSegmentationNode&);
 
+  vtkSetMacro(SUVMax,double);
+  vtkSetMacro(SUVMean,double);
+  vtkSetMacro(SUVMin,double);
+
   bool Selected;
 
   vtkMRMLScalarVolumeNode* LabelVolume;
   double ROIxyz[3];
   double ROIRadius[3];
+
+  double SUVMax;
+  double SUVMean;
+  double SUVMin;
 
 };
 
