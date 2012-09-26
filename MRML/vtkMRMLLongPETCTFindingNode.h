@@ -37,6 +37,8 @@
 
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
 
+#include <vtkSmartPointer.h>
+
 class map;
 class vector;
 
@@ -44,6 +46,8 @@ class vtkMRMLLongPETCTStudyNode;
 class vtkMRMLScalarVolumeNode;
 class vtkMRMLLongPETCTSegmentationNode;
 class vtkMRMLAnnotationROINode;
+
+class vtkEventForwarderCommand;
 
 
 #include <vtkNew.h>
@@ -80,7 +84,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkGetMacro(TypeName, const char*);
   vtkSetMacro(TypeName, const char*);
 
-  bool HasSegmentation();
+  int GetSegmentationsCount();
 
   //vtkGetMacro(ColorID, int);
   //vtkSetMacro(ColorID, int);
@@ -104,6 +108,7 @@ protected:
   const char* TypeName;
   int ColorID;
 
+  vtkSmartPointer<vtkEventForwarderCommand> segmentationModifiedForwarder;
 };
 
 #endif

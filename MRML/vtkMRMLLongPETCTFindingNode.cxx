@@ -22,12 +22,15 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTFindingNode.h"
 
 #include "vtkMRMLLongPETCTStudyNode.h"
+#include "vtkMRMLLongPETCTSegmentationNode.h"
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
 #include <vtkMRMLAnnotationROINode.h>
 #include <vtkMRMLScalarVolumeNode.h>
+
+#include <vtkEventForwarderCommand.h>
 // STD includes
 
 
@@ -41,6 +44,9 @@ vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
   this->TypeName = "Tumor";
   this->ColorID = 1;
   this->SegmentationROI = NULL;
+
+  this->segmentationModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
+  segmentationModifiedForwarder->SetTarget(this);
 
 }
 
@@ -90,6 +96,10 @@ void vtkMRMLLongPETCTFindingNode::PrintSelf(ostream& os, vtkIndent indent)
 bool vtkMRMLLongPETCTFindingNode::AddSegmentationForStudy(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTSegmentationNode* segmentation)
 {
   bool ok = this->StudyToSegmentationMap.insert(std::make_pair(study,segmentation)).second;
+
+  if(ok && segmentationModifiedForwarder != NULL)
+    segmentation->AddObserver(vtkCommand::ModifiedEvent,this->segmentationModifiedForwarder);
+
   this->InvokeEvent(vtkCommand::ModifiedEvent);
 
   return ok;
@@ -138,9 +148,9 @@ void vtkMRMLLongPETCTFindingNode::SetColorID(int id)
 
 
 //----------------------------------------------------------------------------
-bool vtkMRMLLongPETCTFindingNode::HasSegmentation()
+int vtkMRMLLongPETCTFindingNode::GetSegmentationsCount()
 {
-  return this->StudyToSegmentationMap.size() > 0 ? true : false;
+  return this->StudyToSegmentationMap.size();
 }
 
 
