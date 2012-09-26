@@ -127,13 +127,12 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 
   for(unsigned int i=0; i < this->Studies.size(); ++i)
     {
-      if(this->Studies.at(i)->GetSelected())
+      if(this->Studies.at(i)->GetSelectedForSegmentation())
         count++;
     }
 
   return count;
 }
-
 
 
 //----------------------------------------------------------------------------
@@ -223,7 +222,7 @@ std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedS
 
   for(unsigned int i=0; i < this->Studies.size();++i)
     {
-      if(this->Studies.at(i)->GetSelected())
+      if(this->Studies.at(i)->GetSelectedForSegmentation())
         selectedStudies.push_back(this->Studies[i]);
     }
 
