@@ -24,6 +24,7 @@
 
 #include <vtkMRMLLongPETCTReportNode.h>
 #include <vtkMRMLLongPETCTStudyNode.h>
+#include <vtkMRMLLongPETCTSegmentationNode.h>
 
 #include <vtkMRMLColorTableNode.h>
 
@@ -299,9 +300,13 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
                       qSlicerLongPETCTColorSelectionDialog::getRGBColorFromDoubleValues(
                           color[0], color[1], color[2]);
 
+                  QString cssFontColor = "color: #000";
+                  if(findingColor.lightness() < 100)
+                    cssFontColor = "color: #FEFEFE";
+
                   if(label != NULL)
                     {
-                      label->setStyleSheet("background-color:" + findingColor.name());
+                      label->setStyleSheet(cssFontColor +"; background-color:" + findingColor.name());
                     }
 
                 }
@@ -352,14 +357,38 @@ void qSlicerLongPETCTReportTableWidget::updateView()
   if(lastSelectedFindingIndex >= 0 && lastSelectedFindingIndex < d->ReportNode->GetFindingsCount())
     this->selectFindingRow(lastSelectedFindingIndex);
 
-  if(lastSelectedStudyIndex != -1 && lastSelectedFindingIndex != -1)
+  for(int i=0; i < this->rowCount(); ++i)
     {
-      QLabel* selCellWidget = qobject_cast<QLabel*>(this->cellWidget(lastSelectedFindingIndex,lastSelectedStudyIndex));
-      if(selCellWidget != NULL)
+      vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = d->ReportNode->GetFinding(i);
+
+      for(int j=0; j < this->columnCount(); ++j)
         {
-          QString styleSheet = selCellWidget->styleSheet();
-          styleSheet = styleSheet + "; border: 3px solid #FF0000";
-          selCellWidget->setStyleSheet(styleSheet);
+          QLabel* cellWidget = qobject_cast<QLabel*>(this->cellWidget(i,j));
+          if(cellWidget != NULL)
+            {
+              vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
+
+              vtkSmartPointer<vtkMRMLLongPETCTSegmentationNode> segmentation = finding->GetSegmentationForStudy(study);
+
+              if (segmentation != NULL)
+                {
+                  QStringList tooltip;
+                  tooltip << "SUVMax: " << QString().setNum(segmentation->GetSUVMax())
+                      << "\nSUVMean: " << QString().setNum(segmentation->GetSUVMean()) << "\nSUVMin: "
+                      << QString().setNum(segmentation->GetSUVMin());
+
+                  cellWidget->setToolTip(tooltip.join(""));
+                }
+              else
+                cellWidget->setToolTip(NULL);
+
+              if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
+                {
+                  QString styleSheet = cellWidget->styleSheet();
+                  styleSheet = styleSheet + "; border: 3px solid #FF0000";
+                  cellWidget->setStyleSheet(styleSheet);
+                }
+            }
         }
     }
 }
@@ -369,7 +398,6 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 void qSlicerLongPETCTReportTableWidget
 ::selectStudyColumn(int index)
 {
-
   if(index >= 0 && index < this->columnCount())
     {
       QBrush background(QColor(98,140,178));
@@ -428,7 +456,7 @@ void qSlicerLongPETCTReportTableWidget
 }
 
 
-//-----------------------------------------------------------------------------
+/*//-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportTableWidget::
 updateSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding, double max, double mean, double min)
 {
@@ -464,7 +492,7 @@ qSlicerLongPETCTReportTableWidget::clearSegmentationSUVs(
 
   if(col != -1 && row != -1)
     d->setCellWidgetToolTip(row,col,"");
-}
+}*/
 
 
 
