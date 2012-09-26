@@ -74,6 +74,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkSetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
   vtkSetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
+
   //vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
   void SetSegmentationROI(vtkMRMLAnnotationROINode* roi);
@@ -84,7 +85,13 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkGetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
-  vtkBooleanMacro(Selected, int);
+  vtkBooleanMacro(SelectedForSegmentation, bool);
+  vtkGetMacro(SelectedForSegmentation, bool);
+  vtkSetMacro(SelectedForSegmentation, bool);
+
+  vtkBooleanMacro(SelectedForAnalysis, bool);
+  vtkGetMacro(SelectedForAnalysis, bool);
+  vtkSetMacro(SelectedForAnalysis, bool);
 
   vtkGetMacro(CenteredVolumes, bool);
 
@@ -100,7 +107,8 @@ protected:
 
   void ObserveCenteringTransform(bool observe);
 
-  bool Selected;
+  bool SelectedForSegmentation;
+  bool SelectedForAnalysis;
   bool CenteredVolumes;
 
   vtkMRMLScalarVolumeNode* PETVolumeNode;

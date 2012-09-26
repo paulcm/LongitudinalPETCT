@@ -44,7 +44,8 @@ vtkMRMLLongPETCTStudyNode::vtkMRMLLongPETCTStudyNode()
 void vtkMRMLLongPETCTStudyNode::Initialize()
 {
   this->SetHideFromEditors(true);
-  this->Selected = false;
+  this->SelectedForSegmentation = false;
+  this->SelectedForAnalysis = true;
   this->CenteredVolumes = true;
 
   this->PETVolumeNode = NULL;
@@ -53,8 +54,6 @@ void vtkMRMLLongPETCTStudyNode::Initialize()
 
   this->CenteringTransform = NULL;
   this->SegmentationROI = NULL;
-
-
 
 }
 
