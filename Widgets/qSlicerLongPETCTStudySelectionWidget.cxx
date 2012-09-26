@@ -99,7 +99,7 @@ qSlicerLongPETCTStudySelectionWidgetPrivate::addRowToTableForStudy(vtkSmartPoint
   Q_ASSERT(this->Table);
 
   QCheckBox* studyIDCheckBox = new QCheckBox(q);
-  studyIDCheckBox->setChecked(study->GetSelected());
+  studyIDCheckBox->setChecked(study->GetSelectedForSegmentation());
 
   QString studyID = study->GetAttribute("DICOM.StudyID");
   studyIDCheckBox->setText(studyID);
