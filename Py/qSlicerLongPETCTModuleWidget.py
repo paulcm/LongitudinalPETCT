@@ -41,6 +41,7 @@ class qSlicerLongPETCTModuleWidget:
     #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
+    self.reportObserverIDs = []
     self.tempObserverEditorTag = -1
     self.segmentationROIOldPosition = [0.,0.,0.]
     #self.tempCroppedLblVolObserverTag = -1
@@ -69,18 +70,23 @@ class qSlicerLongPETCTModuleWidget:
     
     self.findingsInfoMessageBox = None
     
+    
+    
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
     # instanciate all collapsible buttons
     self.reportsCollapsibleButton = ctk.ctkCollapsibleButton()
     self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
     self.findingsCollapsibleButton = ctk.ctkCollapsibleButton()
+    self.analysisCollapsibleButton = ctk.ctkCollapsibleButton()
     
     # put all collapsible buttons in a button group so that only one can be uncollapsed at a time
     self.collapsibleButtonsGroup = qt.QButtonGroup()
     self.collapsibleButtonsGroup.addButton(self.reportsCollapsibleButton)
     self.collapsibleButtonsGroup.addButton(self.studiesCollapsibleButton)
     self.collapsibleButtonsGroup.addButton(self.findingsCollapsibleButton)
+    self.collapsibleButtonsGroup.addButton(self.analysisCollapsibleButton)
+    
     
     # show Report selection widget
     self.reportsCollapsibleButton.setProperty('collapsed',False)
@@ -104,11 +110,6 @@ class qSlicerLongPETCTModuleWidget:
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     
     
-    if self.reportSelector.currentNode():
-      self.enableStudiesCollapsibleButton(True)
-    else:
-      self.enableStudiesCollapsibleButton(False)
-    
     self.layout.addWidget(self.studiesCollapsibleButton)
 
     studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
@@ -119,7 +120,7 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.setProperty('linearOpacity',False)
     self.studySelectionWidget.setProperty('rockView',True)
     
-    self.studySelectionWidget.setReportNode(self.reportSelector.currentNode())
+    self.studySelectionWidget.setReportNode(self.getCurrentReport())
     self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
     
     studiesLayout.addWidget(self.studySelectionWidget)
@@ -138,11 +139,11 @@ class qSlicerLongPETCTModuleWidget:
     self.findingsCollapsibleButton.connect('contentsCollapsed(bool)', self.onShowFindingsInfoMessageBox)      
     
     
-    if self.reportSelector.currentNode():
-      if self.reportSelector.currentNode().GetUserSelectedStudy():
-        self.enableFindingsCollapsibleButton(True)
-      else:
-        self.enableFindingsCollapsibleButton(False)
+    #if self.reportSelector.currentNode():
+      #if self.reportSelector.currentNode().GetUserSelectedStudy():
+        #self.enableFindingsCollapsibleButton(True)
+      #else:
+        #self.enableFindingsCollapsibleButton(False)
    
     
     self.layout.addWidget(self.findingsCollapsibleButton)
@@ -160,7 +161,6 @@ class qSlicerLongPETCTModuleWidget:
     self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
     self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
     self.findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
-    
     
     # Editor widget in Findings
     editorWidgetParent = slicer.qMRMLWidget()
@@ -183,6 +183,21 @@ class qSlicerLongPETCTModuleWidget:
     
     self.findingSelectionWidget.setEditorWidget(editorWidgetParent)
 
+
+    #Analysis Collapsible Button
+    self.analysisCollapsibleButton.text = "Analysis"
+    self.analysisCollapsibleButton.setProperty('collapsed',True)
+    #self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onShowFindingsInfoMessageBox)      
+   
+    
+    self.layout.addWidget(self.analysisCollapsibleButton)
+    
+    analysisLayout = qt.QVBoxLayout(self.analysisCollapsibleButton)
+    self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongPETCTAnalysisSettingsWidget()    
+    self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
+    analysisLayout.addWidget(self.analysisSettingsWidget)  
+
+
     # Add vertical spacer
     self.layout.addStretch()
     
@@ -192,16 +207,19 @@ class qSlicerLongPETCTModuleWidget:
 
     # Add Study Slider
     self.studySliderWidget = slicer.modulewidget.qSlicerLongPETCTStudySliderWidget()
-    self.studySliderWidget.setReportNode(self.reportSelector.currentNode())
+    self.studySliderWidget.setReportNode(self.getCurrentReport())
     self.layout.addWidget(self.studySliderWidget)
     self.studySliderWidget.connect('sliderValueChanged(int)',self.onSliderWidgetValueChanged)
     
     # Add Report Table
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
-    self.reportTableWidget.setReportNode(self.reportSelector.currentNode())
+    self.reportTableWidget.setReportNode(self.getCurrentReport())
     self.reportTableWidget.connect('studyClicked(int)',self.onReportTableStudyClicked)
     self.reportTableWidget.connect('findingClicked(int)',self.onReportTableFindingClicked)                 
     self.layout.addWidget(self.reportTableWidget) 
+    
+    
+    self.observeReportNode(self.reportSelector.currentNode())
     
   def onEditorCollapsed(self,collapsed):
     self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
@@ -280,7 +298,7 @@ class qSlicerLongPETCTModuleWidget:
     if currentReport:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
-        selectedStudy.SetSelected(True)
+        selectedStudy.SetSelectedForSegmentation(True)
         self.setCurrentStudy(selectedStudy)           
         
         petID = ""
@@ -346,10 +364,10 @@ class qSlicerLongPETCTModuleWidget:
             
       self.updateBgFgToUserSelectedStudy(selectedStudy)
       
-      if currentReport.GetUserSelectedStudy():
-        self.enableFindingsCollapsibleButton(True)
-      else:
-        self.enableFindingsCollapsibleButton(False)  
+      #if currentReport.GetUserSelectedStudy():
+        #self.enableFindingsCollapsibleButton(True)
+      #else:
+        #self.enableFindingsCollapsibleButton(False)  
 
             
       
@@ -357,7 +375,7 @@ class qSlicerLongPETCTModuleWidget:
   def onStudyDeselected(self, idx):
     currentReport = self.reportSelector.currentNode()
     if currentReport:        
-      currentReport.GetStudy(idx).SetSelected(False)
+      currentReport.GetStudy(idx).SetSelectedForSegmentation(False)
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       self.setCurrentStudy(lastSelectedStudy)
       
@@ -368,24 +386,25 @@ class qSlicerLongPETCTModuleWidget:
       
       self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())   
       
-      if currentReport.GetUserSelectedStudy():
-        self.enableFindingsCollapsibleButton(True)
-      else:
-        self.enableFindingsCollapsibleButton(False)        
+      #if currentReport.GetUserSelectedStudy():
+        #self.enableFindingsCollapsibleButton(True)
+      #else:
+        #self.enableFindingsCollapsibleButton(False)        
    
       
       
   def onCurrentReportChanged(self, reportNode):
+    
+    self.observeReportNode(reportNode)
+    
     self.logic.SetSelectedReportNode = reportNode
     self.studySliderWidget.setReportNode(reportNode)
+    self.studySelectionWidget.setReportNode(reportNode)
+    self.analysisSettingsWidget.setReportNode(reportNode)
+    #self.findingSelectionWidget.setReportNode(reportNode)
     self.reportTableWidget.setReportNode(reportNode)
     
     if reportNode:
- 
-      self.enableStudiesCollapsibleButton(True)
-
-      self.studySelectionWidget.setReportNode(reportNode)
-      self.reportTableWidget.setReportNode(reportNode)
       
       if reportNode.GetUserSelectedStudy():
         self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
@@ -395,14 +414,10 @@ class qSlicerLongPETCTModuleWidget:
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
     
     else:
-      self.enableStudiesCollapsibleButton(False)
-      
       self.onUpdateVolumeRendering(None)
       self.updateBgFgToUserSelectedStudy(None)  
     
     
-      
-  
   def updateBgFgToUserSelectedStudy(self, userSelectedStudy):    
     
     petID = ""
@@ -536,21 +551,21 @@ class qSlicerLongPETCTModuleWidget:
     
       
 
-  def enableStudiesCollapsibleButton(self, enable):
-    if enable:
-      self.studiesCollapsibleButton.setProperty('enabled',True)
-    else:
-      self.studiesCollapsibleButton.setProperty('collapsed',True)
-      self.studiesCollapsibleButton.setProperty('enabled',False)
+  #def enableStudiesCollapsibleButton(self, enable):
+    #if enable:
+      #self.studiesCollapsibleButton.setProperty('enabled',True)
+    #else:
+      #self.studiesCollapsibleButton.setProperty('collapsed',True)
+      #self.studiesCollapsibleButton.setProperty('enabled',False)
       # cascade disabling
-      self.enableFindingsCollapsibleButton(enable)
+      #self.enableFindingsCollapsibleButton(enable)
   
-  def enableFindingsCollapsibleButton(self, enable):
-    if enable:
-      self.findingsCollapsibleButton.setProperty('enabled',True)
-    else:
-      self.findingsCollapsibleButton.setProperty('collapsed',True)
-      self.findingsCollapsibleButton.setProperty('enabled',False)           
+  #def enableFindingsCollapsibleButton(self, enable):
+    #if enable:
+      #self.findingsCollapsibleButton.setProperty('enabled',True)
+    #else:
+      #self.findingsCollapsibleButton.setProperty('collapsed',True)
+      #self.findingsCollapsibleButton.setProperty('enabled',False)           
 
 
   def onSegmentationROIModified(self, caller, event):
@@ -645,11 +660,9 @@ class qSlicerLongPETCTModuleWidget:
       
       if studySeg:
         self.calculateSUVs()
-      else:
-        if self.reportTableWidget:
-          self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)   
-            
-        
+      #else:
+        #if self.reportTableWidget:
+          #self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)           
       
         
 
@@ -686,7 +699,6 @@ class qSlicerLongPETCTModuleWidget:
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         
         studySeg.SetLabelVolume(currentStudy.GetPETLabelVolumeNode())
-        studySeg.SetHideFromEditors(True)
         slicer.mrmlScene.AddNode(studySeg)
         
         currentFinding.AddSegmentationForStudy(currentStudy,studySeg)
@@ -985,21 +997,33 @@ class qSlicerLongPETCTModuleWidget:
         self.timerUpdateTable.stop()
         
         labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
+        # values as comma separated string
         max = self.cliNode.GetParameterAsString('SUVMax')
         mean = self.cliNode.GetParameterAsString('SUVMean')
         min = self.cliNode.GetParameterAsString('SUVMin')
       
         splitter = ', '
         labelValues = labelValues.split(splitter)
+        # values as string list
         max = max.split(splitter)
         mean = mean.split(splitter)
         min = min.split(splitter)
       
         idx = labelValues.index(str(currentFinding.GetColorID()))
-               
-        if self.reportTableWidget:
-          self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,float(max[idx]),float(mean[idx]),float(min[idx]))   
+        
+        # values as float values
+        max = float(max[idx])
+        mean = float(mean[idx])
+        min = float(min[idx])
       
+        #if self.reportTableWidget:
+          #self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,max,mean,min)   
+      
+        currentSeg = currentFinding.GetSegmentationForStudy(currentStudy)
+        
+        if currentSeg:
+          currentSeg.SetSUVs(max,mean,min)
+          
       elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
         qt.QMessageBox.warning(None,'SUV Computation Error','ERROR')
         self.timerUpdateTable.stop()
@@ -1021,6 +1045,46 @@ class qSlicerLongPETCTModuleWidget:
   def onFindingSelectionHelp(self):
     ViewHelper.showInformationMessageBox(ViewHelper.moduleDialogTitle(), ViewHelper.findingInfoMessage())
 
+
+  def manageCollapsibleButtonsAbility(self, caller, event):
+    studies = False
+    findings = False
+    analysis = False
+    
+    currentReport = self.getCurrentReport()
+    
+    if currentReport:
+      studies = True
+    
+      if currentReport.GetSelectedStudiesCount() > 0:
+        findings = True
+        
+        if currentReport.GetFindingsCount() > 0:
+          for i in range(currentReport.GetFindingsCount()):
+            finding = currentReport.GetFinding(i)
+            if finding:
+              if finding.GetSegmentationsCount() > 0:
+                analysis = True      
+                      
+    self.studiesCollapsibleButton.setProperty('enabled',studies)
+    self.findingsCollapsibleButton.setProperty('enabled',findings)  
+    self.analysisCollapsibleButton.setProperty('enabled',analysis) 
+    
+    
+  
+  def observeReportNode(self, reportNode):
+    if reportNode:
+      notObserved = True
+      for id in self.reportObserverIDs:
+        if reportNode.HasObserver(id, vtk.vtkCommand.ModifiedEvent) == 1:
+          notObserved = False
+          break
+    
+      if notObserved:
+        observerID = reportNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.manageCollapsibleButtonsAbility)
+        self.reportObserverIDs.append(observerID)
+    
+    self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
 
   def onReload(self,moduleName="LongPETCT"):
     """Generic reload method for any scripted module.
