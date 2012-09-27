@@ -43,6 +43,7 @@
 class vtkMRMLScalarVolumeNode;
 class vtkMRMLLinearTransformNode;
 class vtkMRMLAnnotationROINode;
+class vtkMRMLVolumeRenderingDisplayNode;
 
 
 
@@ -74,6 +75,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkSetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
   vtkSetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
+  vtkSetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
 
   //vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
@@ -84,6 +86,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkGetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
   vtkGetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
+  vtkGetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
+
 
   vtkBooleanMacro(SelectedForSegmentation, bool);
   vtkGetMacro(SelectedForSegmentation, bool);
@@ -118,6 +122,8 @@ protected:
   vtkMRMLLinearTransformNode* CenteringTransform;
 
   vtkMRMLAnnotationROINode* SegmentationROI;
+
+  vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;
 
 };
 

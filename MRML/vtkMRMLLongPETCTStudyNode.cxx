@@ -55,6 +55,8 @@ void vtkMRMLLongPETCTStudyNode::Initialize()
   this->CenteringTransform = NULL;
   this->SegmentationROI = NULL;
 
+  this->VolumeRenderingDisplayNode = NULL;
+
 }
 
 //----------------------------------------------------------------------------
@@ -129,6 +131,9 @@ void vtkMRMLLongPETCTStudyNode::ObserveCenteringTransform(bool observe)
 void vtkMRMLLongPETCTStudyNode::SetSegmentationROI(vtkMRMLAnnotationROINode* roi)
 {
     this->SegmentationROI = roi;
+
+    if(roi == NULL)
+      return;
 
     if(this->CenteredVolumes)
       {
