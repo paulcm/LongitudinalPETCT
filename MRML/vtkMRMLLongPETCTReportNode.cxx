@@ -376,6 +376,7 @@ void vtkMRMLLongPETCTReportNode::RemoveLastFindingType()
   this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 
+//----------------------------------------------------------------------------
 bool vtkMRMLLongPETCTReportNode::IsFindingTypeInUse(int colorID)
 {
   for(int i=0; i < this->Findings.size(); ++i)
@@ -422,5 +423,16 @@ void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* find
       this->InvokeEvent(vtkCommand::ModifiedEvent);
 
     }
+}
 
+//----------------------------------------------------------------------------
+bool vtkMRMLLongPETCTReportNode::IsStudyInUse(const vtkMRMLLongPETCTStudyNode* study)
+{
+  for(int i=0; i < this->Findings.size(); ++i)
+    {
+      if(this->GetFinding(i)->GetSegmentationForStudy(study) != NULL)
+        return true;
+    }
+
+  return false;
 }
