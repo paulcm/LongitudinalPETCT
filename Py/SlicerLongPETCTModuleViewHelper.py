@@ -291,7 +291,24 @@ class SlicerLongPETCTModuleViewHelper( object ):
             break
           
     return contains          
-           
+  
+  @staticmethod
+  def removeSegmentationFromVolume(lblVolume, colorID):
+      
+    if lblVolume:
+      imgData = lblVolume.GetImageData()
+      
+      if imgData:
+        dims = imgData.GetDimensions()
+        
+        for x in range(dims[0]):
+          for y in range(dims[1]):
+            for z in range(dims[2]):
+              p = imgData.GetScalarComponentAsDouble(x,y,z,0)                             
+              if p == colorID:
+                imgData.SetScalarComponentFromDouble(x,y,z,0,0.)      
+        
+        imgData.Modified()            
   
   @staticmethod
   def getROIPositionInRAS(roi):
@@ -312,7 +329,72 @@ class SlicerLongPETCTModuleViewHelper( object ):
       xyz = [xyz[0],xyz[1],xyz[2]]  
             
     return xyz  
-        
+   
+  @staticmethod
+  def switchToQualitativeView(rows):
+    # add custom layout for comparing two pairs of volumes
+    compareViewTwoRows ="<layout type=\"vertical\">"
+    for i in range(3):
+      compareViewTwoRows = compareViewTwoRows+"   <item>\
+    <layout type=\"horizontal\">\
+    <item>\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare"+str(i*4+1)+"\">\
+    <property name=\"orientation\" action=\"default\">Axial</property>\
+    <property name=\"viewlabel\" action=\"default\">"+str(i*4+1)+"</property>\
+    <property name=\"viewcolor\" action=\"default\">#8C8C8C</property>\
+    <property name=\"lightboxrows\" action=\"default\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"default\">1</property>\
+    <property name=\"lightboxrows\" action=\"relayout\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"relayout\">1</property>\
+    </view>\
+    </item>\
+    <item>\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare"+str(i*4+2)+"\">\
+    <property name=\"orientation\" action=\"default\">Sagittal</property>\
+    <property name=\"viewlabel\" action=\"default\">"+str(i*4+2)+"</property>\
+    <property name=\"viewcolor\" action=\"default\">#8C8C8C</property>\
+    <property name=\"lightboxrows\" action=\"default\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"default\">1</property>\
+    <property name=\"lightboxrows\" action=\"relayout\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"relayout\">1</property>\
+    </view>\
+    </item>\
+    <item>\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare"+str(i*4+3)+"\">\
+    <property name=\"orientation\" action=\"default\">Coronal</property>\
+    <property name=\"viewlabel\" action=\"default\">"+str(i*4+3)+"</property>\
+    <property name=\"viewcolor\" action=\"default\">#8C8C8C</property>\
+    <property name=\"lightboxrows\" action=\"default\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"default\">1</property>\
+    <property name=\"lightboxrows\" action=\"relayout\">1</property>\
+    <property name=\"lightboxcolumns\" action=\"relayout\">1</property>\
+    </view>\
+    </item>\
+    <item>\
+    <view class=\"vtkMRMLViewNode\" type=\""+str(i*4+40)+"\">\
+    <property name=\"viewlabel\" action=\"default\">"+str(i*4+4)+"</property>\
+    </view>\
+    </item>\
+    </layout>\
+    </item>"
+
+    compareViewTwoRows = compareViewTwoRows+"</layout>"
+    
+    layoutNode = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode').GetItemAsObject(0)
+    layoutNode.AddLayoutDescription(123,compareViewTwoRows)
+    layoutNode.SetViewArrangement(123)
+    sliceCompositeNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceCompositeNode')
+    sliceNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceNode')
+    compare0 = None
+    compare1 = None
+    #for i in range(sliceCompositeNodes.GetNumberOfItems()):
+      #scn = sliceCompositeNodes.GetItemAsObject(i)
+      #sn = sliceNodes.GetItemAsObject(i)
+      #print 'Composite node: ',sn.GetName()
+      #if sn.GetName() == 'Compare0':
+        #compare0 = scn
+      #if sn.GetName() == 'Compare1':
+        #compare1 = scn        
       
   @staticmethod
   def showInformationMessageBox(windowTitle, informationMessage):
@@ -324,6 +406,6 @@ class SlicerLongPETCTModuleViewHelper( object ):
        
   @staticmethod
   def findingInfoMessage():
-    return 'How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4.Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.'       
+    return 'How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4. Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.\n'       
           
                 
