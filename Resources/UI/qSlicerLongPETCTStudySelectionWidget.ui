@@ -119,45 +119,16 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="ButtonGPURendering">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
+         <widget class="QPushButton" name="ButtonSpinView">
           <property name="toolTip">
-           <string>GPU Volume Rendering</string>
+           <string>Spin Volume Rendering View</string>
           </property>
           <property name="text">
            <string/>
           </property>
           <property name="icon">
            <iconset resource="../qSlicerLongPETCTModule.qrc">
-            <normaloff>:/Icons/GPURendering.png</normaloff>:/Icons/GPURendering.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>19</width>
-            <height>19</height>
-           </size>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="ButtonRockView">
-          <property name="toolTip">
-           <string>Rock Volume Rendering View</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="../qSlicerLongPETCTModule.qrc">
-            <normaloff>:/Icons/ViewRock.png</normaloff>:/Icons/ViewRock.png</iconset>
+            <normaloff>:/Icons/ViewSpin.png</normaloff>:/Icons/ViewSpin.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -280,23 +251,7 @@
   <connection>
    <sender>ButtonVolumeRendering</sender>
    <signal>toggled(bool)</signal>
-   <receiver>ButtonGPURendering</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>438</x>
-     <y>27</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>438</x>
-     <y>67</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>ButtonVolumeRendering</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>ButtonRockView</receiver>
+   <receiver>ButtonSpinView</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">

@@ -101,6 +101,16 @@ qSlicerLongPETCTStudySelectionWidgetPrivate::addRowToTableForStudy(vtkSmartPoint
   QCheckBox* studyIDCheckBox = new QCheckBox(q);
   studyIDCheckBox->setChecked(study->GetSelectedForSegmentation());
 
+  if(this->ReportNode != NULL)
+    {
+       bool studyIsUsed = this->ReportNode->IsStudyInUse(study);
+       studyIDCheckBox->setDisabled(studyIsUsed);
+       if(studyIsUsed)
+         studyIDCheckBox->setToolTip("This Study can not be deselected while it is used for segmentation by one of the Findings.");
+       else
+         studyIDCheckBox->setToolTip(NULL);
+    }
+
   QString studyID = study->GetAttribute("DICOM.StudyID");
   studyIDCheckBox->setText(studyID);
 
@@ -197,7 +207,7 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
   //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), q, SIGNAL(gpuRenderingToggled(bool)) );
-  QObject::connect(this->ButtonRockView, SIGNAL(toggled(bool)), q, SIGNAL(rockViewToggled(bool)) );
+  QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(rockViewToggled(bool)) );
 
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), this->SliderOpacityPow, SLOT(setValue(double)) );
   QObject::connect(this->SliderOpacityPow, SIGNAL(valueChanged(double)), this->SpinBoxOpacityPow, SLOT(setValue(double)) );
@@ -205,7 +215,6 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 
   QObject::connect(this->CheckBoxStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
 
-  this->ButtonGPURendering->setVisible(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -320,21 +329,12 @@ bool qSlicerLongPETCTStudySelectionWidget::volumeRendering()
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerLongPETCTStudySelectionWidget::gpuRendering()
+bool qSlicerLongPETCTStudySelectionWidget::spinView()
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonGPURendering);
+  Q_ASSERT(d->ButtonSpinView);
 
-  return d->ButtonGPURendering->isChecked();
-}
-
-//-----------------------------------------------------------------------------
-bool qSlicerLongPETCTStudySelectionWidget::rockView()
-{
-  Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonRockView);
-
-  return d->ButtonRockView->isChecked();
+  return d->ButtonSpinView->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -356,22 +356,14 @@ void qSlicerLongPETCTStudySelectionWidget::setVolumeRendering(bool checked)
   d->ButtonVolumeRendering->setChecked(checked);
 }
 
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::setGPURendering(bool checked)
-{
-  Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonGPURendering);
-
-  d->ButtonGPURendering->setChecked(checked);
-}
 
 //-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::setRockView(bool checked)
+void qSlicerLongPETCTStudySelectionWidget::setSpinView(bool checked)
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonRockView);
+  Q_ASSERT(d->ButtonSpinView);
 
-  d->ButtonRockView->setChecked(checked);
+  d->ButtonSpinView->setChecked(checked);
 }
 
 

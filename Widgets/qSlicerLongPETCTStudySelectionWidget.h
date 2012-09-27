@@ -40,8 +40,7 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTStudySelectionWid
   Q_OBJECT
   QVTK_OBJECT
   Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
-  Q_PROPERTY(bool gpuRendering READ gpuRendering WRITE setGPURendering)
-  Q_PROPERTY(bool rockView READ rockView WRITE setRockView)
+  Q_PROPERTY(bool spinView READ spinView WRITE setSpinView)
   Q_PROPERTY(double opacityPow READ opacityPow WRITE setOpacityPow)
   Q_PROPERTY(bool centeredSelected READ centeredSelected WRITE setCenteredSelected)
 
@@ -52,15 +51,13 @@ public:
   virtual ~qSlicerLongPETCTStudySelectionWidget();
 
   bool volumeRendering();
-  bool gpuRendering();
-  bool rockView();
+  bool spinView();
   double opacityPow();
   bool centeredSelected();
 
 
   void setVolumeRendering(bool checked);
-  void setGPURendering(bool checked);
-  void setRockView(bool checked);
+  void setSpinView(bool checked);
   void setOpacityPow(double opacityPow);
   void setCenteredSelected(bool selected);
 
@@ -75,9 +72,8 @@ signals:
     void studySelected(int index);
     void studyDeselected(int index);
     void volumeRenderingToggled(bool toggled);
-    void gpuRenderingToggled(bool toggled);
     void linearOpacityToggled(bool toggled);
-    void rockViewToggled(bool toggled);
+    void spinViewToggled(bool toggled);
     void opacityPowChanged(double d);
     void showStudiesCentered(bool centered);
 
