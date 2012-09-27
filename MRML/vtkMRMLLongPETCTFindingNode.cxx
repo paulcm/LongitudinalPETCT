@@ -110,11 +110,18 @@ vtkMRMLLongPETCTSegmentationNode* vtkMRMLLongPETCTFindingNode::RemoveSegmentatio
 {
   vtkMRMLLongPETCTSegmentationNode* segmentationToRemove = this->GetSegmentationForStudy(study);
 
+  int removed = 0;
+
   if( segmentationToRemove != NULL )
     {
-      this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
-      this->InvokeEvent(vtkCommand::ModifiedEvent);
+      removed = this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongPETCTStudyNode*>(study));
     }
+
+  if(removed > 0)
+    this->InvokeEvent(vtkCommand::ModifiedEvent);
+  else
+    segmentationToRemove = NULL;
+
 
   return segmentationToRemove;
 }
