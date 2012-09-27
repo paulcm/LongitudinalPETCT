@@ -54,6 +54,10 @@ public:
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
 
+signals:
+  void qualitativeAnalysisClicked();
+  void quantitativeAnalysisClicked();
+
 public slots:
   void updateView();
 

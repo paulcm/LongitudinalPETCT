@@ -84,7 +84,9 @@ void qSlicerLongPETCTAnalysisSettingsWidgetPrivate
 
   this->Ui_qSlicerLongPETCTAnalysisSettingsWidget::setupUi(widget);
 
-  // QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(selectionChanged(vtkMRMLNode*)) );
+  QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(qualitativeAnalysisClicked()) );
+  QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(quantitativeAnalysisClicked()) );
+
 }
 
 //// --------------------------------------------------------------------------
@@ -202,18 +204,18 @@ void qSlicerLongPETCTAnalysisSettingsWidget
       QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
 
       QString studyID = study->GetAttribute("DICOM.StudyID");
-      QString dateStr = date.toString(Qt::SystemLocaleLongDate);
+      QString dateStr = date.toString(Qt::SystemLocaleShortDate);
       QString timeStr = time.toString(Qt::ISODate);
 
       QListWidgetItem* item = new QListWidgetItem(d->ListSelectedObjects);
-      item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 
       if(study->GetSelectedForAnalysis())
         item->setCheckState(Qt::Checked);
       else
         item->setCheckState(Qt::Unchecked);
 
-      item->setText(studyID+" | "+dateStr+" | "+timeStr);
+      item->setText("Study ID: "+studyID+"\t| Date: "+dateStr+"\t| Time:"+timeStr);
 
       d->ListSelectedObjects->addItem(item);
     }

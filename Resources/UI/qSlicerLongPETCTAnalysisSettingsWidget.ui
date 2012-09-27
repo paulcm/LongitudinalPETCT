@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>525</width>
-    <height>252</height>
+    <height>258</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,20 +18,42 @@
     <number>16</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>12</number>
-     </property>
-     <property name="leftMargin">
-      <number>12</number>
+      <number>6</number>
      </property>
      <item>
-      <widget class="QRadioButton" name="RadioButtonQualitative">
+      <widget class="QPushButton" name="ButtonQualitativeAnalysis">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Click here for Qualitative Analysis</string>
+       </property>
        <property name="text">
-        <string>Qualitative Analysis</string>
+        <string> Qualitative Analysis</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongPETCTModule.qrc">
+         <normaloff>:/Icons/qual_icon.png</normaloff>:/Icons/qual_icon.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
        </property>
        <attribute name="buttonGroup">
         <string>ButtonGroupAnalysisType</string>
@@ -39,9 +61,34 @@
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="RadioButtonQuantitative">
+      <widget class="QPushButton" name="ButtonQuantitativeAnalysis">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Click here for Quantitative Analysis</string>
+       </property>
        <property name="text">
-        <string>Quantitative Analysis</string>
+        <string> Quantitative Analysis</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongPETCTModule.qrc">
+         <normaloff>:/Icons/LongPETCT.png</normaloff>:/Icons/LongPETCT.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
        </property>
        <attribute name="buttonGroup">
         <string>ButtonGroupAnalysisType</string>
@@ -51,14 +98,31 @@
     </layout>
    </item>
    <item>
-    <widget class="QListWidget" name="ListSelectedObjects">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="spacing">
+      <number>6</number>
      </property>
-    </widget>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Select studies for comparison:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QListWidget" name="ListSelectedObjects">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QListWidget::item { margin-bottom: 5px; color: #000;}</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QPushButton" name="ButtonShowSummary">
@@ -67,9 +131,24 @@
      </property>
     </widget>
    </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../qSlicerLongPETCTModule.qrc"/>
+ </resources>
  <connections/>
  <buttongroups>
   <buttongroup name="ButtonGroupAnalysisType"/>
