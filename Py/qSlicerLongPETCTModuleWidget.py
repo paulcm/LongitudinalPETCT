@@ -32,23 +32,21 @@ class qSlicerLongPETCTModuleWidget:
     if lm:
       lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
     
-    # reload button
-    # (use this during development, but remove it when delivering
-    #  your module to users)
-    self.reloadButton = qt.QPushButton("Reload")
-    self.reloadButton.toolTip = "Reload this module."
-    self.reloadButton.name = "LongPETCT Reload"
-    #self.layout.addWidget(self.reloadButton)
-    self.reloadButton.connect('clicked()', self.onReload)
 
     self.reportObserverIDs = []
     self.tempObserverEditorTag = -1
+    self.viewNodeObserverID = -1
     self.segmentationROIOldPosition = [0.,0.,0.]
     #self.tempCroppedLblVolObserverTag = -1
 
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.vrDisplayNode = None
+    
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    if viewNode:
+      viewNode.SetBoxVisible(0)
+    
     self.findingSettingsDialog = None
 
     self.tempCroppedVol = slicer.vtkMRMLScalarVolumeNode()
@@ -70,8 +68,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.findingsInfoMessageBox = None
     
-    
-    
+       
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
     # instanciate all collapsible buttons
@@ -86,8 +83,7 @@ class qSlicerLongPETCTModuleWidget:
     self.collapsibleButtonsGroup.addButton(self.studiesCollapsibleButton)
     self.collapsibleButtonsGroup.addButton(self.findingsCollapsibleButton)
     self.collapsibleButtonsGroup.addButton(self.analysisCollapsibleButton)
-    
-    
+       
     # show Report selection widget
     self.reportsCollapsibleButton.setProperty('collapsed',False)
     
@@ -118,7 +114,7 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.setProperty('volumeRendering',True)
     self.studySelectionWidget.setProperty('gpuRendering',False)
     self.studySelectionWidget.setProperty('linearOpacity',False)
-    self.studySelectionWidget.setProperty('rockView',True)
+    self.studySelectionWidget.setProperty('spinView',True)
     
     self.studySelectionWidget.setReportNode(self.getCurrentReport())
     self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
@@ -127,10 +123,9 @@ class qSlicerLongPETCTModuleWidget:
 
     self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
     self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
-    self.studySelectionWidget.connect('rockViewToggled(bool)',self.onStudySelectionWidgetRockView)
+    self.studySelectionWidget.connect('spinViewToggled(bool)',self.onStudySelectionWidgetSpinView)
     self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.onStudySelectionWidgetVolumeRendering)
     self.studySelectionWidget.connect('opacityPowChanged(double)',self.onStudySelectionWidgetOpacityPow)
-    self.studySelectionWidget.connect('gpuRenderingToggled(bool)',self.onStudySelectionWidgetGPUVolumeRendering)
     self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
 
     # Findings Collapsible button
@@ -187,7 +182,7 @@ class qSlicerLongPETCTModuleWidget:
     #Analysis Collapsible Button
     self.analysisCollapsibleButton.text = "Analysis"
     self.analysisCollapsibleButton.setProperty('collapsed',True)
-    #self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onShowFindingsInfoMessageBox)      
+    self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onSwitchToQualitativeView)      
    
     
     self.layout.addWidget(self.analysisCollapsibleButton)
@@ -219,6 +214,7 @@ class qSlicerLongPETCTModuleWidget:
     self.layout.addWidget(self.reportTableWidget) 
     
     
+           
     self.observeReportNode(self.reportSelector.currentNode())
     
   def onEditorCollapsed(self,collapsed):
@@ -233,23 +229,25 @@ class qSlicerLongPETCTModuleWidget:
 
   def onSliderWidgetValueChanged(self, value):
     currentStudy = self.getCurrentStudy()
-
     
     currentReport = self.reportSelector.currentNode()
     if currentStudy:
       currentSelectedStudy = self.getCurrentReport().GetSelectedStudy(value)
-      
+    
       self.updateBgFgToUserSelectedStudy(currentSelectedStudy)
       
       if currentSelectedStudy:
         self.setCurrentStudy(currentSelectedStudy)
-       
+
         studyIdx = currentReport.GetIndexOfStudy(currentSelectedStudy)
         self.studySelectionWidget.selectStudyInRow(studyIdx)
-                   
-        self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
+     
+        self.manageVRDisplayNodesVisibility(currentSelectedStudy)
+        #self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
+
       else:
         self.onUpdateVolumeRendering(None)
+        
         
   def setCurrentStudy(self, study):
 
@@ -293,6 +291,7 @@ class qSlicerLongPETCTModuleWidget:
             
           ViewHelper.setSliceNodesCrossingPositionRAS(xyzRAS)
 
+
   def onStudySelected(self, idx):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
@@ -333,56 +332,97 @@ class qSlicerLongPETCTModuleWidget:
       
         viewNode = slicer.util.getNode('vtkMRMLViewNode1')
         
-        # volume rendering
-        if self.vrDisplayNode == None:
-          self.vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode('vtkMRMLGPUTextureMappingVolumeRenderingDisplayNode')
-                    
-          viewNode.SetBoxVisible(0)
-          
-          self.vrDisplayNode.AddViewNodeID(viewNode.GetID())
-          self.vrDisplayNode.SetCroppingEnabled(0)
-          
-          if self.studySelectionWidget.property('volumeRendering'):
-            self.vrDisplayNode.VisibilityOn()
-            viewNode.SetAxisLabelsVisible(1)
-          else:
-            self.vrDisplayNode.VisibilityOff()
-            viewNode.SetAxisLabelsVisible(0)
-          
-          if self.studySelectionWidget.property('rockView') & self.studySelectionWidget.property('volumeRendering'):
-            viewNode.SetAnimationMode(viewNode.Rock)
-          else:
-            viewNode.SetAnimationMode(viewNode.Off)
-          
-        #viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
         
-        self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
+        if selectedStudy.GetVolumeRenderingDisplayNode() == None:
+          vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
+          if vrDisplayNode:
+            vrDisplayNode.SetCroppingEnabled(0)
+          
+            petVolume = selectedStudy.GetPETVolumeNode()
+            if petVolume:
+              vrDisplayNode.SetAndObserveVolumeNodeID(petVolume.GetID())
+              vrDisplayNode.SetName(petVolume.GetName() +"_VR_Display")
+              self.vrLogic.UpdateDisplayNodeFromVolumeNode(vrDisplayNode, petVolume)  
+              if vrDisplayNode.GetVolumePropertyNode():
+                vrDisplayNode.GetVolumePropertyNode().SetName(petVolume.GetName() + "_VR_VolumeProperty")
+              if vrDisplayNode.GetROINode():
+                vrDisplayNode.GetROINode().SetName(petVolume.GetName() + "_VR_ROI")
+            selectedStudy.SetVolumeRenderingDisplayNode(vrDisplayNode)
+          
+        self.manageVRDisplayNodesVisibility(selectedStudy)         
+        viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
+        
+        #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
         self.studySelectionWidget.selectStudyInRow(idx)       
         
-        if viewNode:
-            viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified)
-            
+
       self.updateBgFgToUserSelectedStudy(selectedStudy)
+      
+      if self.viewNodeObserverID == -1:
+        self.viewNodeObserverID = viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified) 
       
       #if currentReport.GetUserSelectedStudy():
         #self.enableFindingsCollapsibleButton(True)
       #else:
-        #self.enableFindingsCollapsibleButton(False)  
-
+        #self.enableFindingsCollapsibleButton(False)                  
+   
+  
+  def manageVRDisplayNodesVisibility(self, selectedStudy):
+    
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    currentReport = self.getCurrentReport()
+    
+    if currentReport:
+      for i in range(currentReport.GetStudiesCount()):
+        study = currentReport.GetStudy(i)
+        if study:
+          vrDisplayNode = study.GetVolumeRenderingDisplayNode()
+          if vrDisplayNode:
             
+            if selectedStudy != study:
+              vrDisplayNode.RemoveViewNodeID(viewNode.GetID())
+            else:
+              vrDisplayNode.AddViewNodeID(viewNode.GetID()) # check if already added in vtkMRMLDisplayNode
+              
+      if selectedStudy:
+              
+        selVrDisplayNode = selectedStudy.GetVolumeRenderingDisplayNode()
+        if selVrDisplayNode:
+          
+          self.onStudySelectionWidgetOpacityPow(self.studySelectionWidget.property('opacityPow'), selVrDisplayNode)
+          
+          if self.studySelectionWidget.property('volumeRendering'):
+            selVrDisplayNode.VisibilityOn()
+            viewNode.SetAxisLabelsVisible(True)
+          else:
+            selVrDisplayNode.VisibilityOff()
+            viewNode.SetAxisLabelsVisible(False)
+          
+          if self.studySelectionWidget.property('spinView') & self.studySelectionWidget.property('volumeRendering'):
+            viewNode.SetAnimationMode(viewNode.Spin)
+          else:
+            viewNode.SetAnimationMode(viewNode.Off)        
+             
+    viewNode.Modified()  
       
-      
+    
+        
   def onStudyDeselected(self, idx):
     currentReport = self.reportSelector.currentNode()
-    if currentReport:        
-      currentReport.GetStudy(idx).SetSelectedForSegmentation(False)
+    if currentReport:
+      study = currentReport.GetStudy(idx)
+      if study:
+        study.SetSelectedForSegmentation(False)
+        
+        if currentReport.IsStudyInUse(study):
+          qt.QMessageBox.question(None,ViewHelper.moduleDialogTitle(),"Segmentations have been performed on this Study!")
+      
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       self.setCurrentStudy(lastSelectedStudy)
       
-      if currentReport.GetUserSelectedStudy():
-        self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
-      else:
-        self.onUpdateVolumeRendering(None)
+
+      self.manageVRDisplayNodesVisibility(currentReport.GetUserSelectedStudy())
+        #self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
       
       self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())   
       
@@ -406,15 +446,17 @@ class qSlicerLongPETCTModuleWidget:
     
     if reportNode:
       
-      if reportNode.GetUserSelectedStudy():
-        self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
-      else:
-        self.onUpdateVolumeRendering(None)
+      self.manageVRDisplayNodesVisibility(reportNode.GetUserSelectedStudy())
+      
+      #if reportNode.GetUserSelectedStudy():
+        #self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
+      #else:
+        #self.onUpdateVolumeRendering(None)
     
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
     
     else:
-      self.onUpdateVolumeRendering(None)
+      self.manageVRDisplayNodesVisibility(None)
       self.updateBgFgToUserSelectedStudy(None)  
     
     
@@ -440,18 +482,29 @@ class qSlicerLongPETCTModuleWidget:
 
 
   def onUpdateVolumeRendering(self, volumeNode):
-    if volumeNode:
+    if (volumeNode != None) & (self.vrDisplayNode != None):
+
       self.vrDisplayNode.SetAndObserveVolumeNodeID(volumeNode.GetID())
       # TODO: clean this hack
       slicer.util.getNode('vtkMRMLViewNode1').InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
-
-      self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
-    
-      self.onStudySelectionWidgetOpacityPow(self.studySelectionWidget.property('opacityPow'))
       
+      self.vrDisplayNode.SetAndObserveROINodeID(None)
+      self.vrDisplayNode.SetAndObserveVolumePropertyNodeID(None)
+      slicer.mrmlScene.RemoveNode(self.vrDisplayNode.GetVolumePropertyNode())
+      slicer.mrmlScene.RemoveNode(self.vrDisplayNode.GetROINode())
+      
+      self.vrLogic.UpdateDisplayNodeFromVolumeNode(self.vrDisplayNode, volumeNode)
+      
+      if self.vrDisplayNode.GetVolumePropertyNode():
+        self.vrDisplayNode.GetVolumePropertyNode().SetName(self.getCurrentStudy().GetPETVolumeNode().GetName() + "_VR_VolPropertyNode")
+      if self.vrDisplayNode.GetROINode():
+        self.vrDisplayNode.GetROINode().SetName(self.getCurrentStudy().GetPETVolumeNode().GetName() + "_VR_ROINode")
+      
+      
+      self.onStudySelectionWidgetOpacityPow(self.studySelectionWidget.property('opacityPow'))
       self.vrDisplayNode.VisibilityOn()
       self.onStudySelectionWidgetVolumeRendering(self.studySelectionWidget.property('volumeRendering'))   
-      
+
     else:
       self.onStudySelectionWidgetVolumeRendering(False) 
       if self.vrDisplayNode:
@@ -459,7 +512,7 @@ class qSlicerLongPETCTModuleWidget:
       
 
   
-  def onStudySelectionWidgetOpacityPow(self, pow):
+  def onStudySelectionWidgetOpacityPow(self, pow, vrDisplayNode = None):
     currentReport = self.reportSelector.currentNode()
     
     if currentReport:
@@ -485,40 +538,45 @@ class qSlicerLongPETCTModuleWidget:
           
               self.opacityFunction.AddPoint(window,1.,0.5,0.)  
               
-              if self.vrDisplayNode:
-                if self.vrDisplayNode.GetVolumePropertyNode():
-                  self.vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
-                  self.vrDisplayNode.Modified()
+              if vrDisplayNode:
+                if vrDisplayNode.GetVolumePropertyNode():
+                  vrDisplayNode.GetVolumePropertyNode().SetScalarOpacity(self.opacityFunction)
+                  vrDisplayNode.Modified()
+                  
+                  # workaround for lately issue with Slicer not updating ViewNode() when only DisplayNode called Modified()
+                  viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+                  if viewNode:
+                    viewNode.Modified()   
+                  
+                   
                 
     
   
   def onStudySelectionWidgetVolumeRendering(self, on):
     
-    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    
     
     if self.vrDisplayNode:
       if on:
         self.vrDisplayNode.VisibilityOn()
         if viewNode:
           viewNode.SetAxisLabelsVisible(1)
-          if self.studySelectionWidget.property('rockView'):
-            viewNode.SetAnimationMode(viewNode.Rock)
+          if self.studySelectionWidget.property('spinView'):
+            viewNode.SetAnimationMode(viewNode.Spin)
       else:
         self.vrDisplayNode.VisibilityOff()
-        self.onStudySelectionWidgetRockView(False)  
+        self.onStudySelectionWidgetSpinView(False)  
         if viewNode:
           viewNode.SetAxisLabelsVisible(0)
           
         
-    
-    
-  def onStudySelectionWidgetRockView(self, rock):
+  def onStudySelectionWidgetSpinView(self, spin):
     
     viewNode = slicer.util.getNode('vtkMRMLViewNode1')
     
     if viewNode:
-      if rock:
-        viewNode.SetAnimationMode(viewNode.Rock)
+      if spin:
+        viewNode.SetAnimationMode(viewNode.Spin)
         
       else:
         viewNode.SetAnimationMode(viewNode.Off)
@@ -534,20 +592,10 @@ class qSlicerLongPETCTModuleWidget:
         currentReport.GetStudy(i).SetCenteredVolumes(centered)
       
       if currentStudy:
-        self.onUpdateVolumeRendering(currentStudy.GetPETVolumeNode())
+        self.manageVRDisplayNodesVisibility(currentStudy)
+        #self.onUpdateVolumeRendering(currentStudy.GetPETVolumeNode())
         self.updateBgFgToUserSelectedStudy(currentStudy)
         
-  def onStudySelectionWidgetGPUVolumeRendering(self, useGPU):
-  
-    if useGPU:
-      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode() #'vtkMRMLGPURayCastVolumeRenderingDisplayNode')
-    else:
-      displayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
-      
-    if self.vrDisplayNode:
-      displayNode.Copy(self.vrDisplayNode)  
-
-    self.vrDisplayNode = displayNode
     
       
 
@@ -856,9 +904,23 @@ class qSlicerLongPETCTModuleWidget:
       if currentROI:
         currentROI.SetVisibility(visible)
      
+     
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
+      
+      for i in range(currentReport.GetSelectedStudiesCount()):
+        study = currentReport.GetStudy(i)
+        
+        seg = findingNode.GetSegmentationForStudy(study)
+        if seg:
+          ViewHelper.removeSegmentationFromVolume(seg.GetLabelVolume(), findingNode.GetColorID())
+          findingNode.RemoveSegmentationForStudy(study)
+          slicer.mrmlScene.RemoveNode(seg)
+          study.SetSegmentationROI(None)  
+          
+      
+      slicer.mrmlScene.RemoveNode(findingNode.GetSegmentationROI())
       currentReport.RemoveFinding(findingNode)
            
    
@@ -916,10 +978,10 @@ class qSlicerLongPETCTModuleWidget:
   def viewNodeModified(self, caller, event):
     viewNode = slicer.util.getNode('vtkMRMLViewNode1')
     if viewNode == caller:
-      if viewNode.GetAnimationMode() == viewNode.Rock:
-        self.studySelectionWidget.setProperty('rockView',True)
+      if viewNode.GetAnimationMode() == viewNode.Spin:
+        self.studySelectionWidget.setProperty('spinView',True)
       else:
-        self.studySelectionWidget.setProperty('rockView',False)
+        self.studySelectionWidget.setProperty('spinView',False)
           
   
   def findingNodeModified(self, caller, event):
@@ -982,7 +1044,7 @@ class qSlicerLongPETCTModuleWidget:
         
     if (parameters != None):
       self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = False)
-      self.timerUpdateTable.start(500)
+      self.timerUpdateTable.start(1000)
       
 
   def onUpdateSUVTable(self):
@@ -1009,6 +1071,9 @@ class qSlicerLongPETCTModuleWidget:
         mean = mean.split(splitter)
         min = min.split(splitter)
       
+        print labelValues
+        print str(currentFinding.GetColorID())
+        
         idx = labelValues.index(str(currentFinding.GetColorID()))
         
         # values as float values
@@ -1086,38 +1151,11 @@ class qSlicerLongPETCTModuleWidget:
     
     self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
 
-  def onReload(self,moduleName="LongPETCT"):
-    """Generic reload method for any scripted module.
-    ModuleWizard will subsitute correct default moduleName.
-    """
-    import imp, sys, os, slicer
-
-    widgetName = moduleName + "Widget"
-
-    # reload the source code
-    # - set source file path
-    # - load the module to the global space
-    filePath = eval('slicer.modules.%s.path' % moduleName.lower())
-    p = os.path.dirname(filePath)
-    
-    
-    if not sys.path.__contains__(p):
-      sys.path.insert(0,p)
-    fp = open(filePath, "r")
-    globals()[moduleName] = imp.load_module(
-        moduleName, fp, filePath, ('.py', 'r', imp.PY_SOURCE))
-    fp.close()
-    
-
-    # rebuild the widget
-    # - find and hide the existing widget
-    # - create a new widget in the existing parent
-    parent = slicer.util.findChildren(name='%s Reload' % moduleName)[0].parent()
-    for child in parent.children():
-      try:
-        child.hide()
-      except AttributeError:
-        pass
-    globals()[widgetName.lower()] = eval(
-        'globals()["%s"].%s(parent)' % (moduleName, widgetName))
-    globals()[widgetName.lower()].setup()
+  def onSwitchToQualitativeView(self, analysisCollapsed):
+   print "SWITCHING TO QUALITATIVE"
+   ViewHelper.switchToQualitativeView(2)
+   #lm = slicer.app.layoutManager()
+   
+   #if analysisCollapsed:
+     #if lm:
+      #lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
