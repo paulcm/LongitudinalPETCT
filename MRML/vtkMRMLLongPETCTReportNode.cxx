@@ -31,6 +31,8 @@ Version:   $Revision: 1.2 $
 #include <vtkMRMLColorTableNode.h>
 #include <cassert>
 
+#include <vector>
+
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLLongPETCTReportNode);
@@ -134,6 +136,19 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
   return count;
 }
 
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetSelectedStudiesForAnalysisCount() const
+{
+  int count = 0;
+
+  for(unsigned int i=0; i < this->Studies.size(); ++i)
+    {
+      if(this->Studies.at(i)->GetSelectedForSegmentation() && this->Studies.at(i)->GetSelectedForAnalysis())
+        count++;
+    }
+
+  return count;
+}
 
 //----------------------------------------------------------------------------
 int vtkMRMLLongPETCTReportNode::AddStudy(vtkMRMLLongPETCTStudyNode* study)
@@ -229,6 +244,20 @@ std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedS
   return selectedStudies;
 }
 
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedStudiesForAnalysis()
+{
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis;
+
+  for(unsigned int i=0; i < this->Studies.size();++i)
+    {
+      if(this->Studies.at(i)->GetSelectedForSegmentation() && this->Studies.at(i)->GetSelectedForAnalysis())
+        selectedStudiesAnalysis.push_back(this->Studies[i]);
+    }
+
+  return selectedStudiesAnalysis;
+}
+
 
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int index)
@@ -275,6 +304,23 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTSt
   for(unsigned int i=0; i < selectedStudies.size(); ++i)
     {
       if (selectedStudies[i] == study)
+        return static_cast<int>(i);
+    }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedForAnalysisStudy(const vtkMRMLLongPETCTStudyNode* study)
+{
+  if(study == NULL)
+    return -1;
+
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis = this->GetSelectedStudiesForAnalysis();
+
+  for(unsigned int i=0; i < selectedStudiesAnalysis.size(); ++i)
+    {
+      if (selectedStudiesAnalysis[i] == study)
         return static_cast<int>(i);
     }
 
@@ -360,7 +406,6 @@ void vtkMRMLLongPETCTReportNode::RemoveLastFindingType()
 
   workingCopy->SetNumberOfColors(this->FindingTypesColorTable->GetNumberOfColors()-1);
 
-  int count = 0;
 
   for(int i=0; i < this->FindingTypesColorTable->GetNumberOfColors()-1; ++i)
     {
@@ -379,7 +424,7 @@ void vtkMRMLLongPETCTReportNode::RemoveLastFindingType()
 //----------------------------------------------------------------------------
 bool vtkMRMLLongPETCTReportNode::IsFindingTypeInUse(int colorID)
 {
-  for(int i=0; i < this->Findings.size(); ++i)
+  for(unsigned int i=0; i < this->Findings.size(); ++i)
     {
       if(this->GetFinding(i)->GetColorID() == colorID)
         return true;
