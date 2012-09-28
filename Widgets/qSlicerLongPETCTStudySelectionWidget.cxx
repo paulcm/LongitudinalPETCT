@@ -207,7 +207,7 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
 
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
   //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), q, SIGNAL(gpuRenderingToggled(bool)) );
-  QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(rockViewToggled(bool)) );
+  QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(spinViewToggled(bool)) );
 
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), this->SliderOpacityPow, SLOT(setValue(double)) );
   QObject::connect(this->SliderOpacityPow, SIGNAL(valueChanged(double)), this->SpinBoxOpacityPow, SLOT(setValue(double)) );
