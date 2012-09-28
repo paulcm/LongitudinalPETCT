@@ -33,6 +33,7 @@ class qSlicerLongPETCTModuleWidget:
       lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
     
 
+    self.qualitativeViewFirstTimeFlag = True
     self.reportObserverIDs = []
     self.tempObserverEditorTag = -1
     self.viewNodeObserverID = -1
@@ -68,6 +69,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.findingsInfoMessageBox = None
     
+    self.findingROIVisiblityBackup = True
        
     self.opacityFunction = vtk.vtkPiecewiseFunction()
     
@@ -190,6 +192,9 @@ class qSlicerLongPETCTModuleWidget:
     analysisLayout = qt.QVBoxLayout(self.analysisCollapsibleButton)
     self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongPETCTAnalysisSettingsWidget()    
     self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
+    self.analysisSettingsWidget.connect('studySelectedForAnalysis(int,bool)', self.updateQualitativeView)
+    
+    
     analysisLayout.addWidget(self.analysisSettingsWidget)  
 
 
@@ -214,7 +219,7 @@ class qSlicerLongPETCTModuleWidget:
     self.layout.addWidget(self.reportTableWidget) 
     
     
-           
+    ViewHelper.SetForegroundOpacity(0.6)       
     self.observeReportNode(self.reportSelector.currentNode())
     
   def onEditorCollapsed(self,collapsed):
@@ -308,7 +313,7 @@ class qSlicerLongPETCTModuleWidget:
         firstDisplayPetLabels = selectedStudy.GetPETLabelVolumeNode().GetScalarVolumeDisplayNode() == None
                 
         if firstDisplayPet | firstDisplayCt | firstDisplayPetLabels:
-          self.updateBgFgToUserSelectedStudy(selectedStudy)
+          self.updateBgFgToUserSelectedStudy(selectedStudy, True)
 
         if firstDisplayPetLabels:
           selectedStudy.GetPETLabelVolumeNode().GetDisplayNode().SetAndObserveColorNodeID(currentReport.GetFindingTypesColorTable().GetID())
@@ -325,10 +330,11 @@ class qSlicerLongPETCTModuleWidget:
             petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
             
           selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat");
-          compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
-          for compositeNode in compositeNodes.values():
-            compositeNode.SetForegroundVolumeID(petID)
-            compositeNode.SetForegroundOpacity(0.6)
+          
+          #compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
+          #for compositeNode in compositeNodes.values():
+            #compositeNode.SetForegroundVolumeID(petID)
+            #compositeNode.SetForegroundOpacity(0.6)
       
         viewNode = slicer.util.getNode('vtkMRMLViewNode1')
         
@@ -460,7 +466,7 @@ class qSlicerLongPETCTModuleWidget:
       self.updateBgFgToUserSelectedStudy(None)  
     
     
-  def updateBgFgToUserSelectedStudy(self, userSelectedStudy):    
+  def updateBgFgToUserSelectedStudy(self, userSelectedStudy, fitVolumes = False):    
     
     petID = ""
     ctID = ""
@@ -478,7 +484,8 @@ class qSlicerLongPETCTModuleWidget:
       if petLblVolume:
         petLblID = petLblVolume.GetID()
 
-    ViewHelper.SetBgFgLblVolumes(ctID,petID,petLblID)
+    ViewHelper.SetRYGBgFgLblVolumes(ctID,petID,petLblID, fitVolumes)
+    #ViewHelper.SetBgFgLblVolumes(ctID,petID,petLblID,False)
 
 
   def onUpdateVolumeRendering(self, volumeNode):
@@ -546,15 +553,15 @@ class qSlicerLongPETCTModuleWidget:
                   # workaround for lately issue with Slicer not updating ViewNode() when only DisplayNode called Modified()
                   viewNode = slicer.util.getNode('vtkMRMLViewNode1')
                   if viewNode:
-                    viewNode.Modified()   
+                    viewNode.Modified()  
+                    camNode = slicer.util.getNode('vtkMRMLCameraNode1')
+                    camNode.Modified() 
                   
                    
                 
     
   
-  def onStudySelectionWidgetVolumeRendering(self, on):
-    
-    
+  def onStudySelectionWidgetVolumeRendering(self, on): 
     
     if self.vrDisplayNode:
       if on:
@@ -665,7 +672,7 @@ class qSlicerLongPETCTModuleWidget:
       slicer.mrmlScene.RemoveNode(createdLabelVol)
       
       propagate = caller == self
-      ViewHelper.SetBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(),propagate)  
+      ViewHelper.SetRYGBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(),propagate)  
     
     self.tempLabelVol.GetDisplayNode().SetAndObserveColorNodeID(self.getCurrentReport().GetFindingTypesColorTable().GetID())
         
@@ -717,7 +724,7 @@ class qSlicerLongPETCTModuleWidget:
       if self.studySelectionWidget.property('centeredSelected'):
         currentFinding.GetSegmentationROI().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransform().GetID())
       
-      self.updateBgFgToUserSelectedStudy(currentStudy)
+      self.updateBgFgToUserSelectedStudy(currentStudy,True)
       
       roiXYZ = ViewHelper.getROIPositionInRAS(currentFinding.GetSegmentationROI())
       ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
@@ -1151,9 +1158,54 @@ class qSlicerLongPETCTModuleWidget:
     
     self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
 
+  
   def onSwitchToQualitativeView(self, analysisCollapsed):
-   print "SWITCHING TO QUALITATIVE"
-   ViewHelper.switchToQualitativeView(2)
+   
+    if analysisCollapsed:
+      self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
+      lm = slicer.app.layoutManager()
+     
+      if lm:
+        lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
+
+    else:
+      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+      for i in range(roiNodes.GetNumberOfItems()):
+        roi = roiNodes.GetItemAsObject(i)  
+        if roi: 
+          roi.SetVisibility(0)
+      
+      self.updateQualitativeView()
+                   
+      #self.manageVRDisplayNodesVisibility(None) 
+  def updateQualitativeView(self):
+    
+    ViewHelper.switchToQualitativeView(self.getCurrentReport().GetSelectedStudiesForAnalysisCount())
+    
+    viewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLViewNode')   
+    for j in range(self.getCurrentReport().GetSelectedStudiesCount()):
+      study = self.getCurrentReport().GetSelectedStudy(j)
+      if study:
+        
+        if study.GetSelectedForAnalysis() == False:
+          continue
+        
+        vrdn = study.GetVolumeRenderingDisplayNode()
+        if vrdn:
+          viewNode = viewNodes.GetItemAsObject(self.getCurrentReport().GetIndexOfSelectedForAnalysisStudy(study)+1)
+          vrdn.AddViewNodeID(viewNode.GetID())
+          viewNode.SetAnimationMode(slicer.vtkMRMLViewNode.Spin)
+          print "Added ViewNode: " + viewNode.GetName() + " to " + vrdn.GetName()
+            
+          if self.qualitativeViewFirstTimeFlag:
+            ViewHelper.SetForegroundOpacity(0.6, True)
+            self.qualitativeViewFirstTimeFlag = False
+            
+          ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfSelectedForAnalysisStudy(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)
+        
+              
+     
+       
    #lm = slicer.app.layoutManager()
    
    #if analysisCollapsed:
