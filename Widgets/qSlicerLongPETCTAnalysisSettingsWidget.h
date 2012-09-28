@@ -36,6 +36,7 @@ class qSlicerLongPETCTAnalysisSettingsWidgetPrivate;
 class vtkMRMLScene;
 class vtkMRMLNode;
 class vtkMRMLLongPETCTReportNode;
+class QListWidgetItem;
 
 
 /// \ingroup Slicer_QtModules_LongPETCT
@@ -57,9 +58,11 @@ public:
 signals:
   void qualitativeAnalysisClicked();
   void quantitativeAnalysisClicked();
+  void studySelectedForAnalysis(int index, bool selected);
 
 public slots:
   void updateView();
+  void listItemChanged(QListWidgetItem* item);
 
 protected:
   QScopedPointer<qSlicerLongPETCTAnalysisSettingsWidgetPrivate> d_ptr;

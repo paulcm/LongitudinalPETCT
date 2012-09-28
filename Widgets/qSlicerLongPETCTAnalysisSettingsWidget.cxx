@@ -56,6 +56,8 @@ public:
 
   vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
+  int numberOfCheckedItems();
+
   //void prepareCheckBoxes();
   //void removeLastCheckBoxes(int amount);
 
@@ -86,7 +88,25 @@ void qSlicerLongPETCTAnalysisSettingsWidgetPrivate
 
   QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(qualitativeAnalysisClicked()) );
   QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(quantitativeAnalysisClicked()) );
+  QObject::connect(this->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), q, SLOT(listItemChanged(QListWidgetItem*)) );
+}
 
+// --------------------------------------------------------------------------
+int qSlicerLongPETCTAnalysisSettingsWidgetPrivate
+::numberOfCheckedItems()
+{
+  Q_ASSERT(this->ListSelectedObjects);
+
+  int nr = 0;
+
+  for(int i=0; i < this->ListSelectedObjects->count(); ++i)
+    {
+      if(this->ListSelectedObjects->item(i)->checkState() == Qt::Checked)
+        nr++;
+    }
+
+
+  return nr;
 }
 
 //// --------------------------------------------------------------------------
@@ -195,6 +215,7 @@ void qSlicerLongPETCTAnalysisSettingsWidget
 //      d->removeLastCheckBoxes(d->ListSelectedStudiesForAnalysis.size());
 //      return;
 //    }
+  QObject::disconnect(d->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(listItemChanged(QListWidgetItem*)) );
 
   for(int i=0; i < d->ReportNode->GetSelectedStudiesCount(); ++i)
     {
@@ -220,6 +241,53 @@ void qSlicerLongPETCTAnalysisSettingsWidget
       d->ListSelectedObjects->addItem(item);
     }
 
+  bool minOneSel = d->numberOfCheckedItems() > 0;
+  d->ListSelectedObjects->setEnabled(minOneSel);
+
+  QObject::connect(d->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(listItemChanged(QListWidgetItem*)) );
+
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTAnalysisSettingsWidget
+::listItemChanged(QListWidgetItem* item)
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ListSelectedObjects);
+
+  int index = 0;
+
+  for(;index < d->ListSelectedObjects->count(); ++index)
+    {
+      if(d->ListSelectedObjects->item(index) == item)
+        break;
+    }
+
+  bool checked = item->checkState() == Qt::Checked;
+
+  if(d->ReportNode != NULL)
+    {
+
+      bool noneSelected = d->numberOfCheckedItems() == 0;
+
+      if(noneSelected)
+        {
+          QObject::disconnect(d->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(listItemChanged(QListWidgetItem*)) );
+          item->setCheckState(Qt::Checked);
+          QObject::connect(d->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(listItemChanged(QListWidgetItem*)) );
+        }
+      else
+        {
+          vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(index);
+
+          if(study != NULL)
+            {
+              study->SetSelectedForAnalysis(checked);
+              emit studySelectedForAnalysis(index,checked);
+            }
+
+        }
+
+    }
+}
 
