@@ -132,8 +132,8 @@
           </property>
           <property name="iconSize">
            <size>
-            <width>16</width>
-            <height>16</height>
+            <width>18</width>
+            <height>19</height>
            </size>
           </property>
           <property name="checkable">
@@ -203,7 +203,7 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>12</height>
+         <height>0</height>
         </size>
        </property>
        <property name="checkable">
@@ -249,22 +249,6 @@
  </resources>
  <connections>
   <connection>
-   <sender>ButtonVolumeRendering</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>ButtonSpinView</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>438</x>
-     <y>27</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>438</x>
-     <y>147</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>ExpandButton</sender>
    <signal>toggled(bool)</signal>
    <receiver>WidgetButtonsPanel</receiver>
@@ -277,22 +261,6 @@
     <hint type="destinationlabel">
      <x>454</x>
      <y>251</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>ButtonVolumeRendering</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>SpinBoxOpacityPow</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>454</x>
-     <y>15</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>454</x>
-     <y>123</y>
     </hint>
    </hints>
   </connection>
