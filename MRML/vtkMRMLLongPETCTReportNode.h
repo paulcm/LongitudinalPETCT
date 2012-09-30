@@ -92,6 +92,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   vtkMRMLLongPETCTStudyNode* GetStudy(int index) const;
 
   vtkMRMLLongPETCTStudyNode* GetSelectedStudy(int index);
+  vtkMRMLLongPETCTStudyNode* GetSelectedStudyForAnalysis(int index);
   vtkMRMLLongPETCTStudyNode* GetSelectedStudyFirst();
   vtkMRMLLongPETCTStudyNode* GetSelectedStudyLast();
 

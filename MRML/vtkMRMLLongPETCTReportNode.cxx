@@ -272,6 +272,19 @@ vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int inde
 }
 
 //----------------------------------------------------------------------------
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudyForAnalysis(int index)
+{
+  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis = this->GetSelectedStudiesForAnalysis();
+
+  if(index >= 0 && index < static_cast<int>(selectedStudiesAnalysis.size()))
+    return selectedStudiesAnalysis[index];
+
+
+  return NULL;
+}
+
+
+//----------------------------------------------------------------------------
 vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudyFirst()
 {
   if(this->GetSelectedStudiesCount() > 0)
