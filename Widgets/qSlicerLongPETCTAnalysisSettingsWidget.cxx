@@ -86,9 +86,13 @@ void qSlicerLongPETCTAnalysisSettingsWidgetPrivate
 
   this->Ui_qSlicerLongPETCTAnalysisSettingsWidget::setupUi(widget);
 
+  this->WidgetButtonsPanel->setVisible(false);
+
   QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(qualitativeAnalysisClicked()) );
   QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(quantitativeAnalysisClicked()) );
   QObject::connect(this->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), q, SLOT(listItemChanged(QListWidgetItem*)) );
+  QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
+  QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(spinViewToggled(bool)) );
 }
 
 // --------------------------------------------------------------------------
@@ -289,5 +293,43 @@ void qSlicerLongPETCTAnalysisSettingsWidget
         }
 
     }
+}
+
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTAnalysisSettingsWidget::volumeRendering()
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonVolumeRendering);
+
+  return d->ButtonVolumeRendering->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTAnalysisSettingsWidget::spinView()
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonSpinView);
+
+  return d->ButtonSpinView->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTAnalysisSettingsWidget::setVolumeRendering(bool checked)
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonVolumeRendering);
+
+  d->ButtonVolumeRendering->setChecked(checked);
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTAnalysisSettingsWidget::setSpinView(bool checked)
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonSpinView);
+
+  d->ButtonSpinView->setChecked(checked);
 }
 
