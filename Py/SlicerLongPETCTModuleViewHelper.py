@@ -380,9 +380,10 @@ class SlicerLongPETCTModuleViewHelper( object ):
     return xyz  
    
   @staticmethod
-  def switchToQualitativeView(studies):
+  def updateQualitativeViewLayout(studies):
     
     label = SlicerLongPETCTModuleViewHelper.compareLabel()
+    label3D = SlicerLongPETCTModuleViewHelper.compareLabel3D()
    
     # add custom layout for comparing two pairs of volumes
     compareViewTwoRows ="<layout type=\"horizontal\">"
@@ -392,7 +393,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
       compareViewTwoRows = compareViewTwoRows+"   <item>\
     <layout type=\"vertical\">\
     <item>\
-    <view class=\"vtkMRMLViewNode\" type=\"type"+str(i)+"\">\
+    <view class=\"vtkMRMLViewNode\" singletontag=\""+label3D+str(i+1)+"\">\
     <property name=\"viewlabel\" action=\"default\">D"+str(i+1)+"</property>\
     </view>\
     </item>\
@@ -438,10 +439,12 @@ class SlicerLongPETCTModuleViewHelper( object ):
     id = 123 + studies
     layoutNode.AddLayoutDescription(id,compareViewTwoRows)
     layoutNode.SetViewArrangement(id)
-    sliceCompositeNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceCompositeNode')
-    sliceNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceNode')
-    compare0 = None
-    compare1 = None
+    
+    
+    compViewNodes = SlicerLongPETCTModuleViewHelper.getCompareViewNodes()
+    for vn in compViewNodes:
+      if vn.GetBoxVisible != 0:
+        vn.SetBoxVisible(0)
     #for i in range(sliceCompositeNodes.GetNumberOfItems()):
       #scn = sliceCompositeNodes.GetItemAsObject(i)
       #sn = sliceNodes.GetItemAsObject(i)
@@ -449,7 +452,9 @@ class SlicerLongPETCTModuleViewHelper( object ):
       #if sn.GetName() == 'Compare0':
         #compare0 = scn
       #if sn.GetName() == 'Compare1':
-        #compare1 = scn        
+        #compare1 = scn    
+        
+    return id            
       
   @staticmethod
   def showInformationMessageBox(windowTitle, informationMessage):
@@ -462,7 +467,79 @@ class SlicerLongPETCTModuleViewHelper( object ):
   @staticmethod
   def findingInfoMessage():
     return 'How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4. Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.\n'       
-          
+  
+  @staticmethod
+  def reportsHelpText():
+    return '<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600; text-decoration: underline;\">Importing PET/CT studies to a Report</span></p>\n<ol style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\"><li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/SlicerLoadDICOM.png\" /> Open the Slicer DICOM Database</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Browse database for patient and select entry</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select DICOM Data which has been detected by the <span style=\" font-weight:600; font-style:italic;\">Longitudinal PET/CT Analysis</span><span style=\" font-style:italic;\"> Reader</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Click <span style=\" font-weight:600; font-style:italic;\">Load Selection to Slicer </span></li>\n<li style=\" font-weight:600; font-style:italic;\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/LongPETCT_small.png\" /> <span style=\" font-weight:400; font-style:normal;\">Reopen</span><span style=\" font-style:normal;\"> Longitudinal PET/CT Analysis</span><span style=\" font-weight:400; font-style:normal;\"> module</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select the new generated <span style=\" font-weight:600; font-style:italic;\">Report</span></li></ol></body></html>'
+    
   @staticmethod
   def compareLabel():
-    return 'CompareLongPETCT_'                  
+    return 'CompareLongPETCT_'
+  
+  @staticmethod
+  def compareLabel3D():
+    return 'CompareLongPETCT_3D_' 
+  
+  @staticmethod
+  def getStandardViewNode():
+    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    return viewNode
+    
+  @staticmethod
+  def getCompareViewNodes():
+    compareViewNodes = []
+    viewNodes = slicer.util.getNodes('vtkMRMLViewNode*')
+    for vn in viewNodes.values():
+      if str(vn.GetSingletonTag()).find(SlicerLongPETCTModuleViewHelper.compareLabel3D()) != -1:
+        compareViewNodes.append(vn)
+        
+    return compareViewNodes
+  
+  @staticmethod
+  def removeObserversFromCompareViewNodes(observerIDsList):
+   
+    if observerIDsList:
+      compareViewNodes = SlicerLongPETCTModuleViewHelper.getCompareViewNodes()
+    
+      for vn in compareViewNodes:
+        for id in observerIDsList:
+          vn.RemoveObserver(id)
+  
+  @staticmethod
+  def spinStandardViewNode(spin):
+    if spin:
+      SlicerLongPETCTModuleViewHelper.getStandardViewNode().SetAnimationMode(slicer.vtkMRMLViewNode.Spin) 
+    else:
+      SlicerLongPETCTModuleViewHelper.getStandardViewNode().SetAnimationMode(slicer.vtkMRMLViewNode.Off)   
+           
+                         
+  @staticmethod
+  def spinCompareViewNodes(spin):
+    compViewNodes = SlicerLongPETCTModuleViewHelper.getCompareViewNodes()
+    for vn in compViewNodes:
+      if spin:
+        vn.SetAnimationMode(slicer.vtkMRMLViewNode.Spin)
+      else:
+        vn.SetAnimationMode(slicer.vtkMRMLViewNode.Off)
+  
+  @staticmethod      
+  def opacityPowerFunction(window, pow, points):
+    opacityFunction = None
+    rg = int(points)-1
+    
+    window = float(window)
+    pow = float(pow)
+    points = float(points)
+          
+    if window > 0:
+      opacityFunction = vtk.vtkPiecewiseFunction()
+      opacityFunction.AddPoint(0.,0.,0.5,0.)  
+      
+      for i in range(1,rg):
+       
+        m = float(i/points)
+        opacityFunction.AddPoint((window*m),m**pow,0.5,0.)
+              
+      opacityFunction.AddPoint(window,1.,0.5,0.)
+    
+    return opacityFunction          
