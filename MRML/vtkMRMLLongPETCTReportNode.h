@@ -82,7 +82,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   int GetStudiesCount() const;
   int GetSelectedStudiesCount() const;
-  int GetSelectedStudiesForAnalysisCount() const;
+  int GetStudiesSelectedForAnalysisCount() const;
   int GetFindingsCount() const;
 
   vtkMRMLLongPETCTFindingNode* GetFinding(int index) const;
@@ -92,16 +92,16 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   vtkMRMLLongPETCTStudyNode* GetStudy(int index) const;
 
   vtkMRMLLongPETCTStudyNode* GetSelectedStudy(int index);
-  vtkMRMLLongPETCTStudyNode* GetSelectedStudyForAnalysis(int index);
+  vtkMRMLLongPETCTStudyNode* GetStudySelectedForAnalysis(int index);
   vtkMRMLLongPETCTStudyNode* GetSelectedStudyFirst();
   vtkMRMLLongPETCTStudyNode* GetSelectedStudyLast();
 
   std::vector<vtkMRMLLongPETCTStudyNode*> GetSelectedStudies();
-  std::vector<vtkMRMLLongPETCTStudyNode*> GetSelectedStudiesForAnalysis();
+  std::vector<vtkMRMLLongPETCTStudyNode*> GetStudiesSelectedForAnalysis();
 
   int GetIndexOfStudy(const vtkMRMLLongPETCTStudyNode* study);
   int GetIndexOfSelectedStudy(const vtkMRMLLongPETCTStudyNode* study);
-  int GetIndexOfSelectedForAnalysisStudy(const vtkMRMLLongPETCTStudyNode* study);
+  int GetIndexOfStudySelectedForAnalysis(const vtkMRMLLongPETCTStudyNode* study);
   int GetIndexOfFinding(const vtkMRMLLongPETCTFindingNode* finding);
 
   vtkGetMacro(UserSelectedStudy,vtkMRMLLongPETCTStudyNode*);

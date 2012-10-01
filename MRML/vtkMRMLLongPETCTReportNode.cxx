@@ -137,7 +137,7 @@ int vtkMRMLLongPETCTReportNode::GetSelectedStudiesCount() const
 }
 
 //----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetSelectedStudiesForAnalysisCount() const
+int vtkMRMLLongPETCTReportNode::GetStudiesSelectedForAnalysisCount() const
 {
   int count = 0;
 
@@ -245,17 +245,17 @@ std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedS
 }
 
 //----------------------------------------------------------------------------
-std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetSelectedStudiesForAnalysis()
+std::vector<vtkMRMLLongPETCTStudyNode*> vtkMRMLLongPETCTReportNode::GetStudiesSelectedForAnalysis()
 {
-  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis;
+  std::vector<vtkMRMLLongPETCTStudyNode*> studiesSelectedForAnalysis;
 
   for(unsigned int i=0; i < this->Studies.size();++i)
     {
       if(this->Studies.at(i)->GetSelectedForSegmentation() && this->Studies.at(i)->GetSelectedForAnalysis())
-        selectedStudiesAnalysis.push_back(this->Studies[i]);
+        studiesSelectedForAnalysis.push_back(this->Studies[i]);
     }
 
-  return selectedStudiesAnalysis;
+  return studiesSelectedForAnalysis;
 }
 
 
@@ -272,12 +272,12 @@ vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudy(int inde
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetSelectedStudyForAnalysis(int index)
+vtkMRMLLongPETCTStudyNode* vtkMRMLLongPETCTReportNode::GetStudySelectedForAnalysis(int index)
 {
-  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis = this->GetSelectedStudiesForAnalysis();
+  std::vector<vtkMRMLLongPETCTStudyNode*> studiesSelectedForAnalysis = this->GetStudiesSelectedForAnalysis();
 
-  if(index >= 0 && index < static_cast<int>(selectedStudiesAnalysis.size()))
-    return selectedStudiesAnalysis[index];
+  if(index >= 0 && index < static_cast<int>(studiesSelectedForAnalysis.size()))
+    return studiesSelectedForAnalysis[index];
 
 
   return NULL;
@@ -324,16 +324,16 @@ int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedStudy(const vtkMRMLLongPETCTSt
 }
 
 //----------------------------------------------------------------------------
-int vtkMRMLLongPETCTReportNode::GetIndexOfSelectedForAnalysisStudy(const vtkMRMLLongPETCTStudyNode* study)
+int vtkMRMLLongPETCTReportNode::GetIndexOfStudySelectedForAnalysis(const vtkMRMLLongPETCTStudyNode* study)
 {
   if(study == NULL)
     return -1;
 
-  std::vector<vtkMRMLLongPETCTStudyNode*> selectedStudiesAnalysis = this->GetSelectedStudiesForAnalysis();
+  std::vector<vtkMRMLLongPETCTStudyNode*> studiesSelectedForAnalysis = this->GetStudiesSelectedForAnalysis();
 
-  for(unsigned int i=0; i < selectedStudiesAnalysis.size(); ++i)
+  for(unsigned int i=0; i < studiesSelectedForAnalysis.size(); ++i)
     {
-      if (selectedStudiesAnalysis[i] == study)
+      if (studiesSelectedForAnalysis[i] == study)
         return static_cast<int>(i);
     }
 
@@ -467,11 +467,6 @@ void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* find
   if(index >= 0 && index < this->GetFindingsCount())
     {
       this->Findings.erase(this->Findings.begin()+index);
-//        std::cout << "FINDING REF COUNT BEFORE DELETE" << finding->GetReferenceCount() << std::endl;
-//
-//      finding->Delete();
-//
-//      std::cout << "FINDING REF COUNT AFTER DELETE" << finding->GetReferenceCount() << std::endl;
 
       if(this->GetFindingsCount() > 0 && index > 0)
         this->SetUserSelectedFinding(this->GetFinding(index-1));
@@ -486,7 +481,7 @@ void vtkMRMLLongPETCTReportNode::RemoveFinding(vtkMRMLLongPETCTFindingNode* find
 //----------------------------------------------------------------------------
 bool vtkMRMLLongPETCTReportNode::IsStudyInUse(const vtkMRMLLongPETCTStudyNode* study)
 {
-  for(int i=0; i < this->Findings.size(); ++i)
+  for(unsigned int i=0; i < this->Findings.size(); ++i)
     {
       if(this->GetFinding(i)->GetSegmentationForStudy(study) != NULL)
         return true;
