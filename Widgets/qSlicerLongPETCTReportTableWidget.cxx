@@ -306,8 +306,7 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
 
                   if(label != NULL)
                     {
-                      label->setStyleSheet("QWidget{"+cssFontColor +"; background-color:" + findingColor.name()+";} ");
-                      std::cout << "STYLESHEET: " << label->styleSheet().toStdString().c_str() << std::endl;
+                      label->setStyleSheet("QLabel QToolTip {background-color:" + findingColor.name()+";} QLabel {"+cssFontColor +"; background-color:" + findingColor.name()+";} ");
                     }
 
                 }
@@ -390,9 +389,8 @@ void qSlicerLongPETCTReportTableWidget::updateView()
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
                 {
                   QString styleSheet = cellWidget->styleSheet();
-                  styleSheet.prepend("QLabel{border: 3px solid #DD0000;} ");
+                  styleSheet.insert(styleSheet.length()-1," QLabel{border: 3px solid #DD0000;} ");
                   cellWidget->setStyleSheet(styleSheet);
-                  std::cout << "STYLESHEET: " << cellWidget->styleSheet().toStdString().c_str() << std::endl;
                 }
             }
         }
