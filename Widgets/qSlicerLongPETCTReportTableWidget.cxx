@@ -306,7 +306,8 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
 
                   if(label != NULL)
                     {
-                      label->setStyleSheet(cssFontColor +"; background-color:" + findingColor.name());
+                      label->setStyleSheet("QWidget{"+cssFontColor +"; background-color:" + findingColor.name()+";} ");
+                      std::cout << "STYLESHEET: " << label->styleSheet().toStdString().c_str() << std::endl;
                     }
 
                 }
@@ -372,12 +373,16 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 
               if (segmentation != NULL)
                 {
-                  QStringList tooltip;
-                  tooltip << "SUVMax: " << QString().setNum(segmentation->GetSUVMax())
-                      << "\nSUVMean: " << QString().setNum(segmentation->GetSUVMean()) << "\nSUVMin: "
-                      << QString().setNum(segmentation->GetSUVMin());
 
-                  cellWidget->setToolTip(tooltip.join(""));
+                  QString tooltip = QString("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table style=\"border-collapse: collapse;border-spacing: 2px 10px;margin:0;padding:0\" ><tbody>  <tr><td>SUV<span style=\"vertical-align:sub;\">MAX</span></td><td>%1</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MEAN</span></td><td>%2</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MIN</span></td><td>%3</td></tr></tbody></table></body></html>").arg(QString().setNum(segmentation->GetSUVMax()),QString().setNum(segmentation->GetSUVMean()),QString().setNum(segmentation->GetSUVMin()));
+                  cellWidget->setToolTip(tooltip);
+
+//                  QStringList tooltip;
+//                  tooltip << "SUVMax: " << QString().setNum(segmentation->GetSUVMax())
+//                      << "\nSUVMean: " << QString().setNum(segmentation->GetSUVMean()) << "\nSUVMin: "
+//                      << QString().setNum(segmentation->GetSUVMin());
+//
+//                  cellWidget->setToolTip(tooltip.join(""));
                 }
               else
                 cellWidget->setToolTip(NULL);
@@ -385,8 +390,9 @@ void qSlicerLongPETCTReportTableWidget::updateView()
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
                 {
                   QString styleSheet = cellWidget->styleSheet();
-                  styleSheet = styleSheet + "; border: 3px solid #FF0000";
+                  styleSheet.prepend("QLabel{border: 3px solid #DD0000;} ");
                   cellWidget->setStyleSheet(styleSheet);
+                  std::cout << "STYLESHEET: " << cellWidget->styleSheet().toStdString().c_str() << std::endl;
                 }
             }
         }
