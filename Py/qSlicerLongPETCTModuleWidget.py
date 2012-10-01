@@ -60,10 +60,13 @@ class qSlicerLongPETCTModuleWidget:
     self.selectedPETLevel = 0.0
     
     self.cliNode = None
+    self.cliModelMaker = None
     self.timerUpdateTable = qt.QTimer()
     self.timerUpdateTable.connect('timeout()',self.onUpdateSUVTable)
+    self.timerMakeModels = qt.QTimer()
     
     self.findingsInfoMessageBox = None
+    self.unsupportedVolRendMessageBox = None
     
     self.findingROIVisiblityBackup = True
        
@@ -269,6 +272,8 @@ class qSlicerLongPETCTModuleWidget:
             self.studySelectionWidget.setProperty('opacityPow',pow)
             print str(pow)
             self.onSetOpacityPowForCurrentStudy(pow)
+            
+        self.setVisibleModelHierarchy(currentReport.GetIndexOfSelectedStudy(currentStudy))    
       
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROI()
@@ -666,6 +671,22 @@ class qSlicerLongPETCTModuleWidget:
       
       if studySeg:
         self.calculateSUVs()
+        
+        vrdn = currentStudy.GetVolumeRenderingDisplayNode()
+        if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
+          
+          qt.QTimer.singleShot(0,self.makeModels)
+        else:
+          if self.unsupportedVolRendMessageBox == None:
+            self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
+            self.unsupportedVolRendMessageBox.setModal(True)
+            self.unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
+            self.unsupportedVolRendMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+            self.unsupportedVolRendMessageBox.setText('NCIRayCastVolumeRendering is selected as default volume renderer. The Longitudinal PET/CT Analysis module does not support displaying of models from Finding segmentations with this volume renderer!')
+            self.unsupportedVolRendMessageBox.setProperty('dontShowAgainVisible',True)
+            self.unsupportedVolRendMessageBox.setDontShowAgain(False)  
+          
+          self.unsupportedVolRendMessageBox.show()  
       #else:
         #if self.reportTableWidget:
           #self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)           
@@ -993,7 +1014,68 @@ class qSlicerLongPETCTModuleWidget:
             
             if (seg != None) & (petVolume != None):
               seg.SetName(findingNode.GetName()+"_Segmentation_"+petVolume.GetName())        
+  
+  
+  def makeModels(self):
+    print "Make Models"
+    currentStudy = self.getCurrentStudy()
+    currentFinding = self.getCurrentFinding()
+    
+    if (currentStudy != None) & (currentFinding != None):
+      labelVolume = currentStudy.GetPETLabelVolumeNode()
+      modelHierarchy = currentStudy.GetModelHierarchy()
+      colorTable = self.getCurrentReport().GetFindingTypesColorTable()
+      if (labelVolume != None) & (modelHierarchy != Node) & (colorTable != None):
+        parameters = {}
+        parameters['InputVolume'] = labelVolume.GetID()
+        parameters['ColorTable'] = colorTable.GetID()
+        parameters['ModelSceneFile'] = modelHierarchy.GetID()
+        parameters['Name'] = labelVolume.GetName()+"_"+currentFinding.GetName()+"_Model"
+
+        #remove previous model nodes
+        previousModelNodes = vtk.vtkCollection()
+        modelHierarchy.GetChildrenModelNodes(previousModelNodes)
+          
+        for i in range(previousModelNodes.GetNumberOfItems()):
+          modelNode = previousModelNodes.GetItemAsObject(i)
+          if modelNode:
+            if modelNode.IsA('vtkMRMLModelNode'):
+              hnode = slicer.vtkMRMLHierarchyNode.GetAssociatedHierarchyNode(modelNode.GetScene(), modelNode.GetID())
+              if hnode:
+                slicer.mrmlScene.RemoveNode(hnode)
+              
+              slicer.mrmlScene.RemoveNode(modelNode)   
+          
+        #create current model nodes
+        self.cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, self.cliModelMaker, parameters, wait_for_completion = True)
+        modelHierarchy.Modified()
+        
+        
+        #count = 0
+        #while self.cliModelMaker.GetStatusString() != 'Running':
+          #count = count + 1
+            
+        #self.timerMakeModels.start(50)
+        
+        
+  def onUpdateModels(self):
+    
+    if self.cliModelMaker.GetStatusString() == 'Completed':
+      print "Completed1"
+      if self.getCurrentStudy():
+        if self.getCurrentStudy().GetModelHierarchy():
+          print "Completed2"
+          self.getCurrentStudy().GetModelHierarchy().Modified()
+      
+      print "Stopping"
+      self.timerMakeModels.stop()   
+    
+    elif self.cliModelMaker.GetStatusString() == 'CompletedWithErrors':    
+      qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the models for the segmentation!')
+      print "Stopping2"
+      self.timerMakeModels.stop()
                 
+        
    
   def calculateSUVs(self):
     
@@ -1012,23 +1094,10 @@ class qSlicerLongPETCTModuleWidget:
         parameters['PETVolume'] = currentStudy.GetPETVolumeNode().GetID()
         parameters['VOIVolume'] = currentStudy.GetPETLabelVolumeNode().GetID()
         parameters['ColorTable'] = self.getCurrentReport().GetFindingTypesColorTable().GetID()
-        parameters['OutputCSV'] = "/Users/Paul/Desktop/SUV_CSV.csv"
       
-
-        #result[0] = cliNode.GetParameterAsString('SUVMax')
-        #result[1] = cliNode.GetParameterAsString('SUVMean')
-        #result[2] = cliNode.GetParameterAsString('SUVMin')
-        
-        self.runCLI(parameters)
-        #node = slicer.vtkMRMLCommandLineModuleNode()
-        #args = (node,parameters)
-        #Thread.start_new_thread( qSlicerLongPETCTModuleWidget.runSUVAndUpdateTable(parameters) self.runSUVAndUpdateTable, args )
-      
-  def runCLI(self, parameters):
-        
-    if (parameters != None):
-      self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = False)
-      self.timerUpdateTable.start(1000)
+        self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = False)
+        self.timerUpdateTable.start(1000)
+               
       
 
   def onUpdateSUVTable(self):
@@ -1074,9 +1143,11 @@ class qSlicerLongPETCTModuleWidget:
           currentSeg.SetSUVs(max,mean,min)
           
       elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
-        qt.QMessageBox.warning(None,'SUV Computation Error','ERROR')
+        qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
         self.timerUpdateTable.stop()
-         
+  
+  
+           
       
   def onShowFindingsInfoMessageBox(self, findingsCollapsed = False):
     if findingsCollapsed == False:
@@ -1145,7 +1216,8 @@ class qSlicerLongPETCTModuleWidget:
         lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
       
       
-      self.onManageFindingROIsVisibility()  
+      self.onManageFindingROIsVisibility()
+      self.setVisibleModelHierarchy(self.getCurrentReport().GetIndexOfSelectedStudy(self.getCurrentStudy()))  
          
 
     else:
@@ -1161,6 +1233,20 @@ class qSlicerLongPETCTModuleWidget:
       self.showQualitativeView()
       
       
+  def setVisibleModelHierarchy(self, index):
+    currentReport = self.getCurrentReport()
+    
+    if currentReport:
+      for i in range(currentReport.GetSelectedStudiesCount()):
+        modelHierarchy = currentReport.GetSelectedStudy(i).GetModelHierarchy()
+        if modelHierarchy:
+          
+          slicer.vtkMRMLModelHierarchyLogic.SetChildrenVisibility(modelHierarchy, i == index)
+          
+          if modelHierarchy.GetDisplayNode():
+            modelHierarchy.GetDisplayNode().SetVisibility(i == index)
+              
+        
                    
       #self.manageVRDisplayNodesVisibility(None) 
   def showQualitativeView(self):
@@ -1172,17 +1258,29 @@ class qSlicerLongPETCTModuleWidget:
     viewNodes = ViewHelper.getCompareViewNodes()   
     
     
-    for j in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
-      study = self.getCurrentReport().GetStudySelectedForAnalysis(j)
+    for i in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
+      study = self.getCurrentReport().GetStudySelectedForAnalysis(i)
+      
+      viewNode = viewNodes[self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study)]
       
       if study:
-        print "SELECTED STUDY: " + study.GetName()
+        #mh = study.GetModelHierarchy()
+        #if mh:
+          #nodes = vtk.vtkCollection()
+          #mh.GetChildrenModelNodes(nodes)
+          #for j in range(nodes.GetNumberOfItems()):
+            #node = nodes.GetItemAsObject(j)
+            #displayNode = node.GetDisplayNode()
+            #if displayNode:
+              #displayNode.RemoveAllViewNodeIDs()
+              #displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
+              #displayNode.AddViewNodeID(viewNode.GetID())
+        self.setVisibleModelHierarchy(-1)      
         vrdn = study.GetVolumeRenderingDisplayNode()
         if vrdn:
-          print "INDEX FOR VN: " + str(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study))
-          viewNode = viewNodes[self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study)]
-          print "VIEW NODE " + viewNode.GetName()
+          
           vrdn.AddViewNodeID(viewNode.GetID())
+          
           
           if self.analysisSettingsWidget.property('spinView'):
             viewNode.SetAnimationMode(slicer.vtkMRMLViewNode.Spin)
@@ -1195,9 +1293,12 @@ class qSlicerLongPETCTModuleWidget:
           if self.qualitativeViewLastID != currentLayoutID:
             ViewHelper.SetForegroundOpacity(0.6, True)
             self.qualitativeViewLastID = currentLayoutID
+          
+          
             
           ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)
-         
+          
+          
      
        
    #lm = slicer.app.layoutManager()
