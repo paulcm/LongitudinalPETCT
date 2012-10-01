@@ -49,12 +49,13 @@ class SlicerLongPETCTModuleViewHelper( object ):
     
         
   @staticmethod
-  def SetCompareBgFgLblVolumes(selStudyID, bgID, fgID = None, lblID = None, fit = False):
+  def SetCompareBgFgLblVolumes(index, bgID, fgID = None, lblID = None, fit = False):
     
     label = SlicerLongPETCTModuleViewHelper.compareLabel()
      
-    compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode'+label+str(selStudyID)+'*')
-    for cnode in compositeNodes.values():
+    compositeNodes = SlicerLongPETCTModuleViewHelper.getCompareSliceCompositeNodes(index)
+    
+    for cnode in compositeNodes:
       cnode.SetBackgroundVolumeID( bgID );
       cnode.SetForegroundVolumeID( fgID );
       cnode.SetLabelVolumeID( lblID );
@@ -205,6 +206,39 @@ class SlicerLongPETCTModuleViewHelper( object ):
       if green.GetOrientationString() == orientation:
         green.SetSliceOffset(crossingRAS[2])
         
+  
+  @staticmethod 
+  def setCompareSliceNodesCrossingPositionRAS(index, crossingRAS = [0.,0.,0.]):
+    
+    compareSliceNodes = SlicerLongPETCTModuleViewHelper.getCompareSliceNodes(index)
+    if (index > -1) & (index < len(compareSliceNodes)):
+      
+      orientation = "Sagittal"
+      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
+        if compareSliceNodes[0].GetOrientationString() == orientation:
+          compareSliceNodes[0].SetSliceOffset(crossingRAS[0])
+        if compareSliceNodes[1].GetOrientationString() == orientation:
+          compareSliceNodes[1].SetSliceOffset(crossingRAS[0])
+        if compareSliceNodes[2].GetOrientationString() == orientation:
+          compareSliceNodes[2].SetSliceOffset(crossingRAS[0])
+    
+      orientation = "Coronal"
+      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
+        if compareSliceNodes[0].GetOrientationString() == orientation:
+          compareSliceNodes[0].SetSliceOffset(crossingRAS[1])
+        if compareSliceNodes[1].GetOrientationString() == orientation:
+          compareSliceNodes[1].SetSliceOffset(crossingRAS[1])
+        if compareSliceNodes[2].GetOrientationString() == orientation:
+          compareSliceNodes[2].SetSliceOffset(crossingRAS[1])
+        
+      orientation = "Axial"
+      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
+        if compareSliceNodes[0].GetOrientationString() == orientation:
+          compareSliceNodes[0].SetSliceOffset(crossingRAS[2])
+        if compareSliceNodes[1].GetOrientationString() == orientation:
+          compareSliceNodes[1].SetSliceOffset(crossingRAS[2])
+        if compareSliceNodes[2].GetOrientationString() == orientation:
+          compareSliceNodes[2].SetSliceOffset(crossingRAS[2])
   
   @staticmethod
   def centerROIonSliceNodesOffset(roi, centeringTransform):
@@ -398,7 +432,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
     </view>\
     </item>\
     <item>\
-    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i)+"_"+str(i+1)+"\">\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i+1)+"_"+str(i+1)+"\">\
     <property name=\"orientation\" action=\"default\">Axial</property>\
     <property name=\"viewlabel\" action=\"default\">L"+str(i*3+1)+"</property>\
     <property name=\"viewcolor\" action=\"default\">#E17012</property>\
@@ -409,7 +443,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
     </view>\
     </item>\
     <item>\
-    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i)+"_"+str(i+2)+"\">\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i+1)+"_"+str(i+2)+"\">\
     <property name=\"orientation\" action=\"default\">Sagittal</property>\
     <property name=\"viewlabel\" action=\"default\">L"+str(i*3+2)+"</property>\
     <property name=\"viewcolor\" action=\"default\">#E17012</property>\
@@ -420,7 +454,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
     </view>\
     </item>\
     <item>\
-    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i)+"_"+str(i+3)+"\">\
+    <view class=\"vtkMRMLSliceNode\" singletontag=\""+label+str(i+1)+"_"+str(i+3)+"\">\
     <property name=\"orientation\" action=\"default\">Coronal</property>\
     <property name=\"viewlabel\" action=\"default\">L"+str(i*3+3)+"</property>\
     <property name=\"viewcolor\" action=\"default\">#E17012</property>\
@@ -471,6 +505,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
   @staticmethod
   def reportsHelpText():
     return '<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600; text-decoration: underline;\">Importing PET/CT studies to a Report</span></p>\n<ol style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\"><li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/SlicerLoadDICOM.png\" /> Open the Slicer DICOM Database</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Browse database for patient and select entry</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select DICOM Data which has been detected by the <span style=\" font-weight:600; font-style:italic;\">Longitudinal PET/CT Analysis</span><span style=\" font-style:italic;\"> Reader</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Click <span style=\" font-weight:600; font-style:italic;\">Load Selection to Slicer </span></li>\n<li style=\" font-weight:600; font-style:italic;\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/LongPETCT_small.png\" /> <span style=\" font-weight:400; font-style:normal;\">Reopen</span><span style=\" font-style:normal;\"> Longitudinal PET/CT Analysis</span><span style=\" font-weight:400; font-style:normal;\"> module</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select the new generated <span style=\" font-weight:600; font-style:italic;\">Report</span></li></ol></body></html>'
+  
     
   @staticmethod
   def compareLabel():
@@ -491,9 +526,42 @@ class SlicerLongPETCTModuleViewHelper( object ):
     viewNodes = slicer.util.getNodes('vtkMRMLViewNode*')
     for vn in viewNodes.values():
       if str(vn.GetSingletonTag()).find(SlicerLongPETCTModuleViewHelper.compareLabel3D()) != -1:
-        compareViewNodes.append(vn)
+        pos = 0
+        for cvn in compareViewNodes:
+          if vn.GetID() >= cvn.GetID():
+            pos = pos + 1
+        
+        compareViewNodes.insert(pos, vn)
         
     return compareViewNodes
+  
+  @staticmethod
+  def getCompareSliceNodes(index):
+    compareSliceNodes = []
+    sliceNodes = slicer.util.getNodes('vtkMRMLSliceNode'+SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)+"*")
+    for sn in sliceNodes.values():
+      pos = 0
+      for csn in compareSliceNodes:
+        if sn.GetID() >= csn.GetID():
+          pos = pos + 1
+        
+      compareSliceNodes.insert(pos, sn)
+          
+    return compareSliceNodes
+  
+  @staticmethod
+  def getCompareSliceCompositeNodes(index):
+    compareSliceCompositeNodes = []
+    compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode'+SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)+"*")
+    for scn in compositeNodes.values():
+      pos = 0
+      for cscn in compareSliceCompositeNodes:
+        if scn.GetID() >= cscn.GetID():
+          pos = pos + 1
+        
+      compareSliceCompositeNodes.insert(pos, scn)
+      
+    return compareSliceCompositeNodes
   
   @staticmethod
   def removeObserversFromCompareViewNodes(observerIDsList):
