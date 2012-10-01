@@ -44,6 +44,7 @@ class vtkMRMLScalarVolumeNode;
 class vtkMRMLLinearTransformNode;
 class vtkMRMLAnnotationROINode;
 class vtkMRMLVolumeRenderingDisplayNode;
+class vtkMRMLModelHierarchyNode;
 
 
 
@@ -76,7 +77,9 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkSetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
   vtkSetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkSetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
+  //vtkSetMacro(ModelHierarchy, vtkMRMLModelHierarchyNode*);
 
+  void SetModelHierarchy(vtkMRMLModelHierarchyNode* hierarchy);
   //vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
   void SetSegmentationROI(vtkMRMLAnnotationROINode* roi);
@@ -87,7 +90,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   vtkGetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
   vtkGetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
-
+  vtkGetMacro(ModelHierarchy, vtkMRMLModelHierarchyNode*);
 
   vtkBooleanMacro(SelectedForSegmentation, bool);
   vtkGetMacro(SelectedForSegmentation, bool);
@@ -102,6 +105,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTStudyNode : public
   void SetCenteredVolumes(bool centered);
 
   void Initialize();
+
+  void ModelHierarchyModified(vtkObject* caller, long unsigned int eventId, void* callData);
 
 protected:
   vtkMRMLLongPETCTStudyNode();
@@ -125,6 +130,7 @@ protected:
 
   vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;
 
+  vtkMRMLModelHierarchyNode* ModelHierarchy;
 };
 
 #endif
