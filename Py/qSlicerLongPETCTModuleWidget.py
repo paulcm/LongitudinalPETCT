@@ -222,9 +222,11 @@ class qSlicerLongPETCTModuleWidget:
     self.observeReportNode(self.reportSelector.currentNode())
     
   def onEditorCollapsed(self,collapsed):
+    print "C1"
     self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
+    print "C2"
     self.onEnterEditMode( collapsed != True )
-    
+    print "C3"
     self.findingSelectionWidget.hideAddButton(collapsed)
     
  
@@ -273,7 +275,7 @@ class qSlicerLongPETCTModuleWidget:
             print str(pow)
             self.onSetOpacityPowForCurrentStudy(pow)
             
-        self.setVisibleModelHierarchy(currentReport.GetIndexOfSelectedStudy(currentStudy))    
+        #self.setVisibleModelHierarchy(currentReport.GetIndexOfSelectedStudy(currentStudy))    
       
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROI()
@@ -663,19 +665,20 @@ class qSlicerLongPETCTModuleWidget:
       #self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
-      
-      self.editorWidget.exit()      
+      print "T0"
+      self.editorWidget.exit()
+      print "T1"      
       pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
-      
+      print "T2"
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
-      
+      print "T2"
       if studySeg:
         self.calculateSUVs()
-        
+        print "T3"
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
         if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
-          
           qt.QTimer.singleShot(0,self.makeModels)
+          print "T4"
         else:
           if self.unsupportedVolRendMessageBox == None:
             self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
@@ -725,15 +728,15 @@ class qSlicerLongPETCTModuleWidget:
         studySeg = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTSegmentationNode')
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         
-        studySeg.SetLabelVolume(currentStudy.GetPETLabelVolumeNode())
         slicer.mrmlScene.AddNode(studySeg)
+        studySeg.SetLabelVolumeNode(currentStudy.GetPETLabelVolumeNode())
         
         currentFinding.AddSegmentationForStudy(currentStudy,studySeg)
       
       else:
         studySeg = currentFinding.GetSegmentationForStudy(currentStudy)        
             
-      pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLGetLabelVolumeNode(), currentFinding.GetColorID())    
+      pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
     
       if segmentationROI:
         xyz = [0.,0.,0.]
@@ -1022,34 +1025,53 @@ class qSlicerLongPETCTModuleWidget:
     currentFinding = self.getCurrentFinding()
     
     if (currentStudy != None) & (currentFinding != None):
-      labelVolume = currentStudy.GetPETLabelVolumeNode()
-      modelHierarchy = currentStudy.GetModelHierarchy()
-      colorTable = self.getCurrentReport().GetFindingTypesColorTable()
-      if (labelVolume != None) & (modelHierarchy != Node) & (colorTable != None):
-        parameters = {}
-        parameters['InputVolume'] = labelVolume.GetID()
-        parameters['ColorTable'] = colorTable.GetID()
-        parameters['ModelSceneFile'] = modelHierarchy.GetID()
-        parameters['Name'] = labelVolume.GetName()+"_"+currentFinding.GetName()+"_Model"
+     
+      currentSeg = currentFinding.GetSegmentationForStudy(currentStudy)
+      
+      if currentSeg:
+        labelVolume = currentSeg.GetLabelVolumeNode()
 
-        #remove previous model nodes
-        previousModelNodes = vtk.vtkCollection()
-        modelHierarchy.GetChildrenModelNodes(previousModelNodes)
-          
-        for i in range(previousModelNodes.GetNumberOfItems()):
-          modelNode = previousModelNodes.GetItemAsObject(i)
-          if modelNode:
-            if modelNode.IsA('vtkMRMLModelNode'):
-              hnode = slicer.vtkMRMLHierarchyNode.GetAssociatedHierarchyNode(modelNode.GetScene(), modelNode.GetID())
-              if hnode:
-                slicer.mrmlScene.RemoveNode(hnode)
+        #create a temporary model hierarchy for generating models
+        tempMH = slicer.vtkMRMLModelHierarchyNode()
+        slicer.mrmlScene.AddNode(tempMH)
+      
+        colorTable = self.getCurrentReport().GetFindingTypesColorTable()
+        
+        if (labelVolume != None) & (tempMH != None) & (colorTable != None):
+          parameters = {}
+          parameters['InputVolume'] = labelVolume.GetID()
+          parameters['ColorTable'] = colorTable.GetID()
+          parameters['ModelSceneFile'] = tempMH.GetID()
+          parameters['StartLabel'] = currentFinding.GetColorID()
+          parameters['EndLabel'] = currentFinding.GetColorID()
+          parameters['Name'] = labelVolume.GetName()+"_"+currentFinding.GetName()+"_Model"
+
+          self.cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, self.cliModelMaker, parameters, wait_for_completion = True)  
+          genModelNodes = vtk.vtkCollection()
+          tempMH.GetChildrenModelNodes(genModelNodes)
+
+          if genModelNodes.GetNumberOfItems() > 0:
+            modelNode = genModelNodes.GetItemAsObject(0)
+            if modelNode:
+              if modelNode.IsA('vtkMRMLModelNode'):
+                hnode = slicer.vtkMRMLHierarchyNode.GetAssociatedHierarchyNode(modelNode.GetScene(), modelNode.GetID())
+                if hnode:
+                  currentSeg.SetModelHierarchyNode(hnode)
+                  modelNode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_M")
+                  hnode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_H")
+                else:
+                  currentSeg.SetModelHierarchyNode(None)
+                  slicer.mrmlScene.RemoveNode(modelNode)   
+                  slicer.mrmlScene.RemoveNode(hnode)
+   
+          slicer.mrmlScene.RemoveNode(tempMH.GetDisplayNode())
+          slicer.mrmlScene.RemoveNode(tempMH)         
+        
               
-              slicer.mrmlScene.RemoveNode(modelNode)   
+                
           
         #create current model nodes
-        self.cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, self.cliModelMaker, parameters, wait_for_completion = True)
-        print self.cliModelMaker
-        modelHierarchy.Modified()
+        
         
         
         #count = 0
@@ -1062,18 +1084,14 @@ class qSlicerLongPETCTModuleWidget:
   def onUpdateModels(self):
     
     if self.cliModelMaker.GetStatusString() == 'Completed':
-      print "Completed1"
       if self.getCurrentStudy():
         if self.getCurrentStudy().GetModelHierarchy():
-          print "Completed2"
           self.getCurrentStudy().GetModelHierarchy().Modified()
       
-      print "Stopping"
       self.timerMakeModels.stop()   
     
     elif self.cliModelMaker.GetStatusString() == 'CompletedWithErrors':    
       qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the models for the segmentation!')
-      print "Stopping2"
       self.timerMakeModels.stop()
                 
         
@@ -1218,7 +1236,7 @@ class qSlicerLongPETCTModuleWidget:
       
       
       self.onManageFindingROIsVisibility()
-      self.setVisibleModelHierarchy(self.getCurrentReport().GetIndexOfSelectedStudy(self.getCurrentStudy()))  
+      #self.setVisibleModelHierarchy(self.getCurrentReport().GetIndexOfSelectedStudy(self.getCurrentStudy()))  
          
 
     else:
@@ -1265,18 +1283,18 @@ class qSlicerLongPETCTModuleWidget:
       viewNode = viewNodes[self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study)]
       
       if study:
-        mh = study.GetModelHierarchy()
-        if mh:
-          nodes = vtk.vtkCollection()
-          mh.GetChildrenModelNodes(nodes)
-          for j in range(nodes.GetNumberOfItems()):
-            node = nodes.GetItemAsObject(j)
-            displayNode = node.GetDisplayNode()
-            if displayNode:
-              displayNode.RemoveAllViewNodeIDs()
-              displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
-              displayNode.AddViewNodeID(viewNode.GetID())
-              displayNode.SetVisibility(True)
+        #mh = study.GetModelHierarchy()
+        #if mh:
+          #nodes = vtk.vtkCollection()
+          #mh.GetChildrenModelNodes(nodes)
+          #for j in range(nodes.GetNumberOfItems()):
+            #node = nodes.GetItemAsObject(j)
+            #displayNode = node.GetDisplayNode()
+            #if displayNode:
+              #displayNode.RemoveAllViewNodeIDs()
+              #displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
+              #displayNode.AddViewNodeID(viewNode.GetID())
+              #displayNode.SetVisibility(True)
         #self.setVisibleModelHierarchy(-1)      
         vrdn = study.GetVolumeRenderingDisplayNode()
         if vrdn:
