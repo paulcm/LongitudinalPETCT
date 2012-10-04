@@ -61,9 +61,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.cliNode = None
     self.cliModelMaker = None
-    self.timerUpdateTable = qt.QTimer()
-    self.timerUpdateTable.connect('timeout()',self.onUpdateSUVTable)
-    self.timerMakeModels = qt.QTimer()
+    
     
     self.findingsInfoMessageBox = None
     self.unsupportedVolRendMessageBox = None
@@ -623,7 +621,8 @@ class qSlicerLongPETCTModuleWidget:
 
       #if self.tempLabelVol.GetScalarVolumeDisplayNode():
         #slicer.mrmlScene.RemoveNode(tempLabelVol.GetScalarVolumeDisplayNode())
-      
+      if self.tempLabelVol.GetDisplayNode():
+        slicer.mrmlScene.RemoveNode(self.tempLabelVol.GetDisplayNode())
       self.tempLabelVol.Copy(createdLabelVol)   
       self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
       
@@ -665,20 +664,18 @@ class qSlicerLongPETCTModuleWidget:
       #self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
-      print "T0"
-      self.editorWidget.exit()
-      print "T1"      
+      self.editorWidget.exit()     
       pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
-      print "T2"
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
-      print "T2"
+
       if studySeg:
-        self.calculateSUVs()
-        print "T3"
+        #self.calculateSUVs()
+        qt.QTimer.singleShot(0,self.calculateSUVs)
+
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
         if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
           qt.QTimer.singleShot(0,self.makeModels)
-          print "T4"
+
         else:
           if self.unsupportedVolRendMessageBox == None:
             self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
@@ -1020,7 +1017,6 @@ class qSlicerLongPETCTModuleWidget:
   
   
   def makeModels(self):
-    print "Make Models"
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
@@ -1042,9 +1038,10 @@ class qSlicerLongPETCTModuleWidget:
           parameters['InputVolume'] = labelVolume.GetID()
           parameters['ColorTable'] = colorTable.GetID()
           parameters['ModelSceneFile'] = tempMH.GetID()
+          parameters['GenerateAll'] = False
           parameters['StartLabel'] = currentFinding.GetColorID()
           parameters['EndLabel'] = currentFinding.GetColorID()
-          parameters['Name'] = labelVolume.GetName()+"_"+currentFinding.GetName()+"_Model"
+          parameters['Name'] = labelVolume.GetName() + "_" + currentFinding.GetName()+"_M"
 
           self.cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, self.cliModelMaker, parameters, wait_for_completion = True)  
           genModelNodes = vtk.vtkCollection()
@@ -1058,7 +1055,11 @@ class qSlicerLongPETCTModuleWidget:
                 if hnode:
                   currentSeg.SetModelHierarchyNode(hnode)
                   modelNode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_M")
+                  if modelNode.GetDisplayNode():
+                    modelNode.GetDisplayNode().SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_D")
                   hnode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_H")
+                  modelNode.SetHideFromEditors(False)
+                  modelNode.SetHideFromEditors(False)
                 else:
                   currentSeg.SetModelHierarchyNode(None)
                   slicer.mrmlScene.RemoveNode(modelNode)   
@@ -1101,7 +1102,7 @@ class qSlicerLongPETCTModuleWidget:
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
         
-    if currentStudy:
+    if (currentStudy != None) & (currentFinding != None):
          
       instanceUIDs = currentStudy.GetPETVolumeNode().GetAttribute('DICOM.instanceUIDs')
       instanceUID  = instanceUIDs.split(" ",1)[0]
@@ -1114,10 +1115,40 @@ class qSlicerLongPETCTModuleWidget:
         parameters['VOIVolume'] = currentStudy.GetPETLabelVolumeNode().GetID()
         parameters['ColorTable'] = self.getCurrentReport().GetFindingTypesColorTable().GetID()
       
-        self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = False)
-        self.timerUpdateTable.start(1000)
-               
+        self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = True)
+        
+        if self.cliNode.GetStatusString() == 'Completed':
+          labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
+          # values as comma separated string
+          max = self.cliNode.GetParameterAsString('SUVMax')
+          mean = self.cliNode.GetParameterAsString('SUVMean')
+          min = self.cliNode.GetParameterAsString('SUVMin')
       
+          splitter = ', '
+          labelValues = labelValues.split(splitter)
+          # values as string list
+          max = max.split(splitter)
+          mean = mean.split(splitter)
+          min = min.split(splitter)
+      
+          idx = labelValues.index(str(currentFinding.GetColorID()))
+        
+          # values as float values
+          max = float(max[idx])
+          mean = float(mean[idx])
+          min = float(min[idx])
+      
+        #if self.reportTableWidget:
+          #self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,max,mean,min)   
+      
+          currentSeg = currentFinding.GetSegmentationForStudy(currentStudy)
+        
+          if currentSeg:
+            currentSeg.SetSUVs(max,mean,min)
+                     
+        elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
+          qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
+
 
   def onUpdateSUVTable(self):
     
@@ -1130,40 +1161,9 @@ class qSlicerLongPETCTModuleWidget:
       
         self.timerUpdateTable.stop()
         
-        labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
-        # values as comma separated string
-        max = self.cliNode.GetParameterAsString('SUVMax')
-        mean = self.cliNode.GetParameterAsString('SUVMean')
-        min = self.cliNode.GetParameterAsString('SUVMin')
-      
-        splitter = ', '
-        labelValues = labelValues.split(splitter)
-        # values as string list
-        max = max.split(splitter)
-        mean = mean.split(splitter)
-        min = min.split(splitter)
-      
-        print labelValues
-        print str(currentFinding.GetColorID())
         
-        idx = labelValues.index(str(currentFinding.GetColorID()))
-        
-        # values as float values
-        max = float(max[idx])
-        mean = float(mean[idx])
-        min = float(min[idx])
-      
-        #if self.reportTableWidget:
-          #self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,max,mean,min)   
-      
-        currentSeg = currentFinding.GetSegmentationForStudy(currentStudy)
-        
-        if currentSeg:
-          currentSeg.SetSUVs(max,mean,min)
           
-      elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
-        qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
-        self.timerUpdateTable.stop()
+      
   
   
            
