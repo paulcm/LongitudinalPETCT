@@ -1,20 +1,20 @@
 /*==============================================================================
 
-  Program: 3D Slicer
+Program: 3D Slicer
 
-  Copyright (c) Kitware Inc.
+Copyright (c) Kitware Inc.
 
-  See COPYRIGHT.txt
-  or http://www.slicer.org/copyright/copyright.txt for details.
+See COPYRIGHT.txt
+or http://www.slicer.org/copyright/copyright.txt for details.
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-  This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
-  and was partially funded by NIH grant 3P41RR013218-12S1
+This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
+and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
 
@@ -105,16 +105,21 @@ void qSlicerLongPETCTSegmentationTableCellWidget::setModelVisibilityChecked(bool
   d->CheckBoxModelVisibility->setChecked(checked);
 }
 
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTSegmentationTableCellWidget::modelVisibilityVisible()
+{
+  Q_D(qSlicerLongPETCTSegmentationTableCellWidget);
+  Q_ASSERT(d->CheckBoxModelVisibility);
 
+  return d->CheckBoxModelVisibility->isVisible();
+}
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTSegmentationTableCellWidget::setModelVisibilityVisible(bool visible)
+{
+  Q_D(qSlicerLongPETCTSegmentationTableCellWidget);
+  Q_ASSERT(d->CheckBoxModelVisibility);
 
-
-
-
-
-
-
-
-
-
+  d->CheckBoxModelVisibility->setVisible(visible);
+}
 
