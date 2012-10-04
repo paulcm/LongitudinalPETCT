@@ -82,7 +82,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
 
   void SetSUVs(double max, double mean, double min);
 
-  void SetLabelVolume(vtkMRMLScalarVolumeNode* labelVolume);
+  void SetLabelVolumeNode(vtkMRMLScalarVolumeNode* labelVolume);
   vtkGetMacro(LabelVolumeNode,vtkMRMLScalarVolumeNode*);
 
   void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);

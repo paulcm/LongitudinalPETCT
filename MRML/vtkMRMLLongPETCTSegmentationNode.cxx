@@ -162,7 +162,7 @@ void vtkMRMLLongPETCTSegmentationNode::SetSUVs(double max, double mean, double m
 
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongPETCTSegmentationNode::SetLabelVolume(vtkMRMLScalarVolumeNode* labelVolume)
+void vtkMRMLLongPETCTSegmentationNode::SetLabelVolumeNode(vtkMRMLScalarVolumeNode* labelVolume)
 {
   if(labelVolume == this->LabelVolumeNode)
     return;
@@ -172,6 +172,7 @@ void vtkMRMLLongPETCTSegmentationNode::SetLabelVolume(vtkMRMLScalarVolumeNode* l
    vtkSetAndObserveMRMLObjectEventsMacro(this->LabelVolumeNode,labelVolume, this->ObservedEvents);
 
    this->AdjustModelTransformToLabelVolume();
+
 }
 
 //----------------------------------------------------------------------------
@@ -231,6 +232,7 @@ vtkMRMLLongPETCTSegmentationNode::AdjustModelTransformToLabelVolume()
 {
   if (this->ModelHierarchyNode && this->LabelVolumeNode)
     {
+
       vtkNew<vtkCollection> cmn;
       this->ModelHierarchyNode->GetChildrenModelNodes(cmn.GetPointer());
 
@@ -245,6 +247,7 @@ vtkMRMLLongPETCTSegmentationNode::AdjustModelTransformToLabelVolume()
             tempModelNode->SetAndObserveTransformNodeID(this->LabelVolumeNode->GetParentTransformNode()->GetID());
           else
             tempModelNode->SetAndObserveTransformNodeID(NULL);
+
         }
     }
 }
