@@ -38,14 +38,17 @@
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
 
 #include <vtkSmartPointer.h>
+#include <vtkMRMLAnnotationROINode.h>
+#include <vtkMRMLModelHierarchyNode.h>
+#include <vtkIntArray.h>
 
 class map;
-class vector;
 
 class vtkMRMLLongPETCTStudyNode;
 class vtkMRMLScalarVolumeNode;
 class vtkMRMLLongPETCTSegmentationNode;
-class vtkMRMLAnnotationROINode;
+
+class vtkMRMLModelHierarchyNode;
 
 class vtkEventForwarderCommand;
 
@@ -84,6 +87,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkGetMacro(TypeName, const char*);
   vtkSetMacro(TypeName, const char*);
 
+
   int GetSegmentationsCount();
 
   //vtkGetMacro(ColorID, int);
@@ -95,20 +99,34 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTFindingNode : publ
   vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
   vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
 
+  vtkGetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
+  vtkSetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
+
+  void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
+
+  void SetScene(vtkMRMLScene* scene);
+
 protected:
   vtkMRMLLongPETCTFindingNode();
   ~vtkMRMLLongPETCTFindingNode();
   vtkMRMLLongPETCTFindingNode(const vtkMRMLLongPETCTFindingNode&);
   void operator=(const vtkMRMLLongPETCTFindingNode&);
 
+
+  void UpdateSegmentationModelHierarchyParent(vtkMRMLLongPETCTSegmentationNode* segmentation);
+
   std::map<vtkMRMLLongPETCTStudyNode*,vtkMRMLLongPETCTSegmentationNode*> StudyToSegmentationMap;
 
-  vtkMRMLAnnotationROINode* SegmentationROI;
+  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROI;
+  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
 
   const char* TypeName;
   int ColorID;
 
+  vtkSmartPointer<vtkIntArray> ObservedEvents;
+
   vtkSmartPointer<vtkEventForwarderCommand> segmentationModifiedForwarder;
+
 };
 
 #endif
