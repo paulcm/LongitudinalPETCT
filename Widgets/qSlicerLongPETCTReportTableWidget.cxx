@@ -32,7 +32,6 @@
 #include <QDate>
 #include <QHeaderView>
 #include <ctkCheckBox.h>
-#include "qSlicerLongPETCTSegmentationTableCellWidget.h"
 
 #include "qSlicerLongPETCTColorSelectionDialog.h"
 
