@@ -434,13 +434,7 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           volLogic  = slicer.modules.volumes.logic() 
           petLabelVolume = slicer.vtkMRMLScalarVolumeNode()
           petLabelVolume.Copy(petScalarVolume)
-          petLabelVolume = volLogic.CreateLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")
-          
-          modelHierarchy = slicer.vtkMRMLModelHierarchyNode()
-          modelHierarchy.SetName(self.petFileLoadables[i].name+"_Models")
-          modelHierarchy.SetHideFromEditors(False)
-          slicer.mrmlScene.AddNode(modelHierarchy)
-          
+          petLabelVolume = volLogic.CreateLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
           
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
@@ -459,7 +453,6 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyNode.SetPETVolumeNode(petScalarVolume)
           studyNode.SetCTVolumeNode(ctScalarVolume)
           studyNode.SetPETLabelVolumeNode(petLabelVolume)
-          studyNode.SetModelHierarchy(modelHierarchy)
           studyNode.SetScene(slicer.mrmlScene) 
         
           slicer.mrmlScene.AddNode(studyNode)
