@@ -12,5 +12,7 @@
     <file>Icons/add.png</file>
     <file>Icons/delete.png</file>
     <file>Icons/help.png</file>
+    <file>Icons/Model_On.png</file>
+    <file>Icons/Model_Off.png</file>
   </qresource>
 </RCC>
