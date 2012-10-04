@@ -651,7 +651,7 @@ class qSlicerLongPETCTModuleWidget:
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
       
       if studySeg != None:
-        ViewHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolume(), self.tempLabelVol, currentFinding.GetColorID())  
+        ViewHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
                     
       self.editorWidget.editUtil.setLabel(currentFinding.GetColorID())
       self.editorWidget.setMasterNode(self.tempCroppedVol) 
@@ -733,7 +733,7 @@ class qSlicerLongPETCTModuleWidget:
       else:
         studySeg = currentFinding.GetSegmentationForStudy(currentStudy)        
             
-      pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolume(), currentFinding.GetColorID())    
+      pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLGetLabelVolumeNode(), currentFinding.GetColorID())    
     
       if segmentationROI:
         xyz = [0.,0.,0.]
@@ -746,7 +746,7 @@ class qSlicerLongPETCTModuleWidget:
         studySeg.SetROIRadius(radius)
         
         
-      if ViewHelper.containsSegmentation(studySeg.GetLabelVolume(),currentFinding.GetColorID()) == False:
+      if ViewHelper.containsSegmentation(studySeg.GetLabelVolumeNode(),currentFinding.GetColorID()) == False:
         currentFinding.RemoveSegmentationForStudy(currentStudy)
         slicer.mrmlScene.RemoveNode(studySeg)
 
@@ -896,7 +896,7 @@ class qSlicerLongPETCTModuleWidget:
         
         seg = findingNode.GetSegmentationForStudy(study)
         if seg:
-          ViewHelper.removeSegmentationFromVolume(seg.GetLabelVolume(), findingNode.GetColorID())
+          ViewHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
           findingNode.RemoveSegmentationForStudy(study)
           slicer.mrmlScene.RemoveNode(seg)
           study.SetSegmentationROI(None)  
@@ -1048,6 +1048,7 @@ class qSlicerLongPETCTModuleWidget:
           
         #create current model nodes
         self.cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, self.cliModelMaker, parameters, wait_for_completion = True)
+        print self.cliModelMaker
         modelHierarchy.Modified()
         
         
@@ -1264,18 +1265,19 @@ class qSlicerLongPETCTModuleWidget:
       viewNode = viewNodes[self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study)]
       
       if study:
-        #mh = study.GetModelHierarchy()
-        #if mh:
-          #nodes = vtk.vtkCollection()
-          #mh.GetChildrenModelNodes(nodes)
-          #for j in range(nodes.GetNumberOfItems()):
-            #node = nodes.GetItemAsObject(j)
-            #displayNode = node.GetDisplayNode()
-            #if displayNode:
-              #displayNode.RemoveAllViewNodeIDs()
-              #displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
-              #displayNode.AddViewNodeID(viewNode.GetID())
-        self.setVisibleModelHierarchy(-1)      
+        mh = study.GetModelHierarchy()
+        if mh:
+          nodes = vtk.vtkCollection()
+          mh.GetChildrenModelNodes(nodes)
+          for j in range(nodes.GetNumberOfItems()):
+            node = nodes.GetItemAsObject(j)
+            displayNode = node.GetDisplayNode()
+            if displayNode:
+              displayNode.RemoveAllViewNodeIDs()
+              displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
+              displayNode.AddViewNodeID(viewNode.GetID())
+              displayNode.SetVisibility(True)
+        #self.setVisibleModelHierarchy(-1)      
         vrdn = study.GetVolumeRenderingDisplayNode()
         if vrdn:
           
