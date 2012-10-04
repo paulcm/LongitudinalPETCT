@@ -108,7 +108,7 @@ bool vtkMRMLLongPETCTFindingNode::AddSegmentationForStudy(vtkMRMLLongPETCTStudyN
   if(ok && segmentationModifiedForwarder != NULL)
     {
       vtkObserveMRMLObjectEventsMacro(segmentation, this->ObservedEvents);
-      //segmentation->AddObserver(vtkCommand::ModifiedEvent,this->segmentationModifiedForwarder);
+      segmentation->AddObserver(vtkCommand::ModifiedEvent,this->segmentationModifiedForwarder);
 
       this->UpdateSegmentationModelHierarchyParent(segmentation);
 
