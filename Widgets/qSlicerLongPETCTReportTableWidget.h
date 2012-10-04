@@ -61,6 +61,7 @@ public:
 signals:
   void studyClicked(int idx);
   void findingClicked(int idx);
+  void segmentationModelVisiblityChecked(int findID, int studID, bool checked);
 
 public slots:
   void updateView();
@@ -69,6 +70,7 @@ protected slots:
   void selectStudyColumn(int index);
   void selectFindingRow(int index);
 
+  void segmentationModelVisibilityChecked(bool toggled);
   void segmentationCellClicked(int row, int column);
 
 

@@ -31,7 +31,8 @@
 #include <QBrush>
 #include <QDate>
 #include <QHeaderView>
-#include <QLabel>
+#include <ctkCheckBox.h>
+#include "qSlicerLongPETCTSegmentationTableCellWidget.h"
 
 #include "qSlicerLongPETCTColorSelectionDialog.h"
 
@@ -53,6 +54,7 @@ public:
 
   vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
+  ctkCheckBox* createCellWidgetCheckBox();
   void setCellWidgetToolTip(int row, int col, const QString& toolTip);
 
 };
@@ -86,13 +88,30 @@ void qSlicerLongPETCTReportTableWidgetPrivate
 }
 
 // --------------------------------------------------------------------------
+ctkCheckBox*
+qSlicerLongPETCTReportTableWidgetPrivate::createCellWidgetCheckBox()
+{
+  ctkCheckBox* cellWidgetCheckBox = new ctkCheckBox(this);
+  QIcon icon;
+  icon.addFile(":/Icons/Model_On.png", QSize(16, 14), QIcon::Normal,
+      QIcon::Off);
+  icon.addFile(":/Icons/Model_Off.png", QSize(16, 14), QIcon::Normal,
+      QIcon::On);
+  cellWidgetCheckBox->setIndicatorIcon(icon);
+  cellWidgetCheckBox->setChecked(true);
+
+  return cellWidgetCheckBox;
+}
+
+// --------------------------------------------------------------------------
 void qSlicerLongPETCTReportTableWidgetPrivate
 ::setCellWidgetToolTip(int row, int col, const QString& tooltip)
 {
   Q_Q(qSlicerLongPETCTReportTableWidget);
 
-  QLabel* cellWidget = qobject_cast<QLabel*>(q->cellWidget(row,col));
+  //qSlicerLongPETCTSegmentationTableCellWidget* cellWidget = qobject_cast<qSlicerLongPETCTSegmentationTableCellWidget*>(q->cellWidget(row,col));
 
+  ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(q->cellWidget(row,col));
   if(cellWidget != NULL)
       cellWidget->setToolTip(tooltip);
 }
@@ -194,14 +213,8 @@ qSlicerLongPETCTReportTableWidget::prepareVerticalHeaders()
       int newRowID = this->rowCount();
 
       if (diff > 0)
-        {
           this->insertRow(newRowID);
-          for(int j=0; j < this->columnCount();++j)
-            {
-              QLabel* label = new QLabel(this);
-              this->setCellWidget(newRowID,j,label);
-            }
-        }
+
       else if (diff < 0)
         this->removeRow(newRowID - 1);
     }
@@ -284,11 +297,19 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
 
       for (int j = 0; j < d->ReportNode->GetSelectedStudiesCount(); ++j)
         {
-          QLabel* label = qobject_cast<QLabel*>(this->cellWidget(i,j));
+          //qSlicerLongPETCTSegmentationTableCellWidget* cellWidget = qobject_cast<qSlicerLongPETCTSegmentationTableCellWidget*>(this->cellWidget(i,j));
+          ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(this->cellWidget(i,j));
 
           if (finding->GetSegmentationForStudy(
               d->ReportNode->GetSelectedStudy(j)) != NULL)
             {
+              if (!cellWidget)
+                {
+                  cellWidget = d->createCellWidgetCheckBox();
+                  QObject::connect(cellWidget, SIGNAL(toggled(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
+                  this->setCellWidget(i, j, cellWidget);
+                }
+
               int colorID = finding->GetColorID();
               vtkMRMLColorTableNode* colorTable =
                   d->ReportNode->GetFindingTypesColorTable();
@@ -301,20 +322,21 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
                           color[0], color[1], color[2]);
 
                   QString cssFontColor = "color: #000";
+
                   if(findingColor.lightness() < 100)
                     cssFontColor = "color: #FEFEFE";
 
-                  if(label != NULL)
-                    {
-                      label->setStyleSheet("QLabel QToolTip {background-color:" + findingColor.name()+";} QLabel {"+cssFontColor +"; background-color:" + findingColor.name()+";} ");
-                    }
+                  cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
 
                 }
             }
           else
             {
-              if(label != NULL)
-                label->setStyleSheet(NULL);
+              if(cellWidget)
+                {
+                  this->removeCellWidget(i,j);
+                  cellWidget->deleteLater();
+                }
             }
         }
 
@@ -363,7 +385,8 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 
       for(int j=0; j < this->columnCount(); ++j)
         {
-          QLabel* cellWidget = qobject_cast<QLabel*>(this->cellWidget(i,j));
+          //qSlicerLongPETCTSegmentationTableCellWidget* cellWidget = qobject_cast<qSlicerLongPETCTSegmentationTableCellWidget*>(this->cellWidget(i,j));
+          ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(this->cellWidget(i,j));
           if(cellWidget != NULL)
             {
               vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
@@ -375,6 +398,9 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 
                   QString tooltip = QString("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table style=\"border-collapse: collapse;border-spacing: 2px 10px;margin:0;padding:0\" ><tbody>  <tr><td>SUV<span style=\"vertical-align:sub;\">MAX</span></td><td>%1</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MEAN</span></td><td>%2</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MIN</span></td><td>%3</td></tr></tbody></table></body></html>").arg(QString().setNum(segmentation->GetSUVMax()),QString().setNum(segmentation->GetSUVMean()),QString().setNum(segmentation->GetSUVMin()));
                   cellWidget->setToolTip(tooltip);
+                  cellWidget->setVisible(true);
+
+                  //cellWidget->setModelVisibilityVisible(true);
 
 //                  QStringList tooltip;
 //                  tooltip << "SUVMax: " << QString().setNum(segmentation->GetSUVMax())
@@ -384,12 +410,16 @@ void qSlicerLongPETCTReportTableWidget::updateView()
 //                  cellWidget->setToolTip(tooltip.join(""));
                 }
               else
-                cellWidget->setToolTip(NULL);
+                {
+                  cellWidget->setToolTip(NULL);
+                  cellWidget->setVisible(false);
+                  //cellWidget->setModelVisibilityVisible(false);
+                }
 
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
                 {
                   QString styleSheet = cellWidget->styleSheet();
-                  styleSheet.insert(styleSheet.length()-1," QLabel{border: 3px solid #DD0000;} ");
+                  styleSheet.insert(styleSheet.length()-1,"border: 3px solid #DD0000;");
                   cellWidget->setStyleSheet(styleSheet);
                 }
             }
@@ -455,10 +485,48 @@ void qSlicerLongPETCTReportTableWidget
 void qSlicerLongPETCTReportTableWidget
 ::segmentationCellClicked(int row, int column)
 {
+  std::cout << "FINDING: " << row << " SEG: " << column << " CLICKED" << std::endl;
+
   emit studyClicked(column);
   emit findingClicked(row);
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTReportTableWidget
+::segmentationModelVisibilityChecked(bool toggled)
+{
+  Q_D(qSlicerLongPETCTReportTableWidget);
+
+  ctkCheckBox* sender = qobject_cast<ctkCheckBox*>(QObject::sender());
+
+  if (sender)
+    {
+      for(int i=0; i < this->rowCount(); ++i)
+        {
+          for(int j=0; j < this->columnCount(); ++j)
+            {
+              if(this->cellWidget(i,j) == sender)
+                {
+                  if(d->ReportNode)
+                    {
+                      vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = d->ReportNode->GetFinding(i);
+                      if(finding)
+                        {
+                          vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
+                          vtkSmartPointer<vtkMRMLLongPETCTSegmentationNode> seg = finding->GetSegmentationForStudy(study);
+
+                          if(seg)
+                            seg->SetModelVisible(toggled);
+                        }
+                    }
+
+                  emit segmentationModelVisiblityChecked(i,j,toggled);
+                  return;
+                }
+            }
+        }
+    }
+}
 
 /*//-----------------------------------------------------------------------------
 void qSlicerLongPETCTReportTableWidget::
