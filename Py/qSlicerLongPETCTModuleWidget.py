@@ -220,11 +220,8 @@ class qSlicerLongPETCTModuleWidget:
     self.observeReportNode(self.reportSelector.currentNode())
     
   def onEditorCollapsed(self,collapsed):
-    print "C1"
     self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
-    print "C2"
     self.onEnterEditMode( collapsed != True )
-    print "C3"
     self.findingSelectionWidget.hideAddButton(collapsed)
     
  
@@ -601,6 +598,9 @@ class qSlicerLongPETCTModuleWidget:
       self.tempCroppedVol.Copy(currentStudy.GetPETVolumeNode())
       self.tempCroppedVol.SetName("LongitudinalPETCT_CroppedVolume") 
     
+      self.tempLabelVol.Copy(currentStudy.GetPETLabelVolumeNode())
+      self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
+      
       cropLogic = slicer.modules.cropvolume.logic()
       
       # temporary ROI in order to not invoke modified events with original roi
@@ -608,25 +608,27 @@ class qSlicerLongPETCTModuleWidget:
       croppingROI.Copy(currentFinding.GetSegmentationROI())
       
       cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETVolumeNode(),self.tempCroppedVol)
-
+      cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETLabelVolumeNode(),self.tempLabelVol)
+      
       #///
       self.tempCroppedVol.SetAndObserveTransformNodeID(None)
+      self.tempLabelVol.SetAndObserveTransformNodeID(None)
             
       currentFinding.GetSegmentationROI().SetAndObserveTransformNodeID(None)
       
-      volLogic  = slicer.modules.volumes.logic()    
+      #volLogic  = slicer.modules.volumes.logic()    
     
-      createdLabelVol = volLogic.CreateLabelVolume(slicer.mrmlScene, self.tempCroppedVol,'TempLabelVolume')
+      #createdLabelVol = volLogic.CreateLabelVolume(slicer.mrmlScene, self.tempCroppedVol,'TempLabelVolume')
    
 
       #if self.tempLabelVol.GetScalarVolumeDisplayNode():
         #slicer.mrmlScene.RemoveNode(tempLabelVol.GetScalarVolumeDisplayNode())
-      if self.tempLabelVol.GetDisplayNode():
-        slicer.mrmlScene.RemoveNode(self.tempLabelVol.GetDisplayNode())
-      self.tempLabelVol.Copy(createdLabelVol)   
-      self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
+      #if self.tempLabelVol.GetDisplayNode():
+        #slicer.mrmlScene.RemoveNode(self.tempLabelVol.GetDisplayNode())
+      #self.tempLabelVol.Copy(createdLabelVol)   
+      #self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
       
-      slicer.mrmlScene.RemoveNode(createdLabelVol)
+      #slicer.mrmlScene.RemoveNode(createdLabelVol)
       
       propagate = caller == self
       ViewHelper.SetRYGBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(),propagate)  
@@ -726,13 +728,14 @@ class qSlicerLongPETCTModuleWidget:
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         
         slicer.mrmlScene.AddNode(studySeg)
+        
         studySeg.SetLabelVolumeNode(currentStudy.GetPETLabelVolumeNode())
         
         currentFinding.AddSegmentationForStudy(currentStudy,studySeg)
       
       else:
         studySeg = currentFinding.GetSegmentationForStudy(currentStudy)        
-            
+             
       pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
     
       if segmentationROI:
@@ -748,8 +751,17 @@ class qSlicerLongPETCTModuleWidget:
         
       if ViewHelper.containsSegmentation(studySeg.GetLabelVolumeNode(),currentFinding.GetColorID()) == False:
         currentFinding.RemoveSegmentationForStudy(currentStudy)
+        
+        mh = studySeg.GetModelHierarchyNode()
+        if mh:
+          mn = mh.GetModelNode()
+          if mn:
+            mdn = mn.GetModelDisplayNode()
+            slicer.mrmlScene.RemoveNode(mdn)
+          slicer.mrmlScene.RemoveNode(mn)
+              
         slicer.mrmlScene.RemoveNode(studySeg)
-
+        
     
     #if self.tempCroppedLblVolObserverTag != -1:      
       #self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag) 
@@ -1300,7 +1312,6 @@ class qSlicerLongPETCTModuleWidget:
         if vrdn:
           
           vrdn.AddViewNodeID(viewNode.GetID())
-          
           
           if self.analysisSettingsWidget.property('spinView'):
             viewNode.SetAnimationMode(slicer.vtkMRMLViewNode.Spin)
