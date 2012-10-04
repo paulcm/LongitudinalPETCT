@@ -40,15 +40,15 @@
 
 #include <vtkSlicerLongPETCTModuleMRMLExport.h>
 
-class vtkMRMLScalarVolumeNode;
-
+#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLModelHierarchyNode.h>
+#include <vtkIntArray.h>
 
 
 /// \ingroup Slicer_QtModules_LongPETCTSegmentationNode
 class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode : public vtkMRMLNode
 {
   public:   
-
 
   static vtkMRMLLongPETCTSegmentationNode *New();
   vtkTypeMacro(vtkMRMLLongPETCTSegmentationNode,vtkMRMLNode);
@@ -68,6 +68,12 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Segmentation";};
 
+
+  enum
+      {
+        ModelHierarchyUpdatedEvent
+      };
+
   void SetROIxyz(double roiXYZ[3]);
   void GetROIxyz(double xyz[3]);
 
@@ -76,21 +82,28 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
 
   void SetSUVs(double max, double mean, double min);
 
-  vtkGetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
-  vtkSetMacro(LabelVolume,vtkMRMLScalarVolumeNode*);
+  void SetLabelVolume(vtkMRMLScalarVolumeNode* labelVolume);
+  vtkGetMacro(LabelVolumeNode,vtkMRMLScalarVolumeNode*);
+
+  void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);
+  vtkGetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
 
   vtkGetMacro(SUVMax,double);
   vtkGetMacro(SUVMean,double);
   vtkGetMacro(SUVMin,double);
 
-
   void Initialize();
 
+  void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
+
+  void SetScene(vtkMRMLScene* scene);
 protected:
   vtkMRMLLongPETCTSegmentationNode();
   ~vtkMRMLLongPETCTSegmentationNode();
   vtkMRMLLongPETCTSegmentationNode(const vtkMRMLLongPETCTSegmentationNode&);
   void operator=(const vtkMRMLLongPETCTSegmentationNode&);
+
+  void AdjustModelTransformToLabelVolume();
 
   vtkSetMacro(SUVMax,double);
   vtkSetMacro(SUVMean,double);
@@ -98,13 +111,18 @@ protected:
 
   bool Selected;
 
-  vtkMRMLScalarVolumeNode* LabelVolume;
+  vtkSmartPointer<vtkMRMLScalarVolumeNode> LabelVolumeNode;
+  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
+
+  vtkSmartPointer<vtkIntArray> ObservedEvents;
+
   double ROIxyz[3];
   double ROIRadius[3];
 
   double SUVMax;
   double SUVMean;
   double SUVMin;
+
 
 };
 
