@@ -110,45 +110,26 @@ vtkMRMLLongPETCTStudyNode::ObserveCenteringTransform(bool observe)
 {
   if (observe && this->CenteringTransform != NULL)
     {
-      if (this->PETVolumeNode != NULL
+      if (this->PETVolumeNode
           && this->PETVolumeNode->GetParentTransformNode()
               != this->CenteringTransform)
         this->PETVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransform->GetID());
-      if (this->CTVolumeNode != NULL
+      if (this->CTVolumeNode
           && this->CTVolumeNode->GetParentTransformNode()
               != this->CenteringTransform)
         this->CTVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransform->GetID());
-      if (this->PETLabelVolumeNode != NULL
+      if (this->PETLabelVolumeNode
           && this->PETLabelVolumeNode->GetParentTransformNode()
               != this->CenteringTransform)
         this->PETLabelVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransform->GetID());
-      if (this->SegmentationROI != NULL
+      if (this->SegmentationROI
           && this->SegmentationROI->GetParentTransformNode()
               != this->CenteringTransform)
         this->SegmentationROI->SetAndObserveTransformNodeID(
             this->CenteringTransform->GetID());
-
-      if (this->ModelHierarchy)
-        {
-          vtkNew<vtkCollection> modelNodes;
-          this->ModelHierarchy->GetChildrenModelNodes(modelNodes.GetPointer());
-
-          for (int i = 0; i < modelNodes->GetNumberOfItems(); ++i)
-            {
-              vtkSmartPointer<vtkMRMLModelNode> modelNode =
-                  vtkMRMLModelNode::SafeDownCast(
-                      modelNodes->GetItemAsObject(i));
-              if (modelNode
-                  && modelNode->GetParentTransformNode()
-                      != this->CenteringTransform)
-                modelNode->SetAndObserveTransformNodeID(
-                    this->CenteringTransform->GetID());
-            }
-        }
-
     }
   else
     {
@@ -160,49 +141,9 @@ vtkMRMLLongPETCTStudyNode::ObserveCenteringTransform(bool observe)
         this->PETLabelVolumeNode->SetAndObserveTransformNodeID(NULL);
       if (this->SegmentationROI)
         this->SegmentationROI->SetAndObserveTransformNodeID(NULL);
-
-      if (this->ModelHierarchy)
-        {
-          vtkNew<vtkCollection> modelNodes;
-          this->ModelHierarchy->GetChildrenModelNodes(modelNodes.GetPointer());
-
-          for (int i = 0; i < modelNodes->GetNumberOfItems(); ++i)
-            {
-              vtkSmartPointer<vtkMRMLModelNode> modelNode =
-                  vtkMRMLModelNode::SafeDownCast(
-                      modelNodes->GetItemAsObject(i));
-              if (modelNode)
-                modelNode->SetAndObserveTransformNodeID(NULL);
-            }
-        }
     }
 }
 
-void vtkMRMLLongPETCTStudyNode::SetModelHierarchy(vtkMRMLModelHierarchyNode* hierarchy)
-{
-  if(this->ModelHierarchy == hierarchy)
-    return;
-
-  static long hierarchyObserverId = -1;
-
-  if (hierarchyObserverId != -1)
-    this->ModelHierarchy->RemoveObservers(static_cast<unsigned long>(hierarchyObserverId));
-
-  this->ModelHierarchy = hierarchy;
-
-  this->ModelHierarchy->AddObserver(vtkCommand::ModifiedEvent, this, &vtkMRMLLongPETCTStudyNode::ModelHierarchyModified);
-
-  this->ModelHierarchy->Modified(); // initialize on centering transform if necessary
-
-}
-
-void vtkMRMLLongPETCTStudyNode::ModelHierarchyModified(vtkObject* caller, long unsigned int eventId, void* callData)
-{
-  if(caller != this->ModelHierarchy || eventId != vtkCommand::ModifiedEvent)
-    return;
-
-  this->ObserveCenteringTransform(this->CenteredVolumes);
-}
 
 void vtkMRMLLongPETCTStudyNode::SetSegmentationROI(vtkMRMLAnnotationROINode* roi)
 {
