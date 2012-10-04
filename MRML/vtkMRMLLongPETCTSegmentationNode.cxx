@@ -22,6 +22,7 @@ Version:   $Revision: 1.2 $
 #include "vtkMRMLLongPETCTSegmentationNode.h"
 
 #include <vtkMRMLModelNode.h>
+#include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLTransformNode.h>
 
 #include <vtkNew.h>
@@ -48,6 +49,7 @@ void vtkMRMLLongPETCTSegmentationNode::Initialize()
 
   this->LabelVolumeNode = NULL;
   this->ModelHierarchyNode = vtkSmartPointer<vtkMRMLModelHierarchyNode>::New();
+  this->ModelVisible = true;
 
   this->ROIxyz[0] = 0.;
   this->ROIxyz[1] = 0.;
@@ -78,6 +80,7 @@ vtkMRMLLongPETCTSegmentationNode::~vtkMRMLLongPETCTSegmentationNode()
   this->ModelHierarchyNode == NULL;
 }
 
+
 //----------------------------------------------------------------------------
 void vtkMRMLLongPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
 {
@@ -103,6 +106,7 @@ void vtkMRMLLongPETCTSegmentationNode::Copy(vtkMRMLNode *anode)
   Superclass::Copy(anode);
 
   this->EndModify(disabledModify);
+  this->ModelHierarchyNode->GetModelNode();
 }
 
 //----------------------------------------------------------------------------
@@ -259,5 +263,27 @@ void vtkMRMLLongPETCTSegmentationNode::SetScene(vtkMRMLScene* scene)
     scene->AddNode(this->ModelHierarchyNode);
 
   Superclass::SetScene(scene);
+}
+
+void vtkMRMLLongPETCTSegmentationNode::SetModelVisible(bool visible)
+{
+  if(this->ModelVisible == visible)
+    return;
+
+  this->ModelVisible = visible;
+
+  if(this->ModelHierarchyNode)
+    {
+      vtkSmartPointer<vtkMRMLModelNode> tempMN = this->ModelHierarchyNode->GetModelNode();
+
+      if(tempMN)
+        {
+          vtkSmartPointer<vtkMRMLModelDisplayNode> tempMDN = tempMN->GetModelDisplayNode();
+          if(tempMDN)
+            tempMDN->SetVisibility(visible);
+        }
+    }
+
+  this->InvokeEvent(vtkCommand::ModifiedEvent);
 }
 

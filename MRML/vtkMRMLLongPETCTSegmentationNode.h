@@ -68,7 +68,6 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Segmentation";};
 
-
   enum
       {
         ModelHierarchyUpdatedEvent
@@ -88,6 +87,9 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);
   vtkGetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
 
+  void SetModelVisible(bool visible);
+  vtkGetMacro(ModelVisible, bool);
+
   vtkGetMacro(SUVMax,double);
   vtkGetMacro(SUVMean,double);
   vtkGetMacro(SUVMin,double);
@@ -95,8 +97,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTSegmentationNode :
   void Initialize();
 
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
-
   void SetScene(vtkMRMLScene* scene);
+
 protected:
   vtkMRMLLongPETCTSegmentationNode();
   ~vtkMRMLLongPETCTSegmentationNode();
@@ -109,7 +111,7 @@ protected:
   vtkSetMacro(SUVMean,double);
   vtkSetMacro(SUVMin,double);
 
-  bool Selected;
+  bool ModelVisible;
 
   vtkSmartPointer<vtkMRMLScalarVolumeNode> LabelVolumeNode;
   vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
