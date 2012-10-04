@@ -46,7 +46,7 @@ vtkMRMLLongPETCTReportNode::vtkMRMLLongPETCTReportNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongPETCTReportNode::~vtkMRMLLongPETCTReportNode()
 {
-
+  this->ModelHierarchyNode = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -59,6 +59,9 @@ void vtkMRMLLongPETCTReportNode::Initialize()
     this->UserSelectedStudy = NULL;
     this->UserSelectedFinding = NULL;
     this->FindingTypesColorTable = NULL;
+
+    this->ModelHierarchyNode = vtkSmartPointer<vtkMRMLModelHierarchyNode>::New();
+    this->ModelHierarchyNode->SetName("Longitudinal PET/CT Analysis Models");
 
     this->studyModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
     studyModifiedForwarder->SetTarget(this);
@@ -189,6 +192,9 @@ void vtkMRMLLongPETCTReportNode::AddFinding(vtkMRMLLongPETCTFindingNode* finding
     finding->AddObserver(vtkCommand::ModifiedEvent,this->findingModifiedForwarder);
 
   this->Findings.push_back(finding);
+
+  if(this->ModelHierarchyNode && finding->GetModelHierarchyNode())
+    finding->GetModelHierarchyNode()->SetParentNodeID(this->ModelHierarchyNode->GetID());
 
 
   this->InvokeEvent(vtkCommand::ModifiedEvent);
@@ -489,3 +495,37 @@ bool vtkMRMLLongPETCTReportNode::IsStudyInUse(const vtkMRMLLongPETCTStudyNode* s
 
   return false;
 }
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy)
+{
+  if(this->ModelHierarchyNode.GetPointer() == modelHierarchy)
+    return;
+
+  vtkSetMRMLObjectMacro(this->ModelHierarchyNode, modelHierarchy);
+
+  for(int i=0; i < this->GetFindingsCount(); ++i)
+    {
+      vtkSmartPointer<vtkMRMLModelHierarchyNode> tempMH = this->GetFinding(i)->GetModelHierarchyNode();
+
+      if(tempMH)
+        {
+           if(this->ModelHierarchyNode)
+             tempMH->SetParentNodeID(this->ModelHierarchyNode->GetID());
+           else
+             tempMH->SetParentNodeID(NULL);
+        }
+    }
+}
+
+
+//----------------------------------------------------------------------------
+void vtkMRMLLongPETCTReportNode::SetScene(vtkMRMLScene* scene)
+{
+  if(scene && this->ModelHierarchyNode && ! scene->GetNodeByID(this->ModelHierarchyNode->GetID()))
+    scene->AddNode(this->ModelHierarchyNode);
+
+  Superclass::SetScene(scene);
+}
+
+

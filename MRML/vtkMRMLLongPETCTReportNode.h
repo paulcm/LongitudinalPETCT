@@ -40,12 +40,14 @@
 
 #include "vtkMRMLLongPETCTFindingNode.h"
 #include <vtkSmartPointer.h>
+#include <vtkMRMLModelHierarchyNode.h>
 
 class vtkMRMLLongPETCTStudyNode;
 class vector;
 class string;
 class vtkMRMLColorNode;
 class vtkMRMLColorTableNode;
+
 
 
 class vtkEventForwarderCommand;
@@ -113,6 +115,9 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   vtkGetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
   vtkSetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
 
+  void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);
+  vtkGetMacro(ModelHierarchyNode, vtkMRMLModelHierarchyNode*);
+
 
   const vtkMRMLColorNode* GetColorNode();
 
@@ -130,6 +135,8 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
 
   int GetNumberOfDefaultFindingTypes();
 
+  void SetScene(vtkMRMLScene* scene);
+
 protected:
   vtkMRMLLongPETCTReportNode();
   ~vtkMRMLLongPETCTReportNode();
@@ -146,6 +153,8 @@ protected:
   vtkSmartPointer<vtkEventForwarderCommand> findingModifiedForwarder;
 
   vtkMRMLColorTableNode* FindingTypesColorTable;
+
+  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
 
 private:
   int NumberOfDefaultFindingTypes;
