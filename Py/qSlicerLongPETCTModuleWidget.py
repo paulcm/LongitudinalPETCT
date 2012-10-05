@@ -37,7 +37,6 @@ class qSlicerLongPETCTModuleWidget:
     self.reportObserverIDs = []
     self.tempObserverEditorTag = -1
     self.viewNodeObserverID = -1
-    self.compareViewNodeObserverIDs = []
     self.segmentationROIOldPosition = [0.,0.,0.]
     #self.tempCroppedLblVolObserverTag = -1
 
@@ -123,7 +122,7 @@ class qSlicerLongPETCTModuleWidget:
     self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
     self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
     self.studySelectionWidget.connect('spinViewToggled(bool)',ViewHelper.spinStandardViewNode)
-    self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.setVolumeRendering)
+    self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.studySelectionWidget.connect('opacityPowChanged(double)',self.onSetOpacityPowForCurrentStudy)
     self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
 
@@ -189,7 +188,7 @@ class qSlicerLongPETCTModuleWidget:
     self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongPETCTAnalysisSettingsWidget()    
     self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
     self.analysisSettingsWidget.connect('studySelectedForAnalysis(int,bool)', self.showQualitativeView)
-    self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.setVolumeRendering)
+    self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
     
     analysisLayout.addWidget(self.analysisSettingsWidget)  
@@ -243,12 +242,10 @@ class qSlicerLongPETCTModuleWidget:
         studyIdx = currentReport.GetIndexOfStudy(currentSelectedStudy)
         self.studySelectionWidget.selectStudyInRow(studyIdx)
      
-        self.manageVRDisplayNodesVisibility(currentSelectedStudy)
-        #self.onUpdateVolumeRendering(currentSelectedStudy.GetPETVolumeNode())
-
-      else:
-        #self.onUpdateVolumeRendering(None)
-        self.manageVRDisplayNodesVisibility(None)
+      self.manageVolumeRenderingVisibility()
+        #self.manageVRDisplayNodesVisibility(currentSelectedStudy)
+        
+      
         
         
   def setCurrentStudy(self, study):
@@ -267,10 +264,13 @@ class qSlicerLongPETCTModuleWidget:
           pow = float(vrdn.GetAttribute("OpacityPow"))
           if pow:
             self.studySelectionWidget.setProperty('opacityPow',pow)
-            print str(pow)
+            #print str(pow)
             self.onSetOpacityPowForCurrentStudy(pow)
             
         #self.setVisibleModelHierarchy(currentReport.GetIndexOfSelectedStudy(currentStudy))    
+      
+        self.manageVolumeRenderingVisibility()
+        self.manageModelsVisibility()
       
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROI()
@@ -356,7 +356,9 @@ class qSlicerLongPETCTModuleWidget:
           vrDisplayNode = self.vrLogic.CreateVolumeRenderingDisplayNode()
           if vrDisplayNode:
             vrDisplayNode.SetCroppingEnabled(0)
-            vrDisplayNode.SetAttribute("OpacityPow",str(self.studySelectionWidget.property('opacityPow')))
+            pow = self.studySelectionWidget.property('opacityPow')
+            vrDisplayNode.SetAttribute("OpacityPow",str(pow))
+            vrDisplayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
           
             petVolume = selectedStudy.GetPETVolumeNode()
             if petVolume:
@@ -367,9 +369,11 @@ class qSlicerLongPETCTModuleWidget:
                 vrDisplayNode.GetVolumePropertyNode().SetName(petVolume.GetName() + "_VR_VolumeProperty")
               if vrDisplayNode.GetROINode():
                 vrDisplayNode.GetROINode().SetName(petVolume.GetName() + "_VR_ROI")
+            
             selectedStudy.SetVolumeRenderingDisplayNode(vrDisplayNode)
-          
-        self.manageVRDisplayNodesVisibility(selectedStudy)         
+            
+        self.manageVolumeRenderingVisibility()  
+        #self.manageVRDisplayNodesVisibility(selectedStudy)         
         viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
         
         #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
@@ -398,7 +402,8 @@ class qSlicerLongPETCTModuleWidget:
         if study:
           vrDisplayNode = study.GetVolumeRenderingDisplayNode()
           if vrDisplayNode:
-            vrDisplayNode.RemoveViewNodeID(viewNode.GetID())
+            if vrDisplayNode.IsViewNodeIDPresent(viewNode.GetID()):
+              vrDisplayNode.RemoveViewNodeID(viewNode.GetID())
             if selectedStudy == study:
               vrDisplayNode.AddViewNodeID(viewNode.GetID()) # check if already added in vtkMRMLDisplayNode
               vrDisplayNode.Modified()
@@ -439,8 +444,8 @@ class qSlicerLongPETCTModuleWidget:
       lastSelectedStudy = currentReport.GetSelectedStudyLast()
       self.setCurrentStudy(lastSelectedStudy)
       
-
-      self.manageVRDisplayNodesVisibility(currentReport.GetUserSelectedStudy())
+      self.manageVolumeRenderingVisibility()
+      #self.manageVRDisplayNodesVisibility(currentReport.GetUserSelectedStudy())
         #self.onUpdateVolumeRendering(currentReport.GetUserSelectedStudy().GetPETVolumeNode())
       
       self.updateBgFgToUserSelectedStudy(currentReport.GetUserSelectedStudy())   
@@ -457,6 +462,7 @@ class qSlicerLongPETCTModuleWidget:
     self.observeReportNode(reportNode)
     
     self.logic.SetSelectedReportNode = reportNode
+    self.studySelectionWidget.setReportNode(reportNode)
     self.studySliderWidget.setReportNode(reportNode)
     self.studySelectionWidget.setReportNode(reportNode)
     self.analysisSettingsWidget.setReportNode(reportNode)
@@ -465,7 +471,7 @@ class qSlicerLongPETCTModuleWidget:
     
     if reportNode:
       
-      self.manageVRDisplayNodesVisibility(reportNode.GetUserSelectedStudy())
+      #self.manageVRDisplayNodesVisibility(reportNode.GetUserSelectedStudy())
       
       #if reportNode.GetUserSelectedStudy():
         #self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
@@ -475,9 +481,10 @@ class qSlicerLongPETCTModuleWidget:
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
     
     else:
-      self.manageVRDisplayNodesVisibility(None)
+     # self.manageVRDisplayNodesVisibility(None)
       self.updateBgFgToUserSelectedStudy(None)  
-    
+      
+    self.manageVolumeRenderingVisibility()
     
   def updateBgFgToUserSelectedStudy(self, userSelectedStudy, fitVolumes = False):    
     
@@ -509,42 +516,26 @@ class qSlicerLongPETCTModuleWidget:
       vrdn = currentStudy.GetVolumeRenderingDisplayNode()
       if vrdn:
         vrdn.SetAttribute("OpacityPow",str(pow))
-        
-        self.updateOpacityPow(currentStudy)
+        self.updateOpacityPow(vrdn,pow)
           
-      
   
-  def updateOpacityPow(self, study):
-    
-    if study:
-      petVolumeNode = study.GetPETVolumeNode()
-
-      if petVolumeNode:
-        if petVolumeNode.GetScalarVolumeDisplayNode():
-          
-          window = petVolumeNode.GetScalarVolumeDisplayNode().GetWindow()
-
-          vrdn = study.GetVolumeRenderingDisplayNode()
-          
-          if vrdn:
-
-            pow = None
-            pow = float(vrdn.GetAttribute("OpacityPow"))
-            opacityFunction = ViewHelper.opacityPowerFunction(window,pow,10.)
-   
-            if opacityFunction:
-              propNode = vrdn.GetVolumePropertyNode()
-
-              if propNode:
-                propNode.SetScalarOpacity(opacityFunction)
-                propNode.Modified()
-                
-            vrdn.Modified()
-                
-   
+  def updateOpacityPow(self, vrdn, pow):
+    if vrdn:
+      volNode = vrdn.GetVolumeNode()
+      propNode = vrdn.GetVolumePropertyNode()
       
+      if volNode:
+        volNodeDisplNode = volNode.GetScalarVolumeDisplayNode()
+        if volNodeDisplNode:
+          window = volNodeDisplNode.GetWindow()
+          if window:
+            opacityFunction = ViewHelper.opacityPowerFunction(window,pow,10.)
+            if (opacityFunction!= None) & (propNode != None):
+              propNode.SetScalarOpacity(opacityFunction)
+              propNode.Modified()
+              vrdn.Modified()
               
-         
+        
   
   def setVolumeRendering(self, on):
     currentReport = self.getCurrentReport()
@@ -572,7 +563,8 @@ class qSlicerLongPETCTModuleWidget:
         currentReport.GetStudy(i).SetCenteredVolumes(centered)
       
       if currentStudy:
-        self.manageVRDisplayNodesVisibility(currentStudy)
+        self.manageVolumeRenderingVisibility()
+        #self.manageVRDisplayNodesVisibility(currentStudy)
         self.updateBgFgToUserSelectedStudy(currentStudy)
         
 
@@ -1069,6 +1061,7 @@ class qSlicerLongPETCTModuleWidget:
                   modelNode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_M")
                   if modelNode.GetDisplayNode():
                     modelNode.GetDisplayNode().SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_D")
+                    modelNode.GetDisplayNode().AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
                   hnode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_H")
                   modelNode.SetHideFromEditors(False)
                   modelNode.SetHideFromEditors(False)
@@ -1080,32 +1073,6 @@ class qSlicerLongPETCTModuleWidget:
           slicer.mrmlScene.RemoveNode(tempMH.GetDisplayNode())
           slicer.mrmlScene.RemoveNode(tempMH)         
         
-              
-                
-          
-        #create current model nodes
-        
-        
-        
-        #count = 0
-        #while self.cliModelMaker.GetStatusString() != 'Running':
-          #count = count + 1
-            
-        #self.timerMakeModels.start(50)
-        
-        
-  def onUpdateModels(self):
-    
-    if self.cliModelMaker.GetStatusString() == 'Completed':
-      if self.getCurrentStudy():
-        if self.getCurrentStudy().GetModelHierarchy():
-          self.getCurrentStudy().GetModelHierarchy().Modified()
-      
-      self.timerMakeModels.stop()   
-    
-    elif self.cliModelMaker.GetStatusString() == 'CompletedWithErrors':    
-      qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the models for the segmentation!')
-      self.timerMakeModels.stop()
                 
         
    
@@ -1242,18 +1209,26 @@ class qSlicerLongPETCTModuleWidget:
       self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
       lm = slicer.app.layoutManager()
      
-      self.setVolumeRendering(self.studySelectionWidget.property('volumeRendering')) 
+      #self.setVolumeRendering(self.studySelectionWidget.property('volumeRendering')) 
+      
       if lm:
         lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
       
       
       self.onManageFindingROIsVisibility()
+      
+      self.manageVolumeRenderingCompareViewNodeIDs()
+      self.manageVolumeRenderingVisibility()
+      self.manageModelDisplayCompareViewNodeIDs()
+      self.manageModelsVisibility()
       #self.setVisibleModelHierarchy(self.getCurrentReport().GetIndexOfSelectedStudy(self.getCurrentStudy()))  
          
+      # workaround update   
+      self.setCurrentStudy(self.getCurrentStudy())   
 
     else:
       
-      self.setVolumeRendering(self.analysisSettingsWidget.property('volumeRendering'))
+      #self.setVolumeRendering(self.analysisSettingsWidget.property('volumeRendering'))
       
       roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
       for i in range(roiNodes.GetNumberOfItems()):
@@ -1263,12 +1238,143 @@ class qSlicerLongPETCTModuleWidget:
       
       self.showQualitativeView()
       
-      
-  def setVisibleModelHierarchy(self, index):
+  
+  def manageVolumeRenderingVisibility(self):
     currentReport = self.getCurrentReport()
+    currentStudy = self.getCurrentStudy()
+    
+    qualView = self.analysisCollapsibleButton.property('collapsed') != True
+    
+    stdVolRen = self.studySelectionWidget.property('volumeRendering')
+    stdSpin = self.studySelectionWidget.property('spinView')
+    
+    qualVolRen = self.analysisSettingsWidget.property('volumeRendering') 
+    qualSpin = self.analysisSettingsWidget.property('spinView')
+    
+    viewNode = ViewHelper.getStandardViewNode()
     
     if currentReport:
       for i in range(currentReport.GetSelectedStudiesCount()):
+        study = currentReport.GetSelectedStudy(i)  
+         
+        if study:
+          vrdn = study.GetVolumeRenderingDisplayNode()
+          if vrdn:
+            if ((study == currentStudy) & (stdVolRen == True) & (qualView == False)) | ((qualView == True) & (qualVolRen == True)) :
+              vrdn.SetVisibility(True)
+              self.updateOpacityPow(vrdn, float(vrdn.GetAttribute('OpacityPow')))
+            else:
+              vrdn.SetVisibility(False)
+      
+      if currentReport.GetSelectedStudiesCount() > 0:
+        viewNode.SetAxisLabelsVisible(True & stdVolRen)   
+        ViewHelper.spinStandardViewNode(stdSpin & stdVolRen)
+
+      else:
+        viewNode.SetAxisLabelsVisible(False)
+        ViewHelper.spinStandardViewNode(False)    
+    
+      if qualView:
+        ViewHelper.spinCompareViewNodes(qualSpin & qualVolRen)
+      
+        compareViewNodes = ViewHelper.getCompareViewNodes()
+        for j in range(len(compareViewNodes)):
+          if (j < currentReport.GetStudiesSelectedForAnalysisCount()) & (qualVolRen == True):
+            compareViewNodes[j].SetAxisLabelsVisible(True)
+          else:
+            compareViewNodes[j].SetAxisLabelsVisible(False) 
+        
+          
+  
+  def manageModelsVisibility(self):
+    currentReport = self.getCurrentReport()
+    currentStudy = self.getCurrentStudy()
+
+    qualView = self.analysisCollapsibleButton.property('collapsed') != True
+
+    if currentStudy:
+      for i in range(currentReport.GetFindingsCount()):
+        finding = currentReport.GetFinding(i)
+        for j in range(currentReport.GetSelectedStudiesCount()):
+          study = currentReport.GetSelectedStudy(j)
+          
+          seg = finding.GetSegmentationForStudy(study)
+          if seg:
+            mh = seg.GetModelHierarchyNode()
+            if mh:
+              mn = mh.GetModelNode()
+              if mn:
+                mdn = mn.GetModelDisplayNode()
+                if mdn:
+                  if ((study == currentStudy) & (seg.GetModelVisible() == True)) | (qualView == True):
+                    mdn.SetVisibility(True)
+                  else:
+                    mdn.SetVisibility(False)
+   
+  
+  def manageVolumeRenderingCompareViewNodeIDs(self):
+    currentReport = self.getCurrentReport()
+    
+    compareViewNodes = ViewHelper.getCompareViewNodes()
+    qualView = self.analysisCollapsibleButton.property('collapsed') != True
+    
+    if currentReport:
+      for i in range(currentReport.GetSelectedStudiesCount()):
+        study = currentReport.GetSelectedStudy(i)  
+       
+        vrdn = study.GetVolumeRenderingDisplayNode()
+        if vrdn:
+          for cvn in compareViewNodes:
+            if vrdn.IsViewNodeIDPresent(cvn.GetID()):
+              vrdn.RemoveViewNodeID(cvn.GetID())
+              
+            id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
+            if (id >= 0) & (id < len(compareViewNodes)) & (qualView == True):
+              vrdn.AddViewNodeID(compareViewNodes[id].GetID())
+                  
+       
+         
+                    
+  def manageModelDisplayCompareViewNodeIDs(self):
+    
+    currentReport = self.getCurrentReport()
+    compareViewNodes = ViewHelper.getCompareViewNodes()
+    
+    qualView = self.analysisCollapsibleButton.property('collapsed') != True
+    
+    if currentReport:
+      for i in range(currentReport.GetFindingsCount()):
+        finding = currentReport.GetFinding(i)
+        for j in range(currentReport.GetSelectedStudiesCount()):
+          study = currentReport.GetSelectedStudy(j)
+          
+          seg = finding.GetSegmentationForStudy(study)
+          if seg:
+            mh = seg.GetModelHierarchyNode()
+            if mh:
+              mn = mh.GetModelNode()
+              if mn:
+                mdn = mn.GetModelDisplayNode()
+                if mdn:
+                  for cvn in compareViewNodes:
+                    if mdn.IsViewNodeIDPresent(cvn.GetID()):
+                      mdn.RemoveViewNodeID(cvn.GetID())
+                  
+                  id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
+                  if (id >= 0) & (id < len(compareViewNodes)) & (qualView == True):
+                    mdn.AddViewNodeID(compareViewNodes[id].GetID())         
+    
+            
+             
+        
+  def setVisibleModelHierarchy(self, index):
+
+    currentStudy = self.getCurrentStudy()
+    currentFinding = self.getCurrentFinding()
+    
+    if (currentStudy != None) & (currentFinding != None):
+      for i in range(currentReport.GetSelectedStudiesCount()):
+        
         modelHierarchy = currentReport.GetSelectedStudy(i).GetModelHierarchy()
         if modelHierarchy:
           
@@ -1284,51 +1390,22 @@ class qSlicerLongPETCTModuleWidget:
     
     currentLayoutID = ViewHelper.updateQualitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
     
-    ViewHelper.removeObserversFromCompareViewNodes(self.compareViewNodeObserverIDs)
-    del self.compareViewNodeObserverIDs[:]
-    viewNodes = ViewHelper.getCompareViewNodes()   
+    self.manageVolumeRenderingCompareViewNodeIDs()
+    self.manageVolumeRenderingVisibility()
+    self.manageModelDisplayCompareViewNodeIDs()
+    self.manageModelsVisibility()
+     
     
+              
+    if self.qualitativeViewLastID != currentLayoutID:
+      ViewHelper.SetForegroundOpacity(0.6, True)
+      self.qualitativeViewLastID = currentLayoutID
     
     for i in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
       study = self.getCurrentReport().GetStudySelectedForAnalysis(i)
-      
-      viewNode = viewNodes[self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study)]
-      
       if study:
-        #mh = study.GetModelHierarchy()
-        #if mh:
-          #nodes = vtk.vtkCollection()
-          #mh.GetChildrenModelNodes(nodes)
-          #for j in range(nodes.GetNumberOfItems()):
-            #node = nodes.GetItemAsObject(j)
-            #displayNode = node.GetDisplayNode()
-            #if displayNode:
-              #displayNode.RemoveAllViewNodeIDs()
-              #displayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
-              #displayNode.AddViewNodeID(viewNode.GetID())
-              #displayNode.SetVisibility(True)
-        #self.setVisibleModelHierarchy(-1)      
-        vrdn = study.GetVolumeRenderingDisplayNode()
-        if vrdn:
-          
-          vrdn.AddViewNodeID(viewNode.GetID())
-          
-          if self.analysisSettingsWidget.property('spinView'):
-            viewNode.SetAnimationMode(slicer.vtkMRMLViewNode.Spin)
-          else:
-            viewNode.SetAnimationMode(slicer.vtkMRMLViewNode.Off)
-          
-          observerID = viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified) 
-          self.compareViewNodeObserverIDs.append(observerID)
-            
-          if self.qualitativeViewLastID != currentLayoutID:
-            ViewHelper.SetForegroundOpacity(0.6, True)
-            self.qualitativeViewLastID = currentLayoutID
-          
-          
-            
-          ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)
-          
+        ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
+        
           
      
        
