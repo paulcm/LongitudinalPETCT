@@ -305,7 +305,7 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
               if (!cellWidget)
                 {
                   cellWidget = d->createCellWidgetCheckBox();
-                  QObject::connect(cellWidget, SIGNAL(toggled(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
+                  QObject::connect(cellWidget, SIGNAL(clicked(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
                   this->setCellWidget(i, j, cellWidget);
                 }
 
@@ -388,25 +388,19 @@ void qSlicerLongPETCTReportTableWidget::updateView()
           ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(this->cellWidget(i,j));
           if(cellWidget != NULL)
             {
-              vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
 
+              vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
               vtkSmartPointer<vtkMRMLLongPETCTSegmentationNode> segmentation = finding->GetSegmentationForStudy(study);
+
+              cellWidget->setCheckable(study == d->ReportNode->GetUserSelectedStudy() );
+
 
               if (segmentation != NULL)
                 {
-
+                  cellWidget->setChecked(segmentation->GetModelVisible());
                   QString tooltip = QString("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table style=\"border-collapse: collapse;border-spacing: 2px 10px;margin:0;padding:0\" ><tbody>  <tr><td>SUV<span style=\"vertical-align:sub;\">MAX</span></td><td>%1</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MEAN</span></td><td>%2</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MIN</span></td><td>%3</td></tr></tbody></table></body></html>").arg(QString().setNum(segmentation->GetSUVMax()),QString().setNum(segmentation->GetSUVMean()),QString().setNum(segmentation->GetSUVMin()));
                   cellWidget->setToolTip(tooltip);
                   cellWidget->setVisible(true);
-
-                  //cellWidget->setModelVisibilityVisible(true);
-
-//                  QStringList tooltip;
-//                  tooltip << "SUVMax: " << QString().setNum(segmentation->GetSUVMax())
-//                      << "\nSUVMean: " << QString().setNum(segmentation->GetSUVMean()) << "\nSUVMin: "
-//                      << QString().setNum(segmentation->GetSUVMin());
-//
-//                  cellWidget->setToolTip(tooltip.join(""));
                 }
               else
                 {
@@ -514,7 +508,7 @@ void qSlicerLongPETCTReportTableWidget
                           vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
                           vtkSmartPointer<vtkMRMLLongPETCTSegmentationNode> seg = finding->GetSegmentationForStudy(study);
 
-                          if(seg)
+                          if(seg && study == d->ReportNode->GetUserSelectedStudy())
                             seg->SetModelVisible(toggled);
                         }
                     }
