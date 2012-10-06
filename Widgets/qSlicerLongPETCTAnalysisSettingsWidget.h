@@ -47,6 +47,8 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTAnalysisSettingsW
   QVTK_OBJECT
   Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
   Q_PROPERTY(bool spinView READ spinView WRITE setSpinView)
+  Q_PROPERTY(bool qualitativeChecked READ qualitativeChecked WRITE setQualitativeChecked)
+  Q_PROPERTY(bool quantitativeChecked READ quantitativeChecked WRITE setQuantitativeChecked)
 
 public:
   typedef QWidget Superclass;
@@ -56,15 +58,21 @@ public:
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
 
+  bool qualitativeChecked();
+  bool quantitativeChecked();
   bool volumeRendering();
   bool spinView();
 
+  void setQualitativeChecked(bool checked);
+  void setQuantitativeChecked(bool checked);
   void setVolumeRendering(bool checked);
   void setSpinView(bool checked);
 
+
+
 signals:
-  void qualitativeAnalysisClicked();
-  void quantitativeAnalysisClicked();
+  void qualitativeAnalysisChecked(bool checked);
+  void quantitativeAnalysisChecked(bool checked);
   void studySelectedForAnalysis(int index, bool selected);
   void volumeRenderingToggled(bool toggled);
   void spinViewToggled(bool toggled);

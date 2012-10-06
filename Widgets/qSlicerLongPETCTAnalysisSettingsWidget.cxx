@@ -88,8 +88,8 @@ void qSlicerLongPETCTAnalysisSettingsWidgetPrivate
 
   this->WidgetButtonsPanel->setVisible(false);
 
-  QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(qualitativeAnalysisClicked()) );
-  QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(clicked()), q, SIGNAL(quantitativeAnalysisClicked()) );
+  QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(toggled(bool)), q, SIGNAL(qualitativeAnalysisChecked(bool)) );
+  QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(toggled(bool)), q, SIGNAL(quantitativeAnalysisChecked(bool)) );
   QObject::connect(this->ListSelectedObjects, SIGNAL(itemChanged(QListWidgetItem*)), q, SLOT(listItemChanged(QListWidgetItem*)) );
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
   QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(spinViewToggled(bool)) );
@@ -295,6 +295,24 @@ void qSlicerLongPETCTAnalysisSettingsWidget
     }
 }
 
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTAnalysisSettingsWidget::qualitativeChecked()
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonQualitativeAnalysis);
+
+  return d->ButtonQualitativeAnalysis->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTAnalysisSettingsWidget::quantitativeChecked()
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonQuantitativeAnalysis);
+
+  return d->ButtonQuantitativeAnalysis->isChecked();
+}
+
 
 //-----------------------------------------------------------------------------
 bool qSlicerLongPETCTAnalysisSettingsWidget::volumeRendering()
@@ -312,6 +330,24 @@ bool qSlicerLongPETCTAnalysisSettingsWidget::spinView()
   Q_ASSERT(d->ButtonSpinView);
 
   return d->ButtonSpinView->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTAnalysisSettingsWidget::setQualitativeChecked(bool checked)
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonQualitativeAnalysis);
+
+  d->ButtonQualitativeAnalysis->setChecked(checked);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTAnalysisSettingsWidget::setQuantitativeChecked(bool checked)
+{
+  Q_D(qSlicerLongPETCTAnalysisSettingsWidget);
+  Q_ASSERT(d->ButtonQuantitativeAnalysis);
+
+  d->ButtonQuantitativeAnalysis->setChecked(checked);
 }
 
 //-----------------------------------------------------------------------------
