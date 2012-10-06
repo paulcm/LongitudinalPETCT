@@ -39,6 +39,9 @@ class qSlicerLongPETCTModuleWidget:
     self.viewNodeObserverID = -1
     self.segmentationROIOldPosition = [0.,0.,0.]
     #self.tempCroppedLblVolObserverTag = -1
+    
+    self.chartArrayNodes = []
+    self.chartNode = None
 
     self.logic  = slicer.modules.longpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
@@ -61,6 +64,7 @@ class qSlicerLongPETCTModuleWidget:
     self.cliNode = None
     self.cliModelMaker = None
     
+    self.showCompareAll = False
     
     self.findingsInfoMessageBox = None
     self.unsupportedVolRendMessageBox = None
@@ -180,13 +184,16 @@ class qSlicerLongPETCTModuleWidget:
     #Analysis Collapsible Button
     self.analysisCollapsibleButton.text = "Analysis"
     self.analysisCollapsibleButton.setProperty('collapsed',True)
-    self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onSwitchToQualitativeView)      
+    self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onSwitchToAnalysis)      
     
     self.layout.addWidget(self.analysisCollapsibleButton)
     
     analysisLayout = qt.QVBoxLayout(self.analysisCollapsibleButton)
     self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongPETCTAnalysisSettingsWidget()    
     self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
+    
+    self.analysisSettingsWidget.connect('qualitativeAnalysisChecked(bool)', self.showQualitativeView)
+    self.analysisSettingsWidget.connect('quantitativeAnalysisChecked(bool)', self.showQuantitativeView)
     self.analysisSettingsWidget.connect('studySelectedForAnalysis(int,bool)', self.showQualitativeView)
     self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
@@ -267,11 +274,10 @@ class qSlicerLongPETCTModuleWidget:
             #print str(pow)
             self.onSetOpacityPowForCurrentStudy(pow)
             
-        #self.setVisibleModelHierarchy(currentReport.GetIndexOfSelectedStudy(currentStudy))    
-      
+        
         self.manageVolumeRenderingVisibility()
         self.manageModelsVisibility()
-      
+        
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROI()
       
@@ -870,8 +876,9 @@ class qSlicerLongPETCTModuleWidget:
       if (segROI != None) & (self.getCurrentStudy() != None):
         self.getCurrentStudy().SetSegmentationROI(segROI)
         self.updateSegmentationROIPosition()
-        
-        
+      
+      if self.isQuantitativeViewActive():
+        self.updateQuantitativeView(currentReport.GetUserSelectedFinding())    
   
     else:
       self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -1202,41 +1209,6 @@ class qSlicerLongPETCTModuleWidget:
     
     self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
 
-  
-  def onSwitchToQualitativeView(self, analysisCollapsed):
-   
-    if analysisCollapsed:
-      self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
-      lm = slicer.app.layoutManager()
-     
-      #self.setVolumeRendering(self.studySelectionWidget.property('volumeRendering')) 
-      
-      if lm:
-        lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
-      
-      
-      self.onManageFindingROIsVisibility()
-      
-      self.manageVolumeRenderingCompareViewNodeIDs()
-      self.manageVolumeRenderingVisibility()
-      self.manageModelDisplayCompareViewNodeIDs()
-      self.manageModelsVisibility()
-      #self.setVisibleModelHierarchy(self.getCurrentReport().GetIndexOfSelectedStudy(self.getCurrentStudy()))  
-         
-      # workaround update   
-      self.setCurrentStudy(self.getCurrentStudy())   
-
-    else:
-      
-      #self.setVolumeRendering(self.analysisSettingsWidget.property('volumeRendering'))
-      
-      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
-      for i in range(roiNodes.GetNumberOfItems()):
-        roi = roiNodes.GetItemAsObject(i)  
-        if roi: 
-          roi.SetVisibility(0)
-      
-      self.showQualitativeView()
       
   
   def manageVolumeRenderingVisibility(self):
@@ -1248,8 +1220,8 @@ class qSlicerLongPETCTModuleWidget:
     stdVolRen = self.studySelectionWidget.property('volumeRendering')
     stdSpin = self.studySelectionWidget.property('spinView')
     
-    qualVolRen = self.analysisSettingsWidget.property('volumeRendering') 
-    qualSpin = self.analysisSettingsWidget.property('spinView')
+    anaVolRen = self.analysisSettingsWidget.property('volumeRendering') 
+    anaSpin = self.analysisSettingsWidget.property('spinView')
     
     viewNode = ViewHelper.getStandardViewNode()
     
@@ -1260,7 +1232,7 @@ class qSlicerLongPETCTModuleWidget:
         if study:
           vrdn = study.GetVolumeRenderingDisplayNode()
           if vrdn:
-            if ((study == currentStudy) & (stdVolRen == True) & (qualView == False)) | ((qualView == True) & (qualVolRen == True)) :
+            if ((study == currentStudy) & (stdVolRen == True)) |  ((self.isQualitativeViewActive() & anaVolRen) | (self.isQuantitativeViewActive() & anaVolRen)):
               vrdn.SetVisibility(True)
               self.updateOpacityPow(vrdn, float(vrdn.GetAttribute('OpacityPow')))
             else:
@@ -1275,18 +1247,18 @@ class qSlicerLongPETCTModuleWidget:
         ViewHelper.spinStandardViewNode(False)    
     
       if qualView:
-        ViewHelper.spinCompareViewNodes(qualSpin & qualVolRen)
+        ViewHelper.spinCompareViewNodes(anaSpin & anaVolRen)
       
         compareViewNodes = ViewHelper.getCompareViewNodes()
         for j in range(len(compareViewNodes)):
-          if (j < currentReport.GetStudiesSelectedForAnalysisCount()) & (qualVolRen == True):
+          if (j < currentReport.GetStudiesSelectedForAnalysisCount()) & (anaVolRen == True):
             compareViewNodes[j].SetAxisLabelsVisible(True)
           else:
             compareViewNodes[j].SetAxisLabelsVisible(False) 
         
           
   
-  def manageModelsVisibility(self):
+  def manageModelsVisibility(self, showAll = False):
     currentReport = self.getCurrentReport()
     currentStudy = self.getCurrentStudy()
 
@@ -1306,10 +1278,11 @@ class qSlicerLongPETCTModuleWidget:
               if mn:
                 mdn = mn.GetModelDisplayNode()
                 if mdn:
-                  if ((study == currentStudy) & (seg.GetModelVisible() == True)) | (qualView == True):
+                  if showAll | ((study == currentStudy) & (seg.GetModelVisible() == True)) | (self.isQuantitativeViewActive() & (finding == self.getCurrentFinding())):
                     mdn.SetVisibility(True)
                   else:
                     mdn.SetVisibility(False)
+   
    
   
   def manageVolumeRenderingCompareViewNodeIDs(self):
@@ -1329,18 +1302,22 @@ class qSlicerLongPETCTModuleWidget:
               vrdn.RemoveViewNodeID(cvn.GetID())
               
             id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
-            if (id >= 0) & (id < len(compareViewNodes)) & (qualView == True):
+            if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
+              print "SETTING VISIBLE: "+vrdn.GetName() + " for " + compareViewNodes[id].GetID()
               vrdn.AddViewNodeID(compareViewNodes[id].GetID())
                   
-       
+  
+  def isQualitativeViewActive(self):
+    return (self.analysisCollapsibleButton.property('collapsed') != True) & self.analysisSettingsWidget.property('qualitativeChecked')
+         
+  def isQuantitativeViewActive(self):
+    return (self.analysisCollapsibleButton.property('collapsed') != True) & self.analysisSettingsWidget.property('quantitativeChecked')
          
                     
   def manageModelDisplayCompareViewNodeIDs(self):
     
     currentReport = self.getCurrentReport()
     compareViewNodes = ViewHelper.getCompareViewNodes()
-    
-    qualView = self.analysisCollapsibleButton.property('collapsed') != True
     
     if currentReport:
       for i in range(currentReport.GetFindingsCount()):
@@ -1361,50 +1338,180 @@ class qSlicerLongPETCTModuleWidget:
                       mdn.RemoveViewNodeID(cvn.GetID())
                   
                   id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
-                  if (id >= 0) & (id < len(compareViewNodes)) & (qualView == True):
+                  if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
+                    print "SETTING VISIBLE: "+mdn.GetName() + " for " + compareViewNodes[id].GetID()
                     mdn.AddViewNodeID(compareViewNodes[id].GetID())         
     
-            
-             
+                         
+  
+  def onSwitchToAnalysis(self, analysisCollapsed):
+   
+      
+    if analysisCollapsed:
+      self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
+      
+      lm = slicer.app.layoutManager()
+      if lm:
+        lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
+      
+      self.onManageFindingROIsVisibility()
+      
+      self.manageVolumeRenderingCompareViewNodeIDs()
+      self.manageVolumeRenderingVisibility()
+      self.manageModelDisplayCompareViewNodeIDs()
+      self.manageModelsVisibility()
         
-  def setVisibleModelHierarchy(self, index):
+      # workaround update   
+      self.setCurrentStudy(self.getCurrentStudy())   
 
-    currentStudy = self.getCurrentStudy()
-    currentFinding = self.getCurrentFinding()
+    else:
     
-    if (currentStudy != None) & (currentFinding != None):
-      for i in range(currentReport.GetSelectedStudiesCount()):
-        
-        modelHierarchy = currentReport.GetSelectedStudy(i).GetModelHierarchy()
-        if modelHierarchy:
-          
-          slicer.vtkMRMLModelHierarchyLogic.SetChildrenVisibility(modelHierarchy, i == index)
-          
-          if modelHierarchy.GetDisplayNode():
-            modelHierarchy.GetDisplayNode().SetVisibility(i == index)
-              
-        
-                   
+      #self.setVolumeRendering(self.analysisSettingsWidget.property('volumeRendering'))
+      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+      for i in range(roiNodes.GetNumberOfItems()):
+        roi = roiNodes.GetItemAsObject(i)  
+        if roi: 
+          roi.SetVisibility(0)
+    
+      if self.analysisSettingsWidget.property('qualitativeChecked'):
+        self.showQualitativeView()      
+      
+      elif self.analysisSettingsWidget.property('quantitativeChecked'):  
+        self.showQuantitativeView()           
       #self.manageVRDisplayNodesVisibility(None) 
-  def showQualitativeView(self):
+  
+  def showQuantitativeView(self, show = True):
     
-    currentLayoutID = ViewHelper.updateQualitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
+    if show:
+      
+      
+      
+      currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
     
-    self.manageVolumeRenderingCompareViewNodeIDs()
-    self.manageVolumeRenderingVisibility()
-    self.manageModelDisplayCompareViewNodeIDs()
-    self.manageModelsVisibility()
-     
+      self.manageVolumeRenderingCompareViewNodeIDs()
+      self.manageVolumeRenderingVisibility()
+      self.manageModelDisplayCompareViewNodeIDs()
+
+      self.manageModelsVisibility(True)
+
+      #lm = slicer.app.layoutManager()
     
-              
-    if self.qualitativeViewLastID != currentLayoutID:
-      ViewHelper.SetForegroundOpacity(0.6, True)
-      self.qualitativeViewLastID = currentLayoutID
+      #if lm:
+        #ViewHelper.getStandardChartViewNode().Modified()
+        #lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutConventionalQuantitativeView)
+        
+      currentReport = self.getCurrentReport()
+        
+      if self.chartNode == None:
+        self.chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
+        self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
+        self.chartNode.SetProperty('default', 'type', 'Scatter');
+        self.chartNode.SetProperty('default', 'showLegend', 'on') 
+        self.chartNode.SetProperty('default', 'xAxisType', 'categorical')
+         
+      chartViewNode = ViewHelper.getStandardChartViewNode()
+      chartViewNode.SetChartNodeID(self.chartNode.GetID())
+        
+      self.updateQuantitativeView()
+        
+        
+          
+  def updateQuantitativeView(self, finding = None):
     
-    for i in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
-      study = self.getCurrentReport().GetStudySelectedForAnalysis(i)
-      if study:
-        ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
+    currentReport = self.getCurrentReport()
+    
+    for can in self.chartArrayNodes:
+      self.chartNode.RemoveArray(can.GetName())
+      slicer.mrmlScene.RemoveNode(can)
+    
+    if self.chartArrayNodes:
+      del self.chartArrayNodes[:]  
+    
+      
+    if currentReport:
+      arrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
+      saturationMultipliers = [1.0,0.7,0.4] # should be as many as different arraynodes
+      colorTable = currentReport.GetFindingTypesColorTable()
+      lut = colorTable.GetLookupTable()
+      suvs = []
+      findings = []
+      
+      if finding == None:
+        for i in xrange(currentReport.GetFindingsCount()):
+          fnd = currentReport.GetFinding(i)
+          if fnd:
+            findings.append(fnd)
+      else:
+        findings.append(finding)        
+          
+      for finding in findings:
+        
+        rgba = lut.GetTableValue(finding.GetColorID())
+      
+        for i in xrange(len(arrayNodeNames)):
+      
+          arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())
+          arrayNode.SetName(finding.GetName()+" "+arrayNodeNames[i])
+          self.chartArrayNodes.append(arrayNode)
+      
+          array = arrayNode.GetArray()
+          samples = currentReport.GetStudiesSelectedForAnalysisCount()
+          tuples = samples  
+          array.SetNumberOfTuples(tuples)
+          tuple = 0
+       
+          
+          for j in xrange(samples):
+            study = currentReport.GetStudySelectedForAnalysis(j)
+            seg = finding.GetSegmentationForStudy(study)
+            del suvs[:]
+            if seg:
+              suvs.append(seg.GetSUVMax())
+              suvs.append(seg.GetSUVMean())
+              suvs.append(seg.GetSUVMin())
+           
+              array.SetComponent(tuple, 0, long(study.GetAttribute('DICOM.StudyDate')))       
+              array.SetComponent(tuple, 1, suvs[i])
+              array.SetComponent(tuple, 2, 0.)
+              tuple += 1
+           
+              colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
+              self.chartNode.SetProperty(arrayNode.GetName(), 'color', colorStr)
+        
+          self.chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
+        
+        if len(findings) == 1:
+          self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUV<span style=\"vertical-align:sub;font-size:80%;\">bw</span>')         
+      
+      if len(findings) > 1:
+        self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUV<span style=\"vertical-align:sub;font-size:80%;\">bw</span>')  
+      
+      self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')  
+    
+    ViewHelper.getStandardChartViewNode().Modified()
+                
+        
+  
+  
+  def showQualitativeView(self, show = True):
+    
+    if show:
+      
+      currentLayoutID = ViewHelper.updateQualitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
+   
+      self.manageVolumeRenderingCompareViewNodeIDs()
+      self.manageVolumeRenderingVisibility()
+      self.manageModelDisplayCompareViewNodeIDs()
+      self.manageModelsVisibility(True)
+          
+      if self.qualitativeViewLastID != currentLayoutID:
+        ViewHelper.SetForegroundOpacity(0.6, True)
+        self.qualitativeViewLastID = currentLayoutID
+    
+      for i in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
+        study = self.getCurrentReport().GetStudySelectedForAnalysis(i)
+        if study:
+          ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
         
           
      
