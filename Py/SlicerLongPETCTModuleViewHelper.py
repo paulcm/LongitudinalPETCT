@@ -412,19 +412,53 @@ class SlicerLongPETCTModuleViewHelper( object ):
       xyz = [xyz[0],xyz[1],xyz[2]]  
             
     return xyz  
-   
+  
+  
+  @staticmethod
+  def updateQuantitativeViewLayout(studies):
+    
+    label3D = SlicerLongPETCTModuleViewHelper.compareLabel3D()  
+     
+    quantView ="<layout type=\"vertical\">"
+    quantView += "<item>\
+    <layout type=\"horizontal\">\
+    <item>\
+    <view class=\"vtkMRMLChartViewNode\" singletontag=\"ChartView1\">\
+    <property name=\"viewlabel\" action=\"default\">1</property>\
+    </view>\
+    </item>\
+    </layout>\
+    </item>\
+    <item>\
+    <layout type=\"horizontal\">"
+    for i in range(studies):
+      quantView = quantView+"<item>\
+    <view class=\"vtkMRMLViewNode\" singletontag=\""+label3D+str(i+1)+"\">\
+    <property name=\"viewlabel\" action=\"default\">D"+str(i+1)+"</property>\
+    </view>\
+    </item>"
+    quantView = quantView+"</layout>\
+    </item>\
+    </layout>"
+    
+    
+    layoutNode = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode').GetItemAsObject(0)
+    id = 456 + studies
+    layoutNode.AddLayoutDescription(id,quantView)
+    layoutNode.SetViewArrangement(id)
+        
+      
+     
   @staticmethod
   def updateQualitativeViewLayout(studies):
     
     label = SlicerLongPETCTModuleViewHelper.compareLabel()
     label3D = SlicerLongPETCTModuleViewHelper.compareLabel3D()
    
-    # add custom layout for comparing two pairs of volumes
-    compareViewTwoRows ="<layout type=\"horizontal\">"
+    compareView ="<layout type=\"horizontal\">"
     
     for i in range(studies):
-      print "Constructing ROWS"
-      compareViewTwoRows = compareViewTwoRows+"   <item>\
+      compareView = compareView+"<item>\
     <layout type=\"vertical\">\
     <item>\
     <view class=\"vtkMRMLViewNode\" singletontag=\""+label3D+str(i+1)+"\">\
@@ -467,11 +501,11 @@ class SlicerLongPETCTModuleViewHelper( object ):
     </layout>\
     </item>"
 
-    compareViewTwoRows = compareViewTwoRows+"</layout>"
+    compareView = compareView+"</layout>"
     
     layoutNode = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode').GetItemAsObject(0)
     id = 123 + studies
-    layoutNode.AddLayoutDescription(id,compareViewTwoRows)
+    layoutNode.AddLayoutDescription(id,compareView)
     layoutNode.SetViewArrangement(id)
     
     
@@ -517,8 +551,20 @@ class SlicerLongPETCTModuleViewHelper( object ):
   
   @staticmethod
   def getStandardViewNode():
-    viewNode = slicer.util.getNode('vtkMRMLViewNode1')
+    viewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLViewNode')
+    viewNodes.InitTraversal()
+    viewNode = viewNodes.GetNextItemAsObject()
+    
     return viewNode
+  
+  @staticmethod
+  def getStandardChartViewNode():
+    chartViewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLChartViewNode')
+    chartViewNodes.InitTraversal()
+    chartViewNode = chartViewNodes.GetNextItemAsObject()
+    
+    return chartViewNode
+         
     
   @staticmethod
   def getCompareViewNodes():
@@ -579,8 +625,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
       SlicerLongPETCTModuleViewHelper.getStandardViewNode().SetAnimationMode(slicer.vtkMRMLViewNode.Spin) 
     else:
       SlicerLongPETCTModuleViewHelper.getStandardViewNode().SetAnimationMode(slicer.vtkMRMLViewNode.Off)   
-           
-                         
+                                 
   @staticmethod
   def spinCompareViewNodes(spin):
     compViewNodes = SlicerLongPETCTModuleViewHelper.getCompareViewNodes()
@@ -611,3 +656,16 @@ class SlicerLongPETCTModuleViewHelper( object ):
       opacityFunction.AddPoint(window,1.,0.5,0.)
     
     return opacityFunction          
+  
+  @staticmethod
+  def RGBtoHex(r,g,b, satMod = 1.0):
+    
+    col = qt.QColor(r,g,b)
+    sat = col.saturation() * satMod
+    col.setHsv(col.hue(),sat,col.value())
+    
+    return col.name()
+
+                 
+    
+    #return '#%02X%02X%02X' % (r,g,b)
