@@ -84,7 +84,11 @@ void qSlicerLongPETCTReportSelectionWidgetPrivate
   this->MRMLNodeComboBoxReport->setRemoveEnabled(false);
   this->MRMLNodeComboBoxReport->setRenameEnabled(true);
 
+  this->LabelInformation->setText("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /></head><body style=\"font-family:\'LucidaGrande\'; font-size:13pt; font-weight:400; font-style:normal; text-align:justify;\"><p style=\"margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">There are no Longitudinal PET/CT Analysis Reports in the scene.<br/>Please import PET/CT image data using the <span style=\"font-style: italic;\">Longitudinal PET/CT Analysis Reader</span> in the <img src=\":/Icons/SlicerLoadDICOM.png\" />  <span style=\"font-weight:600;\">DICOM Module</span>.</p></body></html>");
+
   QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(selectionChanged(vtkMRMLNode*)) );
+  QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(nodeAdded()), q, SLOT(updateView()) );
+
 }
 
 
@@ -165,6 +169,7 @@ void qSlicerLongPETCTReportSelectionWidget
   Q_ASSERT(d->LabelNameInfo);
   Q_ASSERT(d->LabelDoBInfo);
   Q_ASSERT(d->LabelSexInfo);
+  Q_ASSERT(d->LabelInformation);
 
   if(d->ReportNode != NULL)
     {
@@ -180,6 +185,10 @@ void qSlicerLongPETCTReportSelectionWidget
         d->LabelDoBInfo->setText(noText);
         d->LabelSexInfo->setText(noText);
     }
+
+    bool infoVisible = d->MRMLNodeComboBoxReport->nodeCount() == 0;
+    d->LabelInformation->setVisible(infoVisible);
+
 }
 
 //-----------------------------------------------------------------------------

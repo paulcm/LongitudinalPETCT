@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>525</width>
-    <height>164</height>
+    <width>608</width>
+    <height>222</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,6 +17,22 @@
    <property name="spacing">
     <number>16</number>
    </property>
+   <item>
+    <widget class="QLabel" name="LabelInformation">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
      <property name="horizontalSpacing">
@@ -122,13 +138,6 @@
        </widget>
       </item>
      </layout>
-     <zorder>LabelName</zorder>
-     <zorder>LabelName</zorder>
-     <zorder>LabelDoB</zorder>
-     <zorder>LabelSex</zorder>
-     <zorder>LabelNameInfo</zorder>
-     <zorder>LabelDoBInfo</zorder>
-     <zorder>LabelSexInfo</zorder>
     </widget>
    </item>
    <item>
@@ -160,15 +169,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ctkExpandButton</class>
-   <extends>QToolButton</extends>
-   <header>ctkExpandButton.h</header>
-  </customwidget>
-  <customwidget>
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qmrmlnodecombobox.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkExpandButton</class>
+   <extends>QToolButton</extends>
+   <header>ctkExpandButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
