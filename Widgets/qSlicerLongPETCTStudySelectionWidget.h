@@ -62,7 +62,7 @@ public:
   void setCenteredSelected(bool selected);
 
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
-  vtkMRMLLongPETCTReportNode* reportNode();
+  Q_INVOKABLE vtkMRMLLongPETCTReportNode* reportNode();
 
 public slots:
   void updateView();
