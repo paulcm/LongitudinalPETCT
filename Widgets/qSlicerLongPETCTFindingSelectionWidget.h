@@ -23,17 +23,17 @@
 
 // Qt includes
 #include <QWidget>
-
+#include <ctkVTKObject.h>
 
 // LongPETCTFindingSelection Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
-
-#include "vtkMRMLScene.h"
 
 
 class qSlicerLongPETCTFindingSelectionWidgetPrivate;
 class vtkMRMLNode;
 class qMRMLNodeComboBox;
+class vtkMRMLScene;
+class vtkMRMLLongPETCTReportNode;
 
 
 
@@ -42,9 +42,11 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSelectionW
   : public QWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
   Q_PROPERTY(vtkMRMLScene* mrmlScene READ mrmlScene WRITE setMRMLScene)
   Q_PROPERTY(bool selectionEnabled READ selectionEnabled WRITE setSelectionEnabled)
   Q_PROPERTY(bool roiVisibility READ roiVisibility WRITE setROIVisibility)
+  Q_PROPERTY(bool placeROIChecked READ placeROIChecked WRITE setPlaceROIChecked)
 
 
 
@@ -62,13 +64,19 @@ public:
   void setROIVisibility(bool visibility);
   bool roiVisibility();
 
+  bool placeROIChecked();
+  void setPlaceROIChecked(bool checked);
+
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxFinding();
   Q_INVOKABLE void setEditorWidget(QWidget* editorWidget);
+
+  Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
+  Q_INVOKABLE vtkMRMLLongPETCTReportNode* reportNode();
 
 signals:
   void findingNodeAddedByUser(vtkMRMLNode* node);
   void roiVisibilityChanged(bool visible);
-  void helpRequested();
+  void placeROIChecked(bool checked);
   void addSegmentationToFinding();
 
 public slots:

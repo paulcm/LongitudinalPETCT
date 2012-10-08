@@ -28,7 +28,9 @@
 
 #include <qMRMLNodeComboBox.h>
 #include <vtkMRMLLongPETCTFindingNode.h>
-#include <vtkMRMLColorNode.h>
+
+#include <vtkSmartPointer.h>
+#include <vtkMRMLLongPETCTReportNode.h>
 
 #include "qSlicerLongPETCTFindingSettingsDialog.h"
 
@@ -53,7 +55,7 @@ public:
 
   virtual void setupUi(qSlicerLongPETCTFindingSelectionWidget* widget);
 
-  vtkMRMLColorNode* ColorNode;
+  vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
 
 };
 
@@ -61,7 +63,7 @@ public:
 qSlicerLongPETCTFindingSelectionWidgetPrivate
 ::qSlicerLongPETCTFindingSelectionWidgetPrivate(
   qSlicerLongPETCTFindingSelectionWidget& object)
-  : q_ptr(&object), ColorNode(NULL)
+  : q_ptr(&object), ReportNode(NULL)
 {
 }
 
@@ -83,7 +85,7 @@ void qSlicerLongPETCTFindingSelectionWidgetPrivate
 
   QObject::connect( this->MRMLNodeComboBoxFinding, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), q, SIGNAL(findingNodeAddedByUser(vtkMRMLNode*)) );
   QObject::connect( this->CheckBoxROIVisiblity, SIGNAL(toggled(bool)), q, SIGNAL(roiVisibilityChanged(bool)) );
-  QObject::connect( this->ButtonHelp, SIGNAL(clicked()), q, SIGNAL(helpRequested()) );
+  QObject::connect( this->ButtonPlaceROI, SIGNAL(toggled(bool)), q, SIGNAL(placeROIChecked(bool)) );
   QObject::connect( this->ButtonAddSegmentationToFinding, SIGNAL(clicked()), q, SIGNAL(addSegmentationToFinding()) );
 }
   //-----------------------------------------------------------------------------
@@ -141,7 +143,18 @@ qMRMLNodeComboBox* qSlicerLongPETCTFindingSelectionWidget::mrmlNodeComboBoxFindi
 void qSlicerLongPETCTFindingSelectionWidget
 ::updateView()
 {
-  //Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->MRMLNodeComboBoxFinding);
+  Q_ASSERT(d->ButtonPlaceROI);
+  Q_ASSERT(d->CheckBoxROIVisiblity);
+
+  vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = vtkMRMLLongPETCTFindingNode::SafeDownCast(d->MRMLNodeComboBoxFinding->currentNode());
+
+  if(!finding || (finding && finding->GetSegmentationROI()))
+    d->ButtonPlaceROI->setDisabled(true);
+
+  else
+    d->ButtonPlaceROI->setEnabled(true);
 }
 
 
@@ -200,6 +213,46 @@ void qSlicerLongPETCTFindingSelectionWidget
 
 //-----------------------------------------------------------------------------
 void qSlicerLongPETCTFindingSelectionWidget
+::setPlaceROIChecked(bool checked)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->ButtonPlaceROI);
+
+  d->ButtonPlaceROI->setChecked(checked);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerLongPETCTFindingSelectionWidget
+::placeROIChecked()
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+  Q_ASSERT(d->ButtonPlaceROI);
+
+  return d->ButtonPlaceROI->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget::setReportNode(vtkMRMLLongPETCTReportNode* reportNode)
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+
+  qvtkReconnect(d->ReportNode.GetPointer(), reportNode, vtkCommand::ModifiedEvent, this, SLOT(updateView()) );
+  d->ReportNode = reportNode;
+
+  this->updateView();
+}
+
+//-----------------------------------------------------------------------------
+vtkMRMLLongPETCTReportNode* qSlicerLongPETCTFindingSelectionWidget::reportNode()
+{
+  Q_D(qSlicerLongPETCTFindingSelectionWidget);
+
+  return d->ReportNode.GetPointer();
+}
+
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTFindingSelectionWidget
 ::setEditorWidget(QWidget* editorWidget)
 {
   Q_D(qSlicerLongPETCTFindingSelectionWidget);
@@ -208,8 +261,8 @@ void qSlicerLongPETCTFindingSelectionWidget
 
   d->ButtonAddSegmentationToFinding->setVisible(false);
 
-  d->FormLayout->setWidget(1,QFormLayout::SpanningRole,editorWidget);
-  d->FormLayout->setWidget(2,QFormLayout::SpanningRole,d->ButtonAddSegmentationToFinding);
+  d->FormLayout->setWidget(2,QFormLayout::SpanningRole,editorWidget);
+  d->FormLayout->setWidget(3,QFormLayout::SpanningRole,d->ButtonAddSegmentationToFinding);
 
   int minWidth = editorWidget->minimumWidth();
   this->setMinimumWidth(minWidth);
