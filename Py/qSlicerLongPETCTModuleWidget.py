@@ -33,6 +33,8 @@ class qSlicerLongPETCTModuleWidget:
       lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
     
 
+    self.roiPlacementEventObserverID = None
+    self.lastAddedROINode = None
     self.qualitativeViewLastID = -1
     self.reportObserverIDs = []
     self.tempObserverEditorTag = -1
@@ -75,7 +77,6 @@ class qSlicerLongPETCTModuleWidget:
     
     # instanciate all collapsible buttons
     self.reportsCollapsibleButton = ctk.ctkCollapsibleButton()
-    self.reportsCollapsibleButton.setToolTip(ViewHelper.reportsHelpText())
     self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
     self.findingsCollapsibleButton = ctk.ctkCollapsibleButton()
     self.analysisCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -132,8 +133,7 @@ class qSlicerLongPETCTModuleWidget:
 
     # Findings Collapsible button
     self.findingsCollapsibleButton.text = "Findings"
-    self.findingsCollapsibleButton.setProperty('collapsed',True)
-    self.findingsCollapsibleButton.connect('contentsCollapsed(bool)', self.onShowFindingsInfoMessageBox)      
+    self.findingsCollapsibleButton.setProperty('collapsed',True)    
     
     
     #if self.reportSelector.currentNode():
@@ -149,8 +149,9 @@ class qSlicerLongPETCTModuleWidget:
       
     self.findingSelectionWidget = slicer.modulewidget.qSlicerLongPETCTFindingSelectionWidget()    
     self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
+    self.findingSelectionWidget.setReportNode(self.getCurrentReport())
     self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onFindingROIVisibilityChanged)
-    self.findingSelectionWidget.connect('helpRequested()', self.onFindingSelectionHelp)
+    self.findingSelectionWidget.connect('placeROIChecked(bool)', self.onActivateROIPlacement)
     self.findingSelectionWidget.connect('addSegmentationToFinding()', self.onCollapseEditor)
     
     self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
@@ -174,7 +175,8 @@ class qSlicerLongPETCTModuleWidget:
     
     if self.reportSelector.currentNode():
       if self.reportSelector.currentNode().GetUserSelectedFinding():
-        self.editorWidget.editLabelMapsFrame.setEnabled(True)
+        if self.reportSelector.currentNode().GetUserSelectedFinding().GetSegmentationROI():
+          self.editorWidget.editLabelMapsFrame.setEnabled(True)
         
     self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
     
@@ -766,49 +768,6 @@ class qSlicerLongPETCTModuleWidget:
             
     return pasted 
   
-
-  def setupFindingNode(self, findingNode):
-
-    currentStudy = self.getCurrentStudy()
-    
-    if (currentStudy != None) & (findingNode != None):
-      
-      if findingNode.GetSegmentationROI() == None:
-        roi = slicer.vtkMRMLAnnotationROINode()
-        roi.SetScene(slicer.mrmlScene)
-        roi.SetHideFromEditors(False)
-        roi.SetName(findingNode.GetName()+"_ROI")  
-        roi.SetVisibility(self.findingSelectionWidget.property('roiVisibility')) 
-        
-        r = 50.0
-        redSlice = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
-        if redSlice:
-          fov = redSlice.GetFieldOfView()
-          fov = sorted(fov)
-          # set ROI radius to 1/10 of short side from Field of View of red slice 
-          r = fov[1]/10
-        
-        roi.SetRadiusXYZ(r,r,r)
-                
-        if slicer.mrmlScene:
-          slicer.mrmlScene.AddNode(roi)
-          findingNode.SetSegmentationROI(roi)
-          currentStudy.SetSegmentationROI(roi)
-            
-      centered = self.studySelectionWidget.property('centeredSelected')
-      roiXYZ = ViewHelper.getSliceNodesCrossingPositionRAS()      
-      
-      roi = currentStudy.GetSegmentationROI()
-      
-      if roi != None:
-        if centered:
-          centerTransform = currentStudy.GetCenteringTransform()
-          if centerTransform:
-            centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
-            roi.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
-        else:
-          roi.SetXYZ(roiXYZ)    
-  
   def onShowFindingSettingsDialog(self, findingNode):
           
     accepted = False
@@ -858,7 +817,7 @@ class qSlicerLongPETCTModuleWidget:
           currentReport.AddFinding(findingNode)
           currentReport.SetUserSelectedFinding(findingNode)
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
-          self.setupFindingNode(currentReport.GetUserSelectedFinding())
+          #self.setupFindingNode(currentReport.GetUserSelectedFinding())
           
         else:
           self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
@@ -871,9 +830,11 @@ class qSlicerLongPETCTModuleWidget:
         currentReport.SetUserSelectedFinding(findingNode) 
         
     if currentReport.GetUserSelectedFinding():
-      self.editorWidget.editLabelMapsFrame.setEnabled(True)
+      
       segROI = currentReport.GetUserSelectedFinding().GetSegmentationROI()
+      
       if (segROI != None) & (self.getCurrentStudy() != None):
+        self.editorWidget.editLabelMapsFrame.setEnabled(True)
         self.getCurrentStudy().SetSegmentationROI(segROI)
         self.updateSegmentationROIPosition()
       
@@ -1135,42 +1096,9 @@ class qSlicerLongPETCTModuleWidget:
         elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
           qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
 
-
-  def onUpdateSUVTable(self):
-    
-    currentStudy = self.getCurrentStudy()
-    currentFinding = self.getCurrentFinding()
-    
-    if (currentStudy != None) & (currentFinding != None):
-      
-      if self.cliNode.GetStatusString() == 'Completed':
-      
-        self.timerUpdateTable.stop()
         
         
-          
       
-  
-  
-           
-      
-  def onShowFindingsInfoMessageBox(self, findingsCollapsed = False):
-    if findingsCollapsed == False:
-      if self.findingsInfoMessageBox == None:
-        self.findingsInfoMessageBox = ctk.ctkMessageBox()
-        self.findingsInfoMessageBox.setModal(True)
-        self.findingsInfoMessageBox.setIcon(qt.QMessageBox.Information)
-        self.findingsInfoMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
-        self.findingsInfoMessageBox.setText(ViewHelper.findingInfoMessage())
-        self.findingsInfoMessageBox.setProperty('dontShowAgainVisible',True)
-        self.findingsInfoMessageBox.setDontShowAgain(False)
-      
-      self.findingsInfoMessageBox.setVisible(True)
-   
-  def onFindingSelectionHelp(self):
-    ViewHelper.showInformationMessageBox(ViewHelper.moduleDialogTitle(), ViewHelper.findingInfoMessage())
-
-
   def manageCollapsibleButtonsAbility(self, caller, event):
     studies = False
     findings = False
@@ -1513,8 +1441,61 @@ class qSlicerLongPETCTModuleWidget:
         if study:
           ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
         
+
+
+  def onActivateROIPlacement(self, activate):
+    appLogic = slicer.app.applicationLogic()
+    if activate & (appLogic != None):
+      intnode = appLogic.GetInteractionNode()
+      selnode = appLogic.GetSelectionNode()
+      
+      if selnode:
+        selnode.SetActiveAnnotationID('vtkMRMLAnnotationROINode')
+        if intnode:
+          roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+          nrOfRoiNodes = roiNodes.GetNumberOfItems()
+          if nrOfRoiNodes > 0:
+            self.lastAddedROINode = roiNodes.GetItemAsObject(nrOfRoiNodes-1)
+            print "LAST: "+ self.lastAddedROINode.GetName()
+          intnode.SetPlaceModePersistence(False)
+         
+          intnode.SetCurrentInteractionMode(slicer.vtkMRMLInteractionNode.Place)
           
-     
+          self.roiPlacementEventObserverID = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeAddedEvent, self.assignNewROIToFinding)
+          
+
+  def assignNewROIToFinding(self, caller, event):
+    
+    if self.roiPlacementEventObserverID != None:
+      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+      roiNode = roiNodes.GetItemAsObject(roiNodes.GetNumberOfItems()-1)
+      currentStudy = self.getCurrentStudy()
+      currentFinding = self.getCurrentFinding()
+        
+      if (roiNode != None) & (roiNode != self.lastAddedROINode) & (currentStudy != None) & (currentFinding != None):
+        if currentFinding.GetSegmentationROI() == None:
+          #adjust roi position if volumes in study are centered so that it's position doesn't get changed when set under transform
+          if currentStudy.GetCenteredVolumes() & (currentStudy.GetCenteringTransform != None):
+            roiXYZ = [0.,0.,0.]
+            roiNode.GetXYZ(roiXYZ)
+            centerTransform = currentStudy.GetCenteringTransform()
+            centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
+            roiNode.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
+          
+          roiNode.SetVisibility(self.findingSelectionWidget.property('roiVisibility'))  
+          currentFinding.SetSegmentationROI(roiNode)
+          currentStudy.SetSegmentationROI(roiNode)
+          appLogic = slicer.app.applicationLogic()
+          if appLogic:
+            intnode = appLogic.GetInteractionNode()
+            if intnode:
+              slicer.mrmlScene.RemoveObserver(self.roiPlacementEventObserverID)
+              self.roiPlacementEventObserverID = None
+              self.lastAddedROINode = roiNode
+              self.editorWidget.editLabelMapsFrame.setEnabled(True)
+    
+    self.findingSelectionWidget.setProperty('placeROIChecked',False) 
+                
        
    #lm = slicer.app.layoutManager()
    
