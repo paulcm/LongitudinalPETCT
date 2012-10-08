@@ -1,18 +1,20 @@
 <RCC>
-  <qresource prefix="/">
-    <file>Icons/ViewSpin.png</file>
-    <file>Icons/qual_icon.png</file>
-    <file>Icons/quan_icon.png</file>
-    <file>Icons/LongPETCT.png</file>
-    <file>Icons/VisibleOff.png</file>
-    <file>Icons/VisibleOn.png</file>
-    <file>Icons/GPURendering.png</file>
-    <file>Icons/ViewRock.png</file>
-    <file>Icons/VolumeRendering.png</file>
-    <file>Icons/add.png</file>
-    <file>Icons/delete.png</file>
-    <file>Icons/help.png</file>
-    <file>Icons/Model_On.png</file>
-    <file>Icons/Model_Off.png</file>
-  </qresource>
+    <qresource prefix="/">
+        <file>Icons/AnnotationROIWithArrow.png</file>
+        <file>Icons/ViewSpin.png</file>
+        <file>Icons/qual_icon.png</file>
+        <file>Icons/quan_icon.png</file>
+        <file>Icons/LongPETCT.png</file>
+        <file>Icons/VisibleOff.png</file>
+        <file>Icons/VisibleOn.png</file>
+        <file>Icons/GPURendering.png</file>
+        <file>Icons/ViewRock.png</file>
+        <file>Icons/VolumeRendering.png</file>
+        <file>Icons/add.png</file>
+        <file>Icons/delete.png</file>
+        <file>Icons/help.png</file>
+        <file>Icons/Model_On.png</file>
+        <file>Icons/Model_Off.png</file>
+        <file>Icons/SlicerLoadDICOM.png</file>
+    </qresource>
 </RCC>
