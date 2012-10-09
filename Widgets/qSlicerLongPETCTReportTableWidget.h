@@ -22,7 +22,7 @@
 #define __qSlicerLongPETCTReportTableWidget_h
 
 // Qt includes
-#include <QTableWidget>
+#include <QWidget>
 
 // LongPETCTReportTable Widgets includes
 #include "qSlicerLongPETCTModuleWidgetsExport.h"
@@ -39,24 +39,18 @@ class vtkMRMLNode;
 
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
 class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTReportTableWidget
-  : public QTableWidget
+  : public QWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
 public:
-  typedef QTableWidget Superclass;
+  typedef QWidget Superclass;
   qSlicerLongPETCTReportTableWidget(QWidget *parent=0);
   virtual ~qSlicerLongPETCTReportTableWidget();
 
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
-
-  //Q_INVOKABLE void updateSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding, double max, double mean, double min);
-  //Q_INVOKABLE void clearSegmentationSUVs(vtkMRMLLongPETCTStudyNode* study, vtkMRMLLongPETCTFindingNode* finding);
-
-
-
 
 signals:
   void studyClicked(int idx);
@@ -91,8 +85,6 @@ protected:
 private:
   Q_DECLARE_PRIVATE(qSlicerLongPETCTReportTableWidget);
   Q_DISABLE_COPY(qSlicerLongPETCTReportTableWidget);
-
-
 
 };
 
