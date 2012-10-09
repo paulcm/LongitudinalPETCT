@@ -52,6 +52,16 @@ public:
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
 
+  enum SelectableMode {
+    AllSelectable,
+    RowSelectable,
+    ColumnSelectable
+  };
+
+  Q_INVOKABLE void setAllSelectableOn(){SelMode = AllSelectable; this->updateView();};
+  Q_INVOKABLE void setColumnSelectableOn(){SelMode = ColumnSelectable; this->updateView();};
+  Q_INVOKABLE void setRowSelectableOn(){SelMode = RowSelectable; this->updateView();};
+
 signals:
   void studyClicked(int idx);
   void findingClicked(int idx);
@@ -68,7 +78,6 @@ protected slots:
   void segmentationCellClicked(int row, int column);
 
 
-
 protected:
   QScopedPointer<qSlicerLongPETCTReportTableWidgetPrivate> d_ptr;
 
@@ -80,6 +89,8 @@ protected:
 
   void updateHorizontalHeaders();
   void updateVerticalHeaders();
+
+  SelectableMode SelMode;
 
 
 private:
