@@ -74,7 +74,7 @@ protected slots:
   void colorSelectionButtonClicked();
   void addTypeButtonClicked();
   void removeTypeButtonClicked();
-  void selectionChanged(int);
+  void selectionChanged(int index);
 
 protected:
   QScopedPointer<qSlicerLongPETCTFindingSettingsDialogPrivate> d_ptr;
