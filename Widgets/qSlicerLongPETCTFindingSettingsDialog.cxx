@@ -60,13 +60,15 @@ public:
   QString ButtonColorDefaultText;
   QString ButtonColorDefaultStyleSheet;
   QString LineEditTypeNamePlaceholderText;
+
+  bool UpdatingFindingTypes;
 };
 
 // --------------------------------------------------------------------------
 qSlicerLongPETCTFindingSettingsDialogPrivate
 ::qSlicerLongPETCTFindingSettingsDialogPrivate(
   qSlicerLongPETCTFindingSettingsDialog& object)
-  : q_ptr(&object), ReportNode(NULL), ColorIDForAdding(-1)
+  : q_ptr(&object), ReportNode(NULL), ColorIDForAdding(-1), UpdatingFindingTypes(false)
 {
 }
 
@@ -118,7 +120,7 @@ void qSlicerLongPETCTFindingSettingsDialogPrivate
   if(index >= 0 && index < this->ComboBoxType->count())
     this->ComboBoxType->setCurrentIndex(index);
   else
-    this->ComboBoxType->setCurrentIndex(-1);
+    this->ComboBoxType->setCurrentIndex(0);
 }
 
 
@@ -280,7 +282,8 @@ void qSlicerLongPETCTFindingSettingsDialog
   Q_ASSERT(d->ComboBoxType);
 
   d->ComboBoxType->clear();
-  d->LineEditName->clear();
+  if( !d->UpdatingFindingTypes )
+    d->LineEditName->clear();
   d->LineEditTypeName->clear();
   d->LineEditTypeName->setPlaceholderText(d->LineEditTypeNamePlaceholderText);
   d->ButtonColor->setStyleSheet(d->ButtonColorDefaultStyleSheet);
@@ -289,7 +292,8 @@ void qSlicerLongPETCTFindingSettingsDialog
   if(d->ReportNode.GetPointer() == NULL || d->ReportNode->GetColorNode() == NULL ||  d->ReportNode->GetUserSelectedFinding() == NULL)
     return;
 
-  this->setFindingName(d->ReportNode->GetUserSelectedFinding()->GetName());
+  if( !d->UpdatingFindingTypes )
+    this->setFindingName(d->ReportNode->GetUserSelectedFinding()->GetName());
 
   vtkMRMLColorTableNode* colorTableNode = d->ReportNode->GetFindingTypesColorTable();
 
@@ -340,20 +344,6 @@ void qSlicerLongPETCTFindingSettingsDialog::colorSelectionButtonClicked()
   dialog.exec();
   int selectedColorID = dialog.selectedColorID();
 
-//  int possibleIndex = d->ReportNode->GetIndexOfFindingColorID(selectedColorID);
-//
-//  if (possibleIndex != -1)
-//    {
-//      QString existingColorTypeName = d->ReportNode->GetFindingType(
-//          possibleIndex).first.c_str();
-//
-//      QStringList message;
-//      message << "The Finding Type" << existingColorTypeName
-//          << "is already associated with this color!\nPlease select another color!";
-//      QMessageBox::warning(NULL, "Color Selection", message.join(" "));
-//
-//      return;
-//    }
 
   if(selectedColorID != -1)
     {
@@ -415,6 +405,8 @@ void qSlicerLongPETCTFindingSettingsDialog::addTypeButtonClicked()
   if(d->ReportNode.GetPointer() == NULL)
     return;
 
+  d->UpdatingFindingTypes = true;
+
   QString typeNameToAdd = d->LineEditTypeName->text().trimmed();
   int indexInFindingTypes = d->ReportNode->GetFindingTypeColorID(typeNameToAdd.toStdString());
 
@@ -436,6 +428,7 @@ void qSlicerLongPETCTFindingSettingsDialog::addTypeButtonClicked()
     {
       double color[4];
       const_cast<vtkMRMLColorNode*>(d->ReportNode->GetColorNode())->GetColor(d->ColorIDForAdding,color);
+
       d->ReportNode->AddFindingType(typeNameToAdd.toStdString(),color);
 
       d->LineEditTypeName->clear();
@@ -447,6 +440,7 @@ void qSlicerLongPETCTFindingSettingsDialog::addTypeButtonClicked()
       d->ComboBoxType->setCurrentIndex(d->ComboBoxType->count()-1);
     }
 
+  d->UpdatingFindingTypes = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -454,6 +448,7 @@ void qSlicerLongPETCTFindingSettingsDialog::selectionChanged(int index)
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
   Q_ASSERT(d->ButtonRemove);
+  Q_ASSERT(d->ButtonBox);
 
   if(d->ReportNode.GetPointer() == NULL)
     return;
@@ -462,6 +457,29 @@ void qSlicerLongPETCTFindingSettingsDialog::selectionChanged(int index)
     d->ButtonRemove->setEnabled(true);
   else
     d->ButtonRemove->setEnabled(false);
+
+
+  QPushButton* okBtn = d->ButtonBox->button(QDialogButtonBox::Ok);
+
+  int currentSelectedColorID = d->ComboBoxType->currentIndex()+1;
+
+  vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = d->ReportNode->GetUserSelectedFinding();
+  if(d->ReportNode->IsFindingTypeInUse(currentSelectedColorID) && finding && finding->GetColorID() != currentSelectedColorID)
+      {
+        if(okBtn)
+          {
+            okBtn->setDisabled(true);
+            okBtn->setToolTip("A Finding with the currently selected Type already exists in the workflow. Please select/create an other type.");
+          }
+      }
+    else
+      {
+        if(okBtn)
+          {
+            okBtn->setEnabled(true);
+            okBtn->setToolTip(NULL);
+          }
+      }
 }
 
 
