@@ -34,7 +34,7 @@
 
 #include "qSlicerLongPETCTFindingSettingsDialog.h"
 
-
+#include <QWidgetItem>
 
 
 //-----------------------------------------------------------------------------
@@ -147,6 +147,7 @@ void qSlicerLongPETCTFindingSelectionWidget
   Q_ASSERT(d->MRMLNodeComboBoxFinding);
   Q_ASSERT(d->ButtonPlaceROI);
   Q_ASSERT(d->CheckBoxROIVisiblity);
+  Q_ASSERT(d->FormLayout);
 
   vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding = vtkMRMLLongPETCTFindingNode::SafeDownCast(d->MRMLNodeComboBoxFinding->currentNode());
 
@@ -155,6 +156,7 @@ void qSlicerLongPETCTFindingSelectionWidget
 
   else
     d->ButtonPlaceROI->setEnabled(true);
+
 }
 
 
@@ -165,10 +167,18 @@ void qSlicerLongPETCTFindingSelectionWidget
   Q_D(qSlicerLongPETCTFindingSelectionWidget);
   Q_ASSERT(d->LabelSelectFinding);
   Q_ASSERT(d->MRMLNodeComboBoxFinding);
+  Q_ASSERT(d->LabelPlaceROI);
 
   d->LabelSelectFinding->setEnabled(enabled);
   d->MRMLNodeComboBoxFinding->setEnabled(enabled);
-}
+  d->LabelPlaceROI->setEnabled(enabled);
+
+  if(d->ReportNode)
+    {
+      if(d->ReportNode->GetUserSelectedFinding())
+          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFinding()->GetSegmentationROI()));
+    }
+  }
 
 //-----------------------------------------------------------------------------
 bool qSlicerLongPETCTFindingSelectionWidget
@@ -177,8 +187,9 @@ bool qSlicerLongPETCTFindingSelectionWidget
   Q_D(qSlicerLongPETCTFindingSelectionWidget);
   Q_ASSERT(d->LabelSelectFinding);
   Q_ASSERT(d->MRMLNodeComboBoxFinding);
+  Q_ASSERT(d->LabelPlaceROI);
 
-  return d->LabelSelectFinding->isEnabled() && d->MRMLNodeComboBoxFinding->isEnabled();
+  return d->LabelSelectFinding->isEnabled() && d->MRMLNodeComboBoxFinding->isEnabled() && d->LabelPlaceROI->isEnabled();
 }
 
 //-----------------------------------------------------------------------------
