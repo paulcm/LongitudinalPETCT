@@ -200,6 +200,7 @@ class qSlicerLongPETCTModuleWidget:
 
     # Add Report Table
     self.reportTableWidget = slicer.modulewidget.qSlicerLongPETCTReportTableWidget()
+    self.reportTableWidget.setColumnSelectableOn()
     self.reportTableWidget.setReportNode(self.getCurrentReport())
     self.reportTableWidget.connect('studyClicked(int)',self.changeSelectedStudy)
     self.reportTableWidget.connect('findingClicked(int)',self.findingSelector.setCurrentNodeIndex)                 
@@ -246,41 +247,13 @@ class qSlicerLongPETCTModuleWidget:
     # update view
     self.updateBgFgToUserSelectedStudy(currentStudy)
     self.manageVolumeRenderingVisibility()
-    self.manageModelsVisibility()     
-        
-  def setCurrentStudy(self, study):
-
-    currentReport = self.getCurrentReport()   
-    currentFinding = self.getCurrentFinding()
     
-    if currentReport:
-      currentReport.SetUserSelectedStudy(study)   
-      currentStudy = self.getCurrentStudy()     
-      
-      if currentStudy:
-        vrdn = currentStudy.GetVolumeRenderingDisplayNode()
-        if vrdn:
-          pow = None
-          pow = float(vrdn.GetAttribute("OpacityPow"))
-          if pow:
-            self.studySelectionWidget.setProperty('opacityPow',pow)
-            #print str(pow)
-            self.onSetOpacityPowForCurrentStudy(pow)
-            
-        
-        self.manageVolumeRenderingVisibility()
-        self.manageModelsVisibility()
-        
-      if currentFinding:
-        currentSegROI = currentFinding.GetSegmentationROI()
-      
-        if (currentStudy != None) & ( currentSegROI != None) :
-          currentStudy.SetSegmentationROI(currentSegROI)
-          self.updateSegmentationROIPosition()
+    self.manageModelsVisibility(self.isQuantitativeViewActive()) 
+    
+    if self.isQuantitativeViewActive():
+      self.updateQuantitativeView(currentReport.GetUserSelectedFinding())    
+                
           
-        elif currentStudy:
-          currentStudy.SetSegmentationROI(None)
-        
        
   def updateSegmentationROIPosition(self):
     currentStudy = self.getCurrentStudy()
@@ -825,7 +798,7 @@ class qSlicerLongPETCTModuleWidget:
     self.onManageFindingROIsVisibility()
     
     if self.isQualitativeViewActive() | self.isQuantitativeViewActive():
-      self.manageModelsVisibility()
+      self.manageModelsVisibility(self.isQuantitativeViewActive())
     
 
   
@@ -1185,7 +1158,7 @@ class qSlicerLongPETCTModuleWidget:
             compareViewNodes[j].SetAxisLabelsVisible(False)       
           
   
-  def manageModelsVisibility(self, showAll = False):
+  def manageModelsVisibility(self, findingRestricted = False):
     currentReport = self.getCurrentReport()
     currentStudy = self.getCurrentStudy()
 
@@ -1203,7 +1176,10 @@ class qSlicerLongPETCTModuleWidget:
               if mn:
                 mdn = mn.GetModelDisplayNode()
                 if mdn:
-                  if showAll | (self.isStandardViewActive() & (study == currentStudy) & (seg.GetModelVisible() == True)) | (self.isQualitativeViewActive() & (seg.GetModelVisible() == True)) | (self.isQuantitativeViewActive() & (finding == self.getCurrentFinding())):
+                  stdViewShow = self.isStandardViewActive() & (study == currentStudy)
+                  qualViewShow = self.isQualitativeViewActive()
+                  quantViewShow = self.isQuantitativeViewActive() & ( (findingRestricted == False) | ( (findingRestricted == True) &  (finding == self.getCurrentFinding()))) 
+                  if (seg.GetModelVisible() == True) & (stdViewShow | qualViewShow | quantViewShow):
                     mdn.SetVisibility(True)
                   else:
                     mdn.SetVisibility(False)
@@ -1287,14 +1263,13 @@ class qSlicerLongPETCTModuleWidget:
       self.manageVolumeRenderingVisibility()
       self.manageModelDisplayCompareViewNodeIDs()
       self.manageModelsVisibility()
-        
-      # workaround update   
-      self.setCurrentStudy(self.getCurrentStudy())   
+      
+      self.reportTableWidget.setColumnSelectableOn() 
 
     else:
     
       #self.setVolumeRendering(self.analysisSettingsWidget.property('volumeRendering'))
-      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+      roiNodes = ViewHelper.getROINodesCollection()
       for i in range(roiNodes.GetNumberOfItems()):
         roi = roiNodes.GetItemAsObject(i)  
         if roi: 
@@ -1311,7 +1286,7 @@ class qSlicerLongPETCTModuleWidget:
     
     if show:
       
-      
+      self.reportTableWidget.setAllSelectableOn()
       
       currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
     
@@ -1319,7 +1294,7 @@ class qSlicerLongPETCTModuleWidget:
       self.manageVolumeRenderingVisibility()
       self.manageModelDisplayCompareViewNodeIDs()
 
-      self.manageModelsVisibility(True)
+      self.manageModelsVisibility()
 
       #lm = slicer.app.layoutManager()
     
@@ -1347,6 +1322,9 @@ class qSlicerLongPETCTModuleWidget:
     
     currentReport = self.getCurrentReport()
     
+    if finding:
+      self.reportTableWidget.setRowSelectableOn()
+    
     for can in self.chartArrayNodes:
       self.chartNode.RemoveArray(can.GetName())
       slicer.mrmlScene.RemoveNode(can)
@@ -1357,7 +1335,7 @@ class qSlicerLongPETCTModuleWidget:
       
     if currentReport:
       arrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
-      saturationMultipliers = [1.0,0.7,0.4] # should be as many as different arraynodes
+      saturationMultipliers = [1.0,0.8,0.6] # should be as many as different arraynodes
       colorTable = currentReport.GetFindingTypesColorTable()
       lut = colorTable.GetLookupTable()
       suvs = []
@@ -1408,10 +1386,10 @@ class qSlicerLongPETCTModuleWidget:
           self.chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
         
         if len(findings) == 1:
-          self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUV<span style=\"vertical-align:sub;font-size:80%;\">bw</span>')         
+          self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')         
       
       if len(findings) > 1:
-        self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUV<span style=\"vertical-align:sub;font-size:80%;\">bw</span>')  
+        self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')  
       
       self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')  
     
@@ -1424,12 +1402,13 @@ class qSlicerLongPETCTModuleWidget:
     
     if show:
       
+      self.reportTableWidget.setAllSelectableOn()
       currentLayoutID = ViewHelper.updateQualitativeViewLayout(self.getCurrentReport().GetStudiesSelectedForAnalysisCount())
    
       self.manageVolumeRenderingCompareViewNodeIDs()
       self.manageVolumeRenderingVisibility()
       self.manageModelDisplayCompareViewNodeIDs()
-      self.manageModelsVisibility(True)
+      self.manageModelsVisibility()
           
       if self.qualitativeViewLastID != currentLayoutID:
         ViewHelper.SetForegroundOpacity(0.6, True)
@@ -1451,7 +1430,7 @@ class qSlicerLongPETCTModuleWidget:
       if selnode:
         selnode.SetActiveAnnotationID('vtkMRMLAnnotationROINode')
         if intnode:
-          roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+          roiNodes = ViewHelper.getROINodesCollection()
           nrOfRoiNodes = roiNodes.GetNumberOfItems()
           if nrOfRoiNodes > 0:
             self.lastAddedROINode = roiNodes.GetItemAsObject(nrOfRoiNodes-1)
@@ -1459,7 +1438,6 @@ class qSlicerLongPETCTModuleWidget:
          
           intnode.SetCurrentInteractionMode(slicer.vtkMRMLInteractionNode.Place)
           
-
           self.roiPlacementNodeAddedEventObserverID = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeAddedEvent, self.assignNewROIToFinding)
           self.roiEndPlacementEventObserverID = intnode.AddObserver(slicer.vtkMRMLInteractionNode.EndPlacementEvent, self.endROIPlacement)
           
@@ -1468,7 +1446,7 @@ class qSlicerLongPETCTModuleWidget:
   def assignNewROIToFinding(self, caller, event):
     
     if self.roiPlacementNodeAddedEventObserverID != None:
-      roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+      roiNodes = ViewHelper.getROINodesCollection()
       roiNode = roiNodes.GetItemAsObject(roiNodes.GetNumberOfItems()-1)
       currentStudy = self.getCurrentStudy()
       currentFinding = self.getCurrentFinding()
