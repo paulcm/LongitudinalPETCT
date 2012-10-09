@@ -45,8 +45,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
       appLogic = slicer.app.applicationLogic()
       if appLogic:
         appLogic.FitSliceToAll()
-    
-    
+        
         
   @staticmethod
   def SetCompareBgFgLblVolumes(index, bgID, fgID = None, lblID = None, fit = False):
@@ -443,8 +442,10 @@ class SlicerLongPETCTModuleViewHelper( object ):
     </item>\
     </layout>"
     
-    
-    layoutNode = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode').GetItemAsObject(0)
+    layoutNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode')
+    layoutNodes.SetReferenceCount(layoutNodes.GetReferenceCount()-1)
+    layoutNodes.InitTraversal()
+    layoutNode = layoutNodes.GetNextItemAsObject()
     id = 456 + studies
     layoutNode.AddLayoutDescription(id,quantView)
     layoutNode.SetViewArrangement(id)
@@ -505,7 +506,10 @@ class SlicerLongPETCTModuleViewHelper( object ):
 
     compareView = compareView+"</layout>"
     
-    layoutNode = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode').GetItemAsObject(0)
+    layoutNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLLayoutNode')
+    layoutNodes.SetReferenceCount(layoutNodes.GetReferenceCount()-1)
+    layoutNodes.InitTraversal()
+    layoutNode = layoutNodes.GetNextItemAsObject()
     id = 123 + studies
     layoutNode.AddLayoutDescription(id,compareView)
     layoutNode.SetViewArrangement(id)
@@ -554,6 +558,7 @@ class SlicerLongPETCTModuleViewHelper( object ):
   @staticmethod
   def getStandardViewNode():
     viewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLViewNode')
+    viewNodes.SetReferenceCount(viewNodes.GetReferenceCount()-1)
     viewNodes.InitTraversal()
     viewNode = viewNodes.GetNextItemAsObject()
     
@@ -562,17 +567,27 @@ class SlicerLongPETCTModuleViewHelper( object ):
   @staticmethod
   def getStandardChartViewNode():
     chartViewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLChartViewNode')
+    chartViewNodes.SetReferenceCount(chartViewNodes.GetReferenceCount()-1)
     chartViewNodes.InitTraversal()
     chartViewNode = chartViewNodes.GetNextItemAsObject()
     
     return chartViewNode
-         
+ 
+  @staticmethod
+  def getROINodesCollection():
+    roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
+    roiNodes.SetReferenceCount(roiNodes.GetReferenceCount()-1)
+    
+    return roiNodes 
     
   @staticmethod
   def getCompareViewNodes():
     compareViewNodes = []
-    viewNodes = slicer.util.getNodes('vtkMRMLViewNode*')
-    for vn in viewNodes.values():
+    viewNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLViewNode')
+    viewNodes.SetReferenceCount(viewNodes.GetReferenceCount()-1)
+    viewNodes.InitTraversal()
+    vn = viewNodes.GetNextItemAsObject()
+    while vn:
       if str(vn.GetSingletonTag()).find(SlicerLongPETCTModuleViewHelper.compareLabel3D()) != -1:
         pos = 0
         for cvn in compareViewNodes:
@@ -580,35 +595,47 @@ class SlicerLongPETCTModuleViewHelper( object ):
             pos = pos + 1
         
         compareViewNodes.insert(pos, vn)
+      vn = viewNodes.GetNextItemAsObject()
+    
         
     return compareViewNodes
   
   @staticmethod
   def getCompareSliceNodes(index):
     compareSliceNodes = []
-    sliceNodes = slicer.util.getNodes('vtkMRMLSliceNode'+SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)+"*")
-    for sn in sliceNodes.values():
-      pos = 0
-      for csn in compareSliceNodes:
-        if sn.GetID() >= csn.GetID():
-          pos = pos + 1
+    sliceNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceNode')
+    sliceNodes.SetReferenceCount(sliceNodes.GetReferenceCount()-1)
+    sliceNodes.InitTraversal()
+    sn = sliceNodes.GetNextItemAsObject()
+    while sn:
+      if str(sn.GetSingletonTag()).find(SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)) != -1:                                              
+        pos = 0
+        for csn in compareSliceNodes:
+          if sn.GetID() >= csn.GetID():
+            pos = pos + 1
         
-      compareSliceNodes.insert(pos, sn)
-          
+        compareSliceNodes.insert(pos, sn)
+      sn = sliceNodes.GetNextItemAsObject()      
+      
     return compareSliceNodes
   
   @staticmethod
   def getCompareSliceCompositeNodes(index):
     compareSliceCompositeNodes = []
-    compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode'+SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)+"*")
-    for scn in compositeNodes.values():
-      pos = 0
-      for cscn in compareSliceCompositeNodes:
-        if scn.GetID() >= cscn.GetID():
-          pos = pos + 1
+    compositeNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLSliceCompositeNode')
+    compositeNodes.SetReferenceCount(compositeNodes.GetReferenceCount()-1)
+    compositeNodes.InitTraversal()
+    scn = compositeNodes.GetNextItemAsObject()
+    while scn:
+      if str(scn.GetSingletonTag()).find(SlicerLongPETCTModuleViewHelper.compareLabel()+str(index+1)) != -1:                                              
+        pos = 0
+        for cscn in compareSliceCompositeNodes:
+          if scn.GetID() >= cscn.GetID():
+            pos = pos + 1
         
-      compareSliceCompositeNodes.insert(pos, scn)
-      
+        compareSliceCompositeNodes.insert(pos, scn)
+      scn = compositeNodes.GetNextItemAsObject() 
+        
     return compareSliceCompositeNodes
   
   @staticmethod
