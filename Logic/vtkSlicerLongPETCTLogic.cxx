@@ -557,7 +557,7 @@ vtkMRMLColorTableNode* vtkSlicerLongPETCTLogic::GetDefaultFindingTypesColorTable
   colorTable->SetColor(1,"Tumor",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(23,color);
-  colorTable->SetColor(2,"LymphNode",color[0],color[1],color[2],color[3]);
+  colorTable->SetColor(2,"Lymph Node",color[0],color[1],color[2],color[3]);
 
   defaultEditorColorNode->GetColor(216,color);
   colorTable->SetColor(3,"Liver",color[0],color[1],color[2],color[3]);
