@@ -40,8 +40,8 @@ vtkMRMLNodeNewMacro(vtkMRMLLongPETCTFindingNode);
 vtkMRMLLongPETCTFindingNode::vtkMRMLLongPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->TypeName = "Tumor";
-  this->ColorID = 1;
+  this->TypeName = "";
+  this->ColorID = -1;
   this->SegmentationROI = NULL;
 
   this->ModelHierarchyNode = vtkSmartPointer<vtkMRMLModelHierarchyNode>::New();
