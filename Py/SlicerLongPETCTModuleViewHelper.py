@@ -308,10 +308,12 @@ class SlicerLongPETCTModuleViewHelper( object ):
           for y in range(0,dims[1],1):
             for z in range(0,dims[2],1):
               p = croppedImgData.GetScalarComponentAsDouble(x,y,z,0)
-              #if p == colorID:
-              mainImageData.SetScalarComponentFromDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0,p)
-              if pasted == False:
-                pasted = True    
+              posInMain = [x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2]]
+              d = mainImageData.GetScalarComponentAsDouble(posInMain[0],posInMain[1],posInMain[2],0)
+              if d == 0.:
+                mainImageData.SetScalarComponentFromDouble(posInMain[0],posInMain[1],posInMain[2],0,p)
+                if pasted == False:
+                  pasted = True    
               
     return pasted                
                 
