@@ -2,6 +2,8 @@ from __main__ import vtk, qt, ctk, slicer
 
 from Editor import EditorWidget
 from SlicerLongPETCTModuleViewHelper import SlicerLongPETCTModuleViewHelper as ViewHelper
+from SlicerLongPETCTModuleSegmentationHelper import SlicerLongPETCTModuleSegmentationHelper as SegmentationHelper
+
 import sys as SYS
 
 import thread as Thread
@@ -598,7 +600,7 @@ class qSlicerLongPETCTModuleWidget:
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
       
       if studySeg != None:
-        ViewHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
+        SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
                     
       self.editorWidget.editUtil.setLabel(currentFinding.GetColorID())
       self.editorWidget.setMasterNode(self.tempCroppedVol) 
@@ -680,8 +682,8 @@ class qSlicerLongPETCTModuleWidget:
       else:
         studySeg = currentFinding.GetSegmentationForStudy(currentStudy)        
       
-      ViewHelper.removeSegmentationFromVolume(studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())       
-      pasted = ViewHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
+      SegmentationHelper.removeSegmentationFromVolume(studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())       
+      pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
     
       if segmentationROI:
         xyz = [0.,0.,0.]
@@ -694,7 +696,7 @@ class qSlicerLongPETCTModuleWidget:
         studySeg.SetROIRadius(radius)
         
         
-      if ViewHelper.containsSegmentation(studySeg.GetLabelVolumeNode(),currentFinding.GetColorID()) == False:
+      if SegmentationHelper.containsSegmentation(studySeg.GetLabelVolumeNode(),currentFinding.GetColorID()) == False:
         currentFinding.RemoveSegmentationForStudy(currentStudy)
         
         mh = studySeg.GetModelHierarchyNode()
@@ -826,7 +828,7 @@ class qSlicerLongPETCTModuleWidget:
         
         seg = findingNode.GetSegmentationForStudy(study)
         if seg:
-          ViewHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
+          SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
           findingNode.RemoveSegmentationForStudy(study)
           slicer.mrmlScene.RemoveNode(seg)
           study.SetSegmentationROI(None)  
@@ -1378,6 +1380,7 @@ class qSlicerLongPETCTModuleWidget:
               array.SetComponent(tuple, 0, long(study.GetAttribute('DICOM.StudyDate')))       
               array.SetComponent(tuple, 1, suvs[i])
               array.SetComponent(tuple, 2, 0.)
+              
               tuple += 1
            
               colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
