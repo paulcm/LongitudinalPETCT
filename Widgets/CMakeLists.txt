@@ -20,6 +20,8 @@ set(${KIT}_SRCS
   qSlicerLongPETCTReportSelectionWidget.h
   qSlicerLongPETCTReportTableWidget.cxx
   qSlicerLongPETCTReportTableWidget.h
+  qSlicerLongPETCTStudySelectionTableWidget.cxx
+  qSlicerLongPETCTStudySelectionTableWidget.h
   qSlicerLongPETCTStudySelectionWidget.cxx
   qSlicerLongPETCTStudySelectionWidget.h
   )
@@ -31,6 +33,7 @@ set(${KIT}_MOC_SRCS
   qSlicerLongPETCTFindingSettingsDialog.h
   qSlicerLongPETCTReportSelectionWidget.h
   qSlicerLongPETCTReportTableWidget.h
+  qSlicerLongPETCTStudySelectionTableWidget.h
   qSlicerLongPETCTStudySelectionWidget.h
   )
 
@@ -42,6 +45,7 @@ set(${KIT}_UI_SRCS
   ../Resources/UI/qSlicerLongPETCTFindingSettingsDialog.ui
   ../Resources/UI/qSlicerLongPETCTReportSelectionWidget.ui
   ../Resources/UI/qSlicerLongPETCTReportTableWidget.ui
+  ../Resources/UI/qSlicerLongPETCTStudySelectionTableWidget.ui
   ../Resources/UI/qSlicerLongPETCTStudySelectionWidget.ui
   )
   
