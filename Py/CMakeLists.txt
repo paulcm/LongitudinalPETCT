@@ -2,6 +2,7 @@
 SET(KIT_PYTHON_SCRIPTS
   qSlicerLongPETCTModuleWidget.py
   SlicerLongPETCTModuleViewHelper.py
+  SlicerLongPETCTModuleSegmentationHelper.py
   DICOMPetCtStudyPlugin.py
   )
 
