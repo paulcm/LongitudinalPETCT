@@ -69,7 +69,6 @@ public:
   void setSpinView(bool checked);
 
 
-
 signals:
   void qualitativeAnalysisChecked(bool checked);
   void quantitativeAnalysisChecked(bool checked);
@@ -79,7 +78,9 @@ signals:
 
 public slots:
   void updateView();
-  void listItemChanged(QListWidgetItem* item);
+
+protected slots:
+  void studySelectedInTable(int index, bool selected);
 
 protected:
   QScopedPointer<qSlicerLongPETCTAnalysisSettingsWidgetPrivate> d_ptr;
