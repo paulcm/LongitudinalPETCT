@@ -35,45 +35,13 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QTableWidget" name="Table">
+      <widget class="qSlicerLongPETCTStudySelectionTableWidget" name="TableStudySelection" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
-       </property>
-       <property name="dragDropOverwriteMode">
-        <bool>false</bool>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-       <property name="columnCount">
-        <number>4</number>
-       </property>
-       <column>
-        <property name="text">
-         <string>Study ID</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Date</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Time</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Study Instance UID</string>
-        </property>
-       </column>
       </widget>
      </item>
      <item>
@@ -241,6 +209,12 @@
    <class>ctkDoubleSlider</class>
    <extends>QWidget</extends>
    <header>ctkdoubleslider.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qSlicerLongPETCTStudySelectionTableWidget</class>
+   <extends>QWidget</extends>
+   <header>qslicerlongpetctstudyselectiontablewidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

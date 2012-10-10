@@ -64,22 +64,25 @@ public:
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   Q_INVOKABLE vtkMRMLLongPETCTReportNode* reportNode();
 
+
+signals:
+  void studySelected(int index);
+  void studyDeselected(int index);
+  void volumeRenderingToggled(bool toggled);
+  void linearOpacityToggled(bool toggled);
+  void spinViewToggled(bool toggled);
+  void opacityPowChanged(double d);
+  void showStudiesCentered(bool centered);
+
+
 public slots:
   void updateView();
   void selectStudyInRow(int row);
 
-signals:
-    void studySelected(int index);
-    void studyDeselected(int index);
-    void volumeRenderingToggled(bool toggled);
-    void linearOpacityToggled(bool toggled);
-    void spinViewToggled(bool toggled);
-    void opacityPowChanged(double d);
-    void showStudiesCentered(bool centered);
 
 protected slots:
-    void studyCheckBoxClicked(bool selected);
-    void tableCellClicked(int row);
+  void studySelectedInTable(int index, bool selected);
+
 
 protected:
   QScopedPointer<qSlicerLongPETCTStudySelectionWidgetPrivate> d_ptr;

@@ -53,18 +53,7 @@ public:
   virtual ~qSlicerLongPETCTStudySelectionWidgetPrivate();
   virtual void setupUi(qSlicerLongPETCTStudySelectionWidget*);
 
-  void deselectTableAll();
-  void selectTableRow(int row, bool select);
-
-  void clearTableAndCheckBoxes();
-
-  void addRowToTableForStudy(vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study);
-
-  QList<QCheckBox*> ListStudyCheckBoxes;
   vtkSmartPointer<vtkMRMLLongPETCTReportNode> ReportNode;
-
-  QTableWidgetItem* createEnabledSelectableTableWidgetItem(const QString& text);
-
 
 };
 
@@ -82,105 +71,6 @@ qSlicerLongPETCTStudySelectionWidgetPrivate
 {
 }
 
-// --------------------------------------------------------------------------
-QTableWidgetItem* qSlicerLongPETCTStudySelectionWidgetPrivate::createEnabledSelectableTableWidgetItem(const QString& text)
-{
-  QTableWidgetItem* item = new QTableWidgetItem(text);
-  item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-  return item;
-}
-
-// --------------------------------------------------------------------------
-void
-qSlicerLongPETCTStudySelectionWidgetPrivate::addRowToTableForStudy(vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study)
-{
-  Q_Q(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(this->Table);
-
-  QCheckBox* studyIDCheckBox = new QCheckBox(q);
-  studyIDCheckBox->setChecked(study->GetSelectedForSegmentation());
-
-  if(this->ReportNode != NULL)
-    {
-       bool studyIsUsed = this->ReportNode->IsStudyInUse(study);
-       studyIDCheckBox->setDisabled(studyIsUsed);
-       if(studyIsUsed)
-         studyIDCheckBox->setToolTip("This Study can not be deselected while it is used for segmentation by one of the Findings.");
-       else
-         studyIDCheckBox->setToolTip(NULL);
-    }
-
-  QString studyID = study->GetAttribute("DICOM.StudyID");
-  studyIDCheckBox->setText(studyID);
-
-  QObject::connect(studyIDCheckBox,SIGNAL(toggled(bool)), q, SLOT(studyCheckBoxClicked(bool)));
-
-  this->ListStudyCheckBoxes.append(studyIDCheckBox);
-
-  QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
-  QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
-
-  QString dateStr = date.toString(Qt::SystemLocaleLongDate);
-  QString timeStr = time.toString(Qt::ISODate);
-  QString studyUID = study->GetAttribute("DICOM.StudyInstanceUID");
-
-  int row = this->Table->rowCount();
-  int col = 0;
-
-  this->Table->insertRow(row);
-  this->Table->setCellWidget(row, col++, studyIDCheckBox);
-  this->Table->setItem(row, col++, this->createEnabledSelectableTableWidgetItem(dateStr));
-  this->Table->setItem(row, col++, this->createEnabledSelectableTableWidgetItem(timeStr));
-  this->Table->setItem(row, col++, this->createEnabledSelectableTableWidgetItem(studyUID));
-
-}
-// --------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidgetPrivate
-::clearTableAndCheckBoxes()
-{
-  Q_Q(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(this->Table);
-
-  // remove all checkboxes first, disconnect them and mark them for deletion
-  while ( ! this->ListStudyCheckBoxes.isEmpty())
-    {
-      QCheckBox* lastCheckBoxInList = this->ListStudyCheckBoxes.last();
-      QObject::disconnect(lastCheckBoxInList,SIGNAL(toggled(bool)), q, SLOT(studyCheckBoxClicked(bool)));
-      this->ListStudyCheckBoxes.removeLast();
-      lastCheckBoxInList->deleteLater();
-    }
-
-  // remove all rows from table
-  while ( this->Table->rowCount() > 0)
-    {
-      this->Table->removeRow(this->Table->rowCount()-1);
-    }
-}
-
-
-// --------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidgetPrivate
-::deselectTableAll()
-{
-  Q_ASSERT(this->Table);
-
-  QTableWidgetSelectionRange range(0,0,this->Table->rowCount()-1,this->Table->columnCount()-1);
-  this->Table->setRangeSelected(range,false);
-}
-
-// --------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidgetPrivate
-::selectTableRow(int row, bool select)
-{
-  Q_ASSERT(this->Table);
-
-  this->deselectTableAll();
-
-  QTableWidgetSelectionRange range(row,0,row,this->Table->columnCount()-1);
-    this->Table->setRangeSelected(range,select);
-
-}
 
 // --------------------------------------------------------------------------
 void qSlicerLongPETCTStudySelectionWidgetPrivate
@@ -203,10 +93,11 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
   this->SliderOpacityPow->setMaximum(max); //this->SpinBoxOpacityPow->minimum());
   this->SliderOpacityPow->setSingleStep(step); //this->SpinBoxOpacityPow->singleStep());
 
-  QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int)) );
+  this->TableStudySelection->setTableMode(qSlicerLongPETCTStudySelectionTableWidget::WorkflowSelection);
+
+  QObject::connect(this->TableStudySelection, SIGNAL(studySelectionChanged(int, bool)), q, SLOT(studySelectedInTable(int, bool)) );
 
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
-  //QObject::connect(this->ButtonGPURendering, SIGNAL(toggled(bool)), q, SIGNAL(gpuRenderingToggled(bool)) );
   QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(spinViewToggled(bool)) );
 
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), this->SliderOpacityPow, SLOT(setValue(double)) );
@@ -214,7 +105,6 @@ void qSlicerLongPETCTStudySelectionWidgetPrivate
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), q, SIGNAL(opacityPowChanged(double)) );
 
   QObject::connect(this->CheckBoxStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
-
 }
 
 //-----------------------------------------------------------------------------
@@ -243,80 +133,22 @@ void qSlicerLongPETCTStudySelectionWidget
 {
   Q_D(qSlicerLongPETCTStudySelectionWidget);
 
-  d->clearTableAndCheckBoxes(); // clear table first
+  std::cout << "Trying to remove rows" << std::endl;
+  d->TableStudySelection->clearRows(); // clear table first
 
   if(d->ReportNode.GetPointer() == NULL)
     return;
 
-  d->deselectTableAll();
+  d->TableStudySelection->deselectTableAll();
 
   for(int i=0; i < d->ReportNode->GetStudiesCount(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetStudy(i);
-      d->addRowToTableForStudy(study);
+      bool disabled = d->ReportNode->IsStudyInUse(study);
+      if(disabled)
+        std::cout << "STUDY " << study->GetName() << " IS IN USE" << std::endl;
+      d->TableStudySelection->addStudyToTable(study, disabled);
     }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::tableCellClicked(int row)
-{
-  Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->Table);
-
-  if(row >= 0 && row < d->ListStudyCheckBoxes.size() && row < d->Table->rowCount())
-    {
-      if(d->ListStudyCheckBoxes.at(row)->isChecked())
-        {
-          d->selectTableRow(row, true);
-          emit studySelected(row);
-        }
-      else
-        {
-          //static bool unseen = true;
-          //if(unseen)
-            //QMessageBox::information(NULL,"Longitudinal PET/CT Analysis","By clicking into a row the study is loaded into the view. This is only possible if the study has been checked into the workflow first.");
-
-          d->deselectTableAll();
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::studyCheckBoxClicked(bool selected)
-{
-  Q_D(qSlicerLongPETCTStudySelectionWidget);
-  Q_ASSERT(d->Table);
-
-  QCheckBox* sender =  qobject_cast<QCheckBox*>(QObject::sender());
-
-  d->deselectTableAll();
-
-
-  for(int i=0; i < d->ListStudyCheckBoxes.size(); ++i)
-    {
-      if(sender == d->ListStudyCheckBoxes.value(i))
-        {
-          if(selected)
-            {
-              //d->selectTableRow(i, true);
-              emit studySelected(i);
-            }
-          else
-            {
-              //d->selectTableRow(i, false);
-              emit studyDeselected(i);
-            }
-          break;
-        }
-    }
-
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongPETCTStudySelectionWidget::selectStudyInRow(int row)
-{
-  Q_D(qSlicerLongPETCTStudySelectionWidget);
-  d->selectTableRow(row, true);
 }
 
 //-----------------------------------------------------------------------------
@@ -415,4 +247,30 @@ void qSlicerLongPETCTStudySelectionWidget::setCenteredSelected(bool selected)
   return d->CheckBoxStudiesCentered->setChecked(selected);
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::selectStudyInRow(int row)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+  d->TableStudySelection->selectTableRow(row, true);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerLongPETCTStudySelectionWidget::studySelectedInTable(int index, bool selected)
+{
+  Q_D(qSlicerLongPETCTStudySelectionWidget);
+
+  if(d->ReportNode)
+    {
+      vtkSmartPointer<vtkMRMLLongPETCTStudyNode> study = d->ReportNode->GetStudy(index);
+
+      if(study)
+        study->SetSelectedForSegmentation(selected);
+    }
+
+  if(selected)
+    emit studySelected(index);
+  else
+    emit studyDeselected(index);
+
+}
 
