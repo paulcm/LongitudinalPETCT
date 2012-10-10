@@ -187,7 +187,7 @@ class qSlicerLongPETCTModuleWidget:
     
     self.analysisSettingsWidget.connect('qualitativeAnalysisChecked(bool)', self.showQualitativeView)
     self.analysisSettingsWidget.connect('quantitativeAnalysisChecked(bool)', self.showQuantitativeView)
-    self.analysisSettingsWidget.connect('studySelectedForAnalysis(int,bool)', self.showQualitativeView)
+    self.analysisSettingsWidget.connect('studySelectedForAnalysis(int, bool)', self.onStudyForAnalysisChanged)
     self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
     
@@ -288,8 +288,7 @@ class qSlicerLongPETCTModuleWidget:
     if currentReport:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
-        selectedStudy.SetSelectedForSegmentation(True)
-        
+                
         petID = ""
         ctID = ""
         
@@ -1244,13 +1243,17 @@ class qSlicerLongPETCTModuleWidget:
                   
                   id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
                   if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
-                    print "SETTING VISIBLE: "+mdn.GetName() + " for " + compareViewNodes[id].GetID()
                     mdn.AddViewNodeID(compareViewNodes[id].GetID())         
     
-                         
+  
+  def onStudyForAnalysisChanged(self):
+    if self.isQualitativeViewActive():
+      self.showQualitativeView()
+    if self.isQuantitativeViewActive():
+      self.showQuantitativeView()
+                           
   
   def onSwitchToAnalysis(self, analysisCollapsed):
-   
       
     if analysisCollapsed:
       self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
@@ -1317,8 +1320,7 @@ class qSlicerLongPETCTModuleWidget:
       chartViewNode.SetChartNodeID(self.chartNode.GetID())
         
       self.updateQuantitativeView()
-        
-        
+            
           
   def updateQuantitativeView(self, finding = None):
     
@@ -1337,7 +1339,7 @@ class qSlicerLongPETCTModuleWidget:
       
     if currentReport:
       arrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
-      saturationMultipliers = [1.0,0.8,0.6] # should be as many as different arraynodes
+      saturationMultipliers = [1.0,0.75,0.5] # should be as many as different arraynodes
       colorTable = currentReport.GetFindingTypesColorTable()
       lut = colorTable.GetLookupTable()
       suvs = []
@@ -1372,20 +1374,24 @@ class qSlicerLongPETCTModuleWidget:
             study = currentReport.GetStudySelectedForAnalysis(j)
             seg = finding.GetSegmentationForStudy(study)
             del suvs[:]
+            suvs.append(0.)
+            suvs.append(0.)
+            suvs.append(0.)
+
             if seg:
-              suvs.append(seg.GetSUVMax())
-              suvs.append(seg.GetSUVMean())
-              suvs.append(seg.GetSUVMin())
-           
-              array.SetComponent(tuple, 0, long(study.GetAttribute('DICOM.StudyDate')))       
-              array.SetComponent(tuple, 1, suvs[i])
-              array.SetComponent(tuple, 2, 0.)
+              suvs[0] = seg.GetSUVMax()
+              suvs[1] = seg.GetSUVMean()
+              suvs[2] = seg.GetSUVMin()
+
+            array.SetComponent(tuple, 0, float(study.GetAttribute('DICOM.StudyDate')))       
+            array.SetComponent(tuple, 1, suvs[i])
+            array.SetComponent(tuple, 2, 0.)
               
-              tuple += 1
+            tuple += 1
            
-              colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
-              self.chartNode.SetProperty(arrayNode.GetName(), 'color', colorStr)
-        
+            colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
+            self.chartNode.SetProperty(arrayNode.GetName(), 'color', colorStr)
+              
           self.chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
         
         if len(findings) == 1:
