@@ -330,8 +330,6 @@ qSlicerLongPETCTReportTableWidget::updateVerticalHeaders()
                     cssFontColor = "color: #FEFEFE";
 
                   cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
-                  std::cout << "=================================== update vert header" << std::endl;
-                  std::cout << cellWidget->styleSheet().toStdString().c_str() << std::endl;
                 }
             }
           else
@@ -450,8 +448,6 @@ qSlicerLongPETCTReportTableWidget::updateView()
                   styleSheet.insert(styleSheet.length() - 1,
                       "border: 3px solid #DD0000;");
                   cellWidget->setStyleSheet(styleSheet);
-                  std::cout << "=================================== update view" << std::endl;
-                  std::cout << cellWidget->styleSheet().toStdString().c_str() << std::endl;
                 }
             }
         }
