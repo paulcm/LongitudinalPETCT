@@ -7,6 +7,7 @@ from SlicerLongPETCTModuleSegmentationHelper import SlicerLongPETCTModuleSegment
 import sys as SYS
 
 import thread as Thread
+import time
 #
 # qSlicerLongPETCTModuleWidget
 #
@@ -25,7 +26,6 @@ class qSlicerLongPETCTModuleWidget:
       self.parent.show()
       
       
-
   def setup(self): 
     # Instantiate and connect widgets ...
 
@@ -71,8 +71,9 @@ class qSlicerLongPETCTModuleWidget:
     
     self.showCompareAll = False
     
-    self.findingsInfoMessageBox = None
     self.unsupportedVolRendMessageBox = None
+    self.segmentationColorChangeMessageBox = None
+
     
     self.findingROIVisiblityBackup = True
        
@@ -163,9 +164,7 @@ class qSlicerLongPETCTModuleWidget:
     self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
     self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
     
-    
     self.editorWidget.toolsColor.colorSpin.connect('valueChanged(int)',self.onEditorColorWarning)
-    self.editorWidget.toolsColor.colorPatch.connect('clicked()',self.onEditorColorWarning)
     
     self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
     self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -217,6 +216,7 @@ class qSlicerLongPETCTModuleWidget:
     ViewHelper.SetForegroundOpacity(0.6)       
     self.observeReportNode(self.reportSelector.currentNode())
     
+  
   def onEditorCollapsed(self,collapsed):
     self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
     self.onEnterEditMode( collapsed != True )
@@ -624,12 +624,10 @@ class qSlicerLongPETCTModuleWidget:
 
       if studySeg:
         #self.calculateSUVs()
-        qt.QTimer.singleShot(0,self.calculateSUVs)
-
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
         if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
           qt.QTimer.singleShot(0,self.makeModels)
-
+        
         else:
           if self.unsupportedVolRendMessageBox == None:
             self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
@@ -641,6 +639,9 @@ class qSlicerLongPETCTModuleWidget:
             self.unsupportedVolRendMessageBox.setDontShowAgain(False)  
           
           self.unsupportedVolRendMessageBox.show()  
+      
+        
+        qt.QTimer.singleShot(0,self.calculateSUVs)
       #else:
         #if self.reportTableWidget:
           #self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)           
@@ -661,6 +662,7 @@ class qSlicerLongPETCTModuleWidget:
                  
   def pasteFromCroppedToMainLblVolume(self, caller, event):
     
+
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
@@ -676,6 +678,7 @@ class qSlicerLongPETCTModuleWidget:
       studySeg = None
      
       if currentFinding.GetSegmentationForStudy(currentStudy) == None:
+        a = time.time()
         studySeg = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTSegmentationNode')
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         
@@ -684,11 +687,15 @@ class qSlicerLongPETCTModuleWidget:
         studySeg.SetLabelVolumeNode(currentStudy.GetPETLabelVolumeNode())
         
         currentFinding.AddSegmentationForStudy(currentStudy,studySeg)
-      
+        b = time.time()
+        print "DURATION OF SEGMENTATION CREATION: " + str(b-a)+  " s" 
       else:
         studySeg = currentFinding.GetSegmentationForStudy(currentStudy)        
       
+      a = time.time()
       SegmentationHelper.removeSegmentationFromVolume(studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())       
+      b = time.time()
+      print "DURATION OF SEGMENTATION REMOVAL: " + str(b-a)+  " s" 
       pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
     
       if segmentationROI:
@@ -718,6 +725,8 @@ class qSlicerLongPETCTModuleWidget:
     
     #if self.tempCroppedLblVolObserverTag != -1:      
       #self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag) 
+    
+    
             
     return pasted 
   
@@ -739,18 +748,7 @@ class qSlicerLongPETCTModuleWidget:
         self.findingSettingsDialog.setReportNode(currentReport)
                 
         result = self.findingSettingsDialog.exec_()
-        
-        name = self.findingSettingsDialog.property('findingName')
-        typename = self.findingSettingsDialog.property('typeName')
-        colorID = self.findingSettingsDialog.property('colorID')
-       
-        if result == qt.QDialog.Accepted:
-          if name:
-            findingNode.SetName(name)
-          findingNode.SetTypeName(typename)
-          findingNode.SetColorID(colorID)
-          
-          accepted = True
+        accepted = result == qt.QDialog.Accepted
     
     return accepted    
    
@@ -950,6 +948,7 @@ class qSlicerLongPETCTModuleWidget:
   
   
   def makeModels(self):
+    a = time.time()
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
@@ -1002,10 +1001,12 @@ class qSlicerLongPETCTModuleWidget:
           slicer.mrmlScene.RemoveNode(tempMH.GetDisplayNode())
           slicer.mrmlScene.RemoveNode(tempMH)         
         
-                
+    b = time.time()
+    print "DURATION OF MAKE MODELS: " + str(b-a)+  "s"            
         
    
   def calculateSUVs(self):
+    a = time.time()
     
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
@@ -1057,7 +1058,8 @@ class qSlicerLongPETCTModuleWidget:
         elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
           qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
 
-        
+    b = time.time()
+    print "DURATION OF SUV COMPUTATION: " + str(b-a)+  "s"         
         
       
   def manageCollapsibleButtonsAbility(self, caller, event):
@@ -1504,7 +1506,22 @@ class qSlicerLongPETCTModuleWidget:
         self.reportTableWidget.setProperty('enabled',True)    
   
   def onEditorColorWarning(self):
-    qt.QMessageBox.information(None,ViewHelper.moduleDialogTitle(),"Please notice that only segmentations with the same color label as the current Finding's Type will be used!") 
+    currentFinding = self.getCurrentFinding()
+    if currentFinding:
+      if self.segmentationColorChangeMessageBox == None:
+        self.segmentationColorChangeMessageBox = ctk.ctkMessageBox()
+        self.segmentationColorChangeMessageBox.setModal(True)
+        self.segmentationColorChangeMessageBox.setIcon(qt.QMessageBox.Information)
+        self.segmentationColorChangeMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+        self.segmentationColorChangeMessageBox.setText("Please notice that only segmentations with the same color label as the current Finding Type ("+currentFinding.GetTypeName()+") will be used!")
+        self.segmentationColorChangeMessageBox.setProperty('dontShowAgainVisible',True)
+        self.segmentationColorChangeMessageBox.setDontShowAgain(False)  
+    
+
+      selectedLabelValue = self.editorWidget.toolsColor.colorSpin.property('value')
+      if (selectedLabelValue > 0) & ( selectedLabelValue != currentFinding.GetColorID() ):     
+        self.segmentationColorChangeMessageBox.show()
+    
    
    #lm = slicer.app.layoutManager()
    
