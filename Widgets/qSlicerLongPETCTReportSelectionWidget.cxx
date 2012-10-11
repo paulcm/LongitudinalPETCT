@@ -170,6 +170,7 @@ void qSlicerLongPETCTReportSelectionWidget
   Q_ASSERT(d->LabelDoBInfo);
   Q_ASSERT(d->LabelSexInfo);
   Q_ASSERT(d->LabelInformation);
+  Q_ASSERT(d->LabelSizeInfo);
 
   if(d->ReportNode != NULL)
     {
@@ -177,13 +178,15 @@ void qSlicerLongPETCTReportSelectionWidget
         QDate dob = QDate::fromString(QString(d->ReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
         d->LabelDoBInfo->setText(dob.toString(Qt::SystemLocaleLongDate));
         d->LabelSexInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientSex"));
+        d->LabelSizeInfo->setText(QString(d->ReportNode->GetAttribute("DICOM.PatientSize"))+" m");
+
     }
   else
     {
-        QString noText;
-        d->LabelNameInfo->setText(noText);
-        d->LabelDoBInfo->setText(noText);
-        d->LabelSexInfo->setText(noText);
+        d->LabelNameInfo->setText(NULL);
+        d->LabelDoBInfo->setText(NULL);
+        d->LabelSexInfo->setText(NULL);
+        d->LabelSizeInfo->setText(NULL);
     }
 
     bool infoVisible = d->MRMLNodeComboBoxReport->nodeCount() == 0;
