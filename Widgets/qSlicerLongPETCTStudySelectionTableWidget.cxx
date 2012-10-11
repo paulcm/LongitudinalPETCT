@@ -100,6 +100,13 @@ void qSlicerLongPETCTStudySelectionTableWidgetPrivate
 
   this->Ui_qSlicerLongPETCTStudySelectionTableWidget::setupUi(widget);
 
+
+  for(int i=0; i < this->Table->columnCount(); ++i)
+    {
+      QTableWidgetItem* tempHorizontalHeader = this->Table->horizontalHeaderItem(i);
+      if(tempHorizontalHeader)
+        tempHorizontalHeader->setToolTip(tempHorizontalHeader->text());
+    }
   QObject::connect(this->Table, SIGNAL(itemChanged(QTableWidgetItem*)), q, SLOT(tableItemChanged(QTableWidgetItem*)) );
   QObject::connect(this->Table, SIGNAL(cellClicked(int,int)), q, SLOT(tableCellClicked(int,int)) );
 
@@ -109,6 +116,7 @@ QTableWidgetItem* qSlicerLongPETCTStudySelectionTableWidgetPrivate::createEnable
 {
   QTableWidgetItem* item = new QTableWidgetItem(text);
   item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+  item->setToolTip(text);
 
   return item;
 }
@@ -173,11 +181,14 @@ qSlicerLongPETCTStudySelectionTableWidget::addStudyToTable(vtkMRMLLongPETCTStudy
 
   QString dateStr = d->dateFromDICOMStr(study->GetAttribute("DICOM.StudyDate")).toString(Qt::SystemLocaleLongDate);
   QString timeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.StudyTime")).toString(Qt::ISODate);
-  QString patientWeightStr = QString(study->GetAttribute("DICOM.PatientWeight"))+" kg";
+  QString patientWeightStr = QString(study->GetAttribute("DICOM.PatientWeight")).trimmed();
+  if( ! patientWeightStr.isEmpty())
+    patientWeightStr.append(" kg");
   QString radiopharmaconStartTimeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.RadioPharmaconStartTime")).toString(Qt::ISODate);
   QString seriesTimeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.SeriesTime")).toString(Qt::ISODate);
-  QString tempRNHL = QString(study->GetAttribute("DICOM.RadionuclideHalfLife")).trimmed();
-  QString radionuclideHalfLifeStr = tempRNHL + tempRNHL.length() > 0 ? " s" : NULL;
+  QString radionuclideHalfLifeStr = QString(study->GetAttribute("DICOM.RadionuclideHalfLife")).trimmed();
+  if( ! radionuclideHalfLifeStr.isEmpty())
+    radionuclideHalfLifeStr.append(" s");
   QString decayCorrectionStr = study->GetAttribute("DICOM.DecayCorrection");
   QString decayFactorStr = study->GetAttribute("DICOM.DecayFactor");
   QString studyUIDStr = study->GetAttribute("DICOM.StudyInstanceUID");
