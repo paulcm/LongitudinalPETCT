@@ -395,7 +395,7 @@ int vtkMRMLLongPETCTReportNode::GetFindingTypeColorID(const std::string& typeNam
 }
 
 //----------------------------------------------------------------------------
-std::string vtkMRMLLongPETCTReportNode::GetFindingTypeName(int colorID)
+const char* vtkMRMLLongPETCTReportNode::GetFindingTypeName(int colorID)
 {
   return this->FindingTypesColorTable->GetColorName(colorID);
 }

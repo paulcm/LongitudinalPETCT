@@ -125,7 +125,7 @@ class VTK_SLICER_LONGPETCT_MODULE_MRML_EXPORT vtkMRMLLongPETCTReportNode : publi
   void AddFindingType(std::string name, double color[4]);
   void RemoveLastFindingType();
 
-  std::string GetFindingTypeName(int colorID);
+  const char* GetFindingTypeName(int colorID);
   int GetFindingTypeColorID(const std::string& typeName);
 
   bool IsFindingTypeInUse(int colorID);
