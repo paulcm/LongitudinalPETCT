@@ -108,7 +108,6 @@ class qSlicerLongPETCTModuleWidget:
     self.studiesCollapsibleButton.text = "Study Selection"
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     
-    
     self.layout.addWidget(self.studiesCollapsibleButton)
 
     studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
@@ -159,6 +158,12 @@ class qSlicerLongPETCTModuleWidget:
     self.editorWidget = EditorWidget(parent=editorWidgetParent,showVolumesFrame=False)
     self.editorWidget.setup()
     #self.editorWidget.toolsColor.frame.setVisible(False)
+    
+    self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
+    self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
+    self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
+    
+    
     self.editorWidget.toolsColor.colorSpin.connect('valueChanged(int)',self.onEditorColorWarning)
     self.editorWidget.toolsColor.colorPatch.connect('clicked()',self.onEditorColorWarning)
     
