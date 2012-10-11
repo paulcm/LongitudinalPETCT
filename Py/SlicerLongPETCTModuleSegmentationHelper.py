@@ -119,13 +119,17 @@ class SlicerLongPETCTModuleSegmentationHelper( object ):
       imgData = lblVolume.GetImageData()
       
       if imgData:
-        dims = imgData.GetDimensions()
         
-        for x in range(dims[0]):
-          for y in range(dims[1]):
-            for z in range(dims[2]):
-              p = imgData.GetScalarComponentAsDouble(x,y,z,0)                             
-              if p == colorID:
-                imgData.SetScalarComponentFromDouble(x,y,z,0,0.)      
+        change = slicer.vtkImageLabelChange()
+        change.SetInput(imgData)
+        change.SetInputLabel(colorID)
+        change.SetOutputLabel(0)
         
-        imgData.Modified()    
+        change.Update()
+        
+        output = change.GetOutput()
+        
+        if output:
+          lblVolume.SetAndObserveImageData(output)
+          output.Modified()
+          lblVolume.Modified()  
