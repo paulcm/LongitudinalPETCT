@@ -167,107 +167,6 @@ qSlicerLongPETCTFindingSettingsDialog::~qSlicerLongPETCTFindingSettingsDialog()
 {
 }
 
-//-----------------------------------------------------------------------------
-QString
-qSlicerLongPETCTFindingSettingsDialog::findingName()
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->LineEditName);
-
-  QString tempName = d->LineEditName->text();
-
-  return d->LineEditName->text();
-}
-
-//-----------------------------------------------------------------------------
-void
-qSlicerLongPETCTFindingSettingsDialog::setFindingName(const QString& name)
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->LineEditName);
-
-  return d->LineEditName->setText(name);
-}
-
-//-----------------------------------------------------------------------------
-QString
-qSlicerLongPETCTFindingSettingsDialog::typeName()
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->ComboBoxType);
-
-  QString empty;
-
-  if (d->ReportNode == NULL)
-    return empty;
-
-  int index = d->ComboBoxType->currentIndex() + 1; // +1 because "None" is not in list
-
-  if (index >= 0 && index < d->ReportNode->GetFindingTypesCount())
-    return QString(d->ReportNode->GetFindingTypeName(index).c_str());
-
-  return empty;
-}
-
-//-----------------------------------------------------------------------------
-void
-qSlicerLongPETCTFindingSettingsDialog::setTypeName(const QString& name)
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->ComboBoxType);
-
-  if (d->ReportNode == NULL)
-    {
-      d->ComboBoxType->setCurrentIndex(-1);
-      return;
-    }
-
-  int index = d->ReportNode->GetFindingTypeColorID(name.toStdString()) - 1; // -1 because "None" is not in list
-
-  if (index >= 0 && index < d->ComboBoxType->count())
-    d->ComboBoxType->setCurrentIndex(index);
-
-  else
-    d->ComboBoxType->setCurrentIndex(-1);
-}
-
-//-----------------------------------------------------------------------------
-int
-qSlicerLongPETCTFindingSettingsDialog::colorID()
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->ComboBoxType);
-
-  if (d->ReportNode == NULL)
-    return -1;
-
-  int index = d->ComboBoxType->currentIndex() + 1; // +1 because "None" is not in list
-
-  return index;
-
-}
-
-//-----------------------------------------------------------------------------
-void
-qSlicerLongPETCTFindingSettingsDialog::setColorID(int colorID)
-{
-  Q_D(qSlicerLongPETCTFindingSettingsDialog);
-  Q_ASSERT(d->ComboBoxType);
-
-  if (d->ReportNode == NULL)
-    {
-      d->ComboBoxType->setCurrentIndex(-1);
-      return;
-    }
-
-  int index = colorID - 1; // -1 because "None" is not in list
-
-  if (index >= 0 && index < d->ComboBoxType->count())
-    d->ComboBoxType->setCurrentIndex(index);
-
-  else
-    d->ComboBoxType->setCurrentIndex(-1);
-}
 
 //-----------------------------------------------------------------------------
 void
@@ -298,6 +197,7 @@ qSlicerLongPETCTFindingSettingsDialog::updateView()
 {
   Q_D(qSlicerLongPETCTFindingSettingsDialog);
   Q_ASSERT(d->ComboBoxType);
+  Q_ASSERT(d->LineEditName);
 
   d->ComboBoxType->clear();
   if (!d->UpdatingFindingTypes)
@@ -313,7 +213,7 @@ qSlicerLongPETCTFindingSettingsDialog::updateView()
     return;
 
   if (!d->UpdatingFindingTypes)
-    this->setFindingName(d->ReportNode->GetUserSelectedFinding()->GetName());
+    d->LineEditName->setText(d->ReportNode->GetUserSelectedFinding()->GetName());
 
   vtkMRMLColorTableNode* colorTableNode =
       d->ReportNode->GetFindingTypesColorTable();
@@ -322,7 +222,7 @@ qSlicerLongPETCTFindingSettingsDialog::updateView()
 
   for (int i = 1; i < colorTableNode->GetNumberOfColors(); ++i) // i = 1 because "None" is not selectable
     {
-      QString findingType = d->ReportNode->GetFindingTypeName(i).c_str();
+      QString findingType = d->ReportNode->GetFindingTypeName(i);
 
       colorTableNode->GetColor(i, col);
       QColor color =
@@ -526,5 +426,30 @@ qSlicerLongPETCTFindingSettingsDialog::selectionChanged(int index)
 
   if (finding->GetColorID() == -1)
     d->LineEditName->setText(d->ComboBoxType->currentText());
+}
+
+//-----------------------------------------------------------------------------
+void
+qSlicerLongPETCTFindingSettingsDialog::accept()
+{
+  Q_D(qSlicerLongPETCTFindingSettingsDialog);
+  Q_ASSERT(d->LineEditName);
+  Q_ASSERT(d->ComboBoxType);
+
+  if(d->ReportNode)
+    {
+      vtkSmartPointer<vtkMRMLLongPETCTFindingNode> finding =
+            d->ReportNode->GetUserSelectedFinding();
+
+      if(finding)
+        {
+          if( ! d->LineEditName->text().isEmpty() )
+            finding->SetName(d->LineEditName->text().toStdString().c_str());
+          finding->SetTypeName(d->ReportNode->GetFindingTypeName(d->ComboBoxType->currentIndex()+1));
+          finding->SetColorID(d->ComboBoxType->currentIndex()+1);
+        }
+    }
+
+  Superclass::accept();
 }
 

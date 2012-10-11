@@ -46,26 +46,15 @@ class Q_SLICER_LONGPETCT_MODULE_WIDGETS_EXPORT qSlicerLongPETCTFindingSettingsDi
   Q_OBJECT
   QVTK_OBJECT
 
-  Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
-  Q_PROPERTY(int colorID READ colorID WRITE setColorID)
-  Q_PROPERTY(QString typeName READ typeName WRITE setTypeName)
-
 public:
   typedef QDialog Superclass;
   qSlicerLongPETCTFindingSettingsDialog(QWidget *parent=0);
   virtual ~qSlicerLongPETCTFindingSettingsDialog();
 
-  QString findingName();
-  void setFindingName(const QString& name);
-
-  int colorID();
-  void setColorID(int colorID);
-
-  QString typeName();
-  void setTypeName(const QString& typeName);
-
   Q_INVOKABLE void setReportNode(vtkMRMLLongPETCTReportNode* reportNode);
   vtkMRMLLongPETCTReportNode* reportNode();
+
+  void accept();
 
 public slots:
   void updateView();
