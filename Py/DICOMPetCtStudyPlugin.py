@@ -27,17 +27,17 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
     self.tags['patientName'] = "0010,0010"
     self.tags['patientBirthDate'] = "0010,0030"
     self.tags['patientSex'] = "0010,0040"
-    #self.tags['patientSize'] = "0010,1020"
-    #self.tags['patientWeight'] = "0010,1030"
+    self.tags['patientSize'] = "0010,1020"
+    self.tags['patientWeight'] = "0010,1030"
     
     self.tags['relatedSeriesSequence'] = "0008,1250"
     
-    #self.tags['radioPharmStartTime'] = "0018,1072"
-    #self.tags['decayCorrection'] = "0054,1102"
-    #self.tags['decayFactor'] = "0054,1321"
-    #self.tags['frameRefTime'] = "0054,1300"
-    #self.tags['radionuclidenHL'] = "0018,1075"
-     
+    self.tags['radioPharmaconStartTime'] = "0018,1072"
+    self.tags['decayCorrection'] = "0054,1102"
+    self.tags['decayFactor'] = "0054,1321"
+    self.tags['frameRefTime'] = "0054,1300"
+    self.tags['radionuclideHalfLife'] = "0018,1075"
+    self.tags['seriesTime'] = "0008,0031" 
     #self.tags['studyInstanceUID'] = "0020,000D"    
     
     #self.tags['seriesInstanceUID'] = "0020,000E"
@@ -404,12 +404,14 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
       patientName = slicer.dicomDatabase.fileValue(files[0], self.tags['patientName'])
       patientBirthDate = slicer.dicomDatabase.fileValue(files[0], self.tags['patientBirthDate'])
       patientSex = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSex'])
+      patientSize = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSize'])
     
       #Report Node    
       reportNode.SetName('Report for '+patientName)
       reportNode.SetAttribute('DICOM.PatientName',patientName)
       reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
       reportNode.SetAttribute('DICOM.PatientSex',patientSex)
+      reportNode.SetAttribute('DICOM.PatientSize',patientSize)
       reportNode.SetScene(slicer.mrmlScene)
       
       colorLogic = slicer.modules.colors.logic()
@@ -441,6 +443,14 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
           studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
     
+          radioPharmaconStartTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radioPharmaconStartTime'])
+          decayCorrection = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayCorrection'])
+          decayFactor = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayFactor'])
+          frameRefTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['frameRefTime'])
+          radionuclideHalfLife = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radionuclideHalfLife'])
+          seriesTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['seriesTime'])
+          patientWeight = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['patientWeight'])
+    
           #Study Node
           studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongPETCTStudyNode')
           studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
@@ -450,6 +460,14 @@ class DICOMPetCtStudyPluginClass(DICOMPlugin):
           studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
           studyNode.SetAttribute('DICOM.StudyDate',studyDate)
           studyNode.SetAttribute('DICOM.StudyTime',studyTime)
+          studyNode.SetAttribute('DICOM.RadioPharmaconStartTime',radioPharmaconStartTime)
+          studyNode.SetAttribute('DICOM.DecayFactor',decayFactor)
+          studyNode.SetAttribute('DICOM.DecayCorrection',decayCorrection)
+          studyNode.SetAttribute('DICOM.FrameReferenceTime',frameRefTime)
+          studyNode.SetAttribute('DICOM.RadionuclideHalfLife',radionuclideHalfLife)
+          studyNode.SetAttribute('DICOM.SeriesTime',seriesTime)
+          studyNode.SetAttribute('DICOM.PatientWeight',patientWeight)
+
           studyNode.SetPETVolumeNode(petScalarVolume)
           studyNode.SetCTVolumeNode(ctScalarVolume)
           studyNode.SetPETLabelVolumeNode(petLabelVolume)
