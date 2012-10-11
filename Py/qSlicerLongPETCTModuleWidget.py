@@ -158,7 +158,9 @@ class qSlicerLongPETCTModuleWidget:
     editorWidgetParent.setMRMLScene(slicer.mrmlScene)
     self.editorWidget = EditorWidget(parent=editorWidgetParent,showVolumesFrame=False)
     self.editorWidget.setup()
-    self.editorWidget.toolsColor.frame.setVisible(False)
+    #self.editorWidget.toolsColor.frame.setVisible(False)
+    self.editorWidget.toolsColor.colorSpin.connect('valueChanged(int)',self.onEditorColorWarning)
+    self.editorWidget.toolsColor.colorPatch.connect('clicked()',self.onEditorColorWarning)
     
     self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
     self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -1495,6 +1497,10 @@ class qSlicerLongPETCTModuleWidget:
           
         self.findingSelectionWidget.setProperty('placeROIChecked',False)
         self.reportTableWidget.setProperty('enabled',True)    
+  
+  def onEditorColorWarning(self):
+    qt.QMessageBox.information(None,ViewHelper.moduleDialogTitle(),"Please notice that only segmentations with the same color label as the current Finding's Type will be used!") 
+   
    #lm = slicer.app.layoutManager()
    
    #if analysisCollapsed:

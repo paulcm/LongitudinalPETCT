@@ -44,7 +44,7 @@ class SlicerLongPETCTModuleSegmentationHelper( object ):
               p = croppedImgData.GetScalarComponentAsDouble(x,y,z,0)
               posInMain = [x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2]]
               d = mainImageData.GetScalarComponentAsDouble(posInMain[0],posInMain[1],posInMain[2],0)
-              if d == 0.:
+              if (d == 0.) & (p == colorID):
                 mainImageData.SetScalarComponentFromDouble(posInMain[0],posInMain[1],posInMain[2],0,p)
                 if pasted == False:
                   pasted = True    
