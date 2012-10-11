@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>404</width>
+    <width>1318</width>
     <height>78</height>
    </rect>
   </property>
@@ -35,6 +35,36 @@
      <column>
       <property name="text">
        <string>Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Patient Weight</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Radiopharmacon Start Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Series Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Radionuclide Half Life</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Decay Correction</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Decay Factor</string>
       </property>
      </column>
      <column>

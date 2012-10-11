@@ -58,6 +58,9 @@ public:
 
   qSlicerLongPETCTStudySelectionTableWidget::TableMode Mode;
 
+  QDate dateFromDICOMStr(const QString& dicomDateStr);
+  QTime timeFromDICOMStr(const QString& dicomTimeStr);
+
 };
 
 // --------------------------------------------------------------------------
@@ -72,6 +75,20 @@ qSlicerLongPETCTStudySelectionTableWidgetPrivate
 qSlicerLongPETCTStudySelectionTableWidgetPrivate
 ::~qSlicerLongPETCTStudySelectionTableWidgetPrivate()
 {
+}
+
+// --------------------------------------------------------------------------
+QDate qSlicerLongPETCTStudySelectionTableWidgetPrivate
+::dateFromDICOMStr(const QString& dicomDateStr)
+{
+  return QDate::fromString(dicomDateStr.trimmed(),"yyyyMMdd");
+}
+
+// --------------------------------------------------------------------------
+QTime qSlicerLongPETCTStudySelectionTableWidgetPrivate
+::timeFromDICOMStr(const QString& dicomTimeStr)
+{
+  return QTime::fromString(dicomTimeStr.trimmed().left(6),"hhmmss");
 }
 
 
@@ -154,12 +171,17 @@ qSlicerLongPETCTStudySelectionTableWidget::addStudyToTable(vtkMRMLLongPETCTStudy
     checkboxItem->setCheckState(Qt::Unchecked);
 
 
-  QDate date = QDate::fromString(QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),"yyyyMMdd");
-  QTime time = QTime::fromString(QString(study->GetAttribute("DICOM.StudyTime")).trimmed().left(6),"hhmmss");
+  QString dateStr = d->dateFromDICOMStr(study->GetAttribute("DICOM.StudyDate")).toString(Qt::SystemLocaleLongDate);
+  QString timeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.StudyTime")).toString(Qt::ISODate);
+  QString patientWeightStr = QString(study->GetAttribute("DICOM.PatientWeight"))+" kg";
+  QString radiopharmaconStartTimeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.RadioPharmaconStartTime")).toString(Qt::ISODate);
+  QString seriesTimeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.SeriesTime")).toString(Qt::ISODate);
+  QString tempRNHL = QString(study->GetAttribute("DICOM.RadionuclideHalfLife")).trimmed();
+  QString radionuclideHalfLifeStr = tempRNHL + tempRNHL.length() > 0 ? " s" : NULL;
+  QString decayCorrectionStr = study->GetAttribute("DICOM.DecayCorrection");
+  QString decayFactorStr = study->GetAttribute("DICOM.DecayFactor");
+  QString studyUIDStr = study->GetAttribute("DICOM.StudyInstanceUID");
 
-  QString dateStr = date.toString(Qt::SystemLocaleLongDate);
-  QString timeStr = time.toString(Qt::ISODate);
-  QString studyUID = study->GetAttribute("DICOM.StudyInstanceUID");
 
   int row = d->Table->rowCount();
   int col = 0;
@@ -168,7 +190,13 @@ qSlicerLongPETCTStudySelectionTableWidget::addStudyToTable(vtkMRMLLongPETCTStudy
   d->Table->setItem(row, col++, checkboxItem);
   d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(dateStr));
   d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(timeStr));
-  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(studyUID));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(patientWeightStr.trimmed()));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(radiopharmaconStartTimeStr));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(seriesTimeStr));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(radionuclideHalfLifeStr.trimmed()));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(decayCorrectionStr.trimmed()));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(decayFactorStr.trimmed()));
+  d->Table->setItem(row, col++, d->createEnabledSelectableTableWidgetItem(studyUIDStr.trimmed()));
 
   QObject::connect(d->Table, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(tableItemChanged(QTableWidgetItem*)) );
 }
