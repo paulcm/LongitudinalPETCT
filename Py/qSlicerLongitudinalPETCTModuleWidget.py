@@ -754,10 +754,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
         if self.findingSettingsDialog == None:
           self.findingSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSettingsDialog(self.parent)
-        
+          
         self.findingSettingsDialog.setReportNode(currentReport)
                 
         result = self.findingSettingsDialog.exec_()
+        
         accepted = result == qt.QDialog.Accepted
     
     return accepted    
@@ -778,13 +779,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
           currentReport.AddFinding(findingNode)
           currentReport.SetUserSelectedFinding(findingNode)
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
-          #self.setupFindingNode(currentReport.GetUserSelectedFinding())
           
         else:
           self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           slicer.mrmlScene.RemoveNode(findingNode)
+
           currentReport.SetUserSelectedFinding(self.findingSelector.currentNode())
+
           self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          
           return
           
       else:
@@ -836,7 +839,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
     if currentReport:
-      
+            
       for i in range(currentReport.GetSelectedStudiesCount()):
         study = currentReport.GetStudy(i)
         
@@ -845,12 +848,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
           SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
           findingNode.RemoveSegmentationForStudy(study)
           slicer.mrmlScene.RemoveNode(seg)
-          study.SetSegmentationROI(None)  
+          study.SetSegmentationROI(None)
           
-      
       slicer.mrmlScene.RemoveNode(findingNode.GetSegmentationROI())
-      currentReport.RemoveFinding(findingNode)
-           
+      currentReport.RemoveFinding(findingNode)  
    
   def onManageFindingROIsVisibility(self):
     currentStudy = self.getCurrentStudy()
@@ -1157,7 +1158,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           if (self.isStandardViewActive() & stdVolRen & (study == currentStudy)) | ( (self.isStandardViewActive() == False) & anaVolRen):
             vrdn.SetVisibility(True)
-            print "Setting VRDN " + vrdn.GetName() + " visible"
                       
       if currentReport.GetSelectedStudiesCount() > 0:
         viewNode.SetAxisLabelsVisible(True & stdVolRen)   
@@ -1224,7 +1224,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
               
             id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
             if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
-              print "SETTING VISIBLE: "+vrdn.GetName() + " for " + compareViewNodes[id].GetID()
               vrdn.AddViewNodeID(compareViewNodes[id].GetID())
   
   def isStandardViewActive(self):
