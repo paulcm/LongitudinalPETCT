@@ -55,6 +55,7 @@ public:
   vtkMRMLLongitudinalPETCTReportNode* reportNode();
 
   void accept();
+  void hide();
 
 public slots:
   void updateView();

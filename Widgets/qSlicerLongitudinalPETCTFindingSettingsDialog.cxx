@@ -199,6 +199,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   Q_ASSERT(d->ComboBoxType);
   Q_ASSERT(d->LineEditName);
 
+
   d->ComboBoxType->clear();
   if (!d->UpdatingFindingTypes)
     d->LineEditName->clear();
@@ -247,6 +248,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
 
   d->selectFindingType(
       d->ReportNode->GetUserSelectedFinding()->GetColorID() - 1); // -1 because of "None" not in list
+
 }
 
 //-----------------------------------------------------------------------------
@@ -448,8 +450,21 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::accept()
           finding->SetTypeName(d->ReportNode->GetFindingTypeName(d->ComboBoxType->currentIndex()+1));
           finding->SetColorID(d->ComboBoxType->currentIndex()+1);
         }
-    }
+      }
 
   Superclass::accept();
 }
+
+//-----------------------------------------------------------------------------
+void
+qSlicerLongitudinalPETCTFindingSettingsDialog::hide()
+{
+  Q_D(qSlicerLongitudinalPETCTFindingSettingsDialog);
+
+  if(d->ReportNode)
+    qvtkDisconnect(d->ReportNode.GetPointer(), vtkCommand::ModifiedEvent, this, SLOT(updateView()));
+
+  Superclass::hide();
+}
+
 
