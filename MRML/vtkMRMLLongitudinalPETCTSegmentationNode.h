@@ -45,8 +45,6 @@
 #include <vtkSlicerLongitudinalPETCTModuleMRMLExport.h>
 
 
-
-
 /// \ingroup Slicer_QtModules_LongitudinalPETCTSegmentationNode
 class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSegmentationNode : public vtkMRMLNode
 {
@@ -68,11 +66,11 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   virtual void Copy(vtkMRMLNode *node);
 
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() {return "Longitudinal PET/CT Segmentation";};
+  virtual const char* GetNodeTagName() {return "PETCT_Segmentation";};
 
   enum
       {
-        ModelHierarchyUpdatedEvent
+        ModelHierarchyChangedEvent
       };
 
   void SetROIxyz(double roiXYZ[3]);
@@ -83,10 +81,18 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
 
   void SetSUVs(double max, double mean, double min);
 
-  void SetLabelVolumeNode(vtkMRMLScalarVolumeNode* labelVolume);
+
+  void SetAndObserveLabelVolumeNodeID(const char* labelVolumeNodeID);
+  void SetAndObserveLabelVolumeNodeID(const std::string& labelVolumeNodeID);
+  vtkGetStringMacro(LabelVolumeNodeID);
+
   vtkGetMacro(LabelVolumeNode,vtkMRMLScalarVolumeNode*);
 
-  void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);
+
+  void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
+  void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
+  vtkGetStringMacro(ModelHierarchyNodeID);
+
   vtkGetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
 
   void SetModelVisible(bool visible);
@@ -96,10 +102,13 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   vtkGetMacro(SUVMean,double);
   vtkGetMacro(SUVMin,double);
 
-  void Initialize();
+  //void RemoveCurrentModelHierarchyFromScene();
 
-  void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void SetScene(vtkMRMLScene* scene);
+  void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
+  void UpdateReferences();
+  void UpdateReferenceID(const char *oldID, const char *newID);
+
 
 protected:
   vtkMRMLLongitudinalPETCTSegmentationNode();
@@ -109,16 +118,21 @@ protected:
 
   void AdjustModelTransformToLabelVolume();
 
+
+  vtkSetStringMacro(LabelVolumeNodeID);
+  vtkSetStringMacro(ModelHierarchyNodeID);
+
   vtkSetMacro(SUVMax,double);
   vtkSetMacro(SUVMean,double);
   vtkSetMacro(SUVMin,double);
 
   bool ModelVisible;
 
+  char* LabelVolumeNodeID;
+  char* ModelHierarchyNodeID;
+
   vtkSmartPointer<vtkMRMLScalarVolumeNode> LabelVolumeNode;
   vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
-
-  vtkSmartPointer<vtkIntArray> ObservedEvents;
 
   double ROIxyz[3];
   double ROIRadius[3];
@@ -126,7 +140,6 @@ protected:
   double SUVMax;
   double SUVMean;
   double SUVMin;
-
 
 };
 
