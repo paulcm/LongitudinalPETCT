@@ -156,15 +156,10 @@ class qSlicerLongPETCTModuleWidget:
     editorWidgetParent = slicer.qMRMLWidget()
     editorWidgetParent.setLayout(qt.QVBoxLayout())
     editorWidgetParent.setMRMLScene(slicer.mrmlScene)
-    self.editorWidget = EditorWidget(parent=editorWidgetParent,showVolumesFrame=False)
+    self.editorWidget = EditorWidget(editorWidgetParent, False)
     self.editorWidget.setup()
     #self.editorWidget.toolsColor.frame.setVisible(False)
     
-    self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
-    self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
-    self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
-    
-    self.editorWidget.toolsColor.colorSpin.connect('valueChanged(int)',self.onEditorColorWarning)
     
     self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
     self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -592,6 +587,11 @@ class qSlicerLongPETCTModuleWidget:
   
   def onEnterEditMode(self,enter):
     
+    self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
+    self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
+    self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
+    
+    
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
       
@@ -607,18 +607,28 @@ class qSlicerLongPETCTModuleWidget:
       
       if studySeg != None:
         SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
-                    
-      self.editorWidget.editUtil.setLabel(currentFinding.GetColorID())
-      self.editorWidget.setMasterNode(self.tempCroppedVol) 
-      self.editorWidget.setMergeNode(self.tempLabelVol)
     
-      self.editorWidget.enter()
+
+      self.editorWidget.setMasterNode(self.tempCroppedVol) 
+      self.editorWidget.setMergeNode(self.tempLabelVol)      
+      
+      self.editorWidget.editUtil.getParameterNode().SetParameter('storedLabel',"")
+      self.editorWidget.editUtil.getParameterNode().SetParameter('label',str(currentFinding.GetColorID()))
+        
+    
+      self.editorWidget.enter()  
     
       self.tempObserverEditorTag = currentFinding.GetSegmentationROI().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
       #self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
-      self.editorWidget.exit()     
+      
+      self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(True)
+      self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(True)
+      self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(True)
+      self.editorWidget.exit()   
+      
+          
       pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
       studySeg = currentFinding.GetSegmentationForStudy(currentStudy)
 
