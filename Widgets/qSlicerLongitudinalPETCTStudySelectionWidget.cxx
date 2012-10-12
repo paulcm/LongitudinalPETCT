@@ -133,10 +133,9 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
 {
   Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
 
-  std::cout << "Trying to remove rows" << std::endl;
   d->TableStudySelection->clearRows(); // clear table first
 
-  if(d->ReportNode.GetPointer() == NULL)
+  if(!d->ReportNode)
     return;
 
   d->TableStudySelection->deselectTableAll();
@@ -145,10 +144,10 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = d->ReportNode->GetStudy(i);
       bool disabled = d->ReportNode->IsStudyInUse(study);
-      if(disabled)
-        std::cout << "STUDY " << study->GetName() << " IS IN USE" << std::endl;
+
       d->TableStudySelection->addStudyToTable(study, disabled);
     }
+
 }
 
 //-----------------------------------------------------------------------------
