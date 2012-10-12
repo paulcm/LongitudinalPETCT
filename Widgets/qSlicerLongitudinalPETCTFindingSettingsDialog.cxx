@@ -22,6 +22,9 @@
 #include "qSlicerLongitudinalPETCTFindingSettingsDialog.h"
 #include "ui_qSlicerLongitudinalPETCTFindingSettingsDialog.h"
 
+
+#include <vtkSmartPointer.h>
+
 #include <vtkMRMLLongitudinalPETCTReportNode.h>
 #include <vtkMRMLColorNode.h>
 #include <vtkMRMLColorTableNode.h>
@@ -30,7 +33,6 @@
 #include "qSlicerLongitudinalPETCTColorSelectionDialog.h"
 
 #include <QMessageBox>
-#include <vtkSmartPointer.h>
 #include <QIcon>
 #include <QPixmap>
 
@@ -188,7 +190,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::reportNode()
 {
   Q_D(qSlicerLongitudinalPETCTFindingSettingsDialog);
 
-  return d->ReportNode.GetPointer();
+  return d->ReportNode;
 }
 
 //-----------------------------------------------------------------------------
@@ -200,7 +202,11 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   Q_ASSERT(d->LineEditName);
 
 
+  QObject::disconnect(d->ComboBoxType, SIGNAL(currentIndexChanged(int)), this,
+        SLOT(selectionChanged(int)));
   d->ComboBoxType->clear();
+  QObject::connect(d->ComboBoxType, SIGNAL(currentIndexChanged(int)), this,
+        SLOT(selectionChanged(int)));
   if (!d->UpdatingFindingTypes)
     d->LineEditName->clear();
   d->LineEditTypeName->clear();
@@ -208,12 +214,17 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   d->ButtonColor->setStyleSheet(d->ButtonColorDefaultStyleSheet);
   d->ButtonColor->setText(d->ButtonColorDefaultText);
 
-  if (d->ReportNode.GetPointer() == NULL
-      || d->ReportNode->GetColorNode() == NULL
-      || d->ReportNode->GetUserSelectedFinding() == NULL)
-    return;
 
-  if (!d->UpdatingFindingTypes)
+
+  std::cout << d->ReportNode << std::endl;
+  std::cout << d->ReportNode->GetUserSelectedFinding() << std::endl;
+  std::cout << d->ReportNode->GetFindingTypesColorTable() << std::endl;
+
+  if ( ! d->ReportNode  || ! d->ReportNode->GetUserSelectedFinding() || ! d->ReportNode->GetFindingTypesColorTable() )
+      return;
+
+
+  if (!d->UpdatingFindingTypes && d->ReportNode->GetUserSelectedFinding())
     d->LineEditName->setText(d->ReportNode->GetUserSelectedFinding()->GetName());
 
   vtkMRMLColorTableNode* colorTableNode =
@@ -391,7 +402,6 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::selectionChanged(int index)
   Q_ASSERT(d->LineEditName);
   Q_ASSERT(d->ComboBoxType);
 
-  if (d->ReportNode.GetPointer() == NULL)
     return;
 
   if (index >= d->ReportNode->GetNumberOfDefaultFindingTypes() - 1
