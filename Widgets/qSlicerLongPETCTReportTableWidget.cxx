@@ -263,7 +263,7 @@ qSlicerLongPETCTReportTableWidget::updateHorizontalHeaders()
       QDate date = QDate::fromString(
           QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),
           "yyyyMMdd");
-      QString itemText = date.toString(Qt::SystemLocaleShortDate);
+      QString itemText = date.toString(Qt::DefaultLocaleShortDate);
       QTableWidgetItem* item = new QTableWidgetItem(itemText);
 
       QFont font = item->font();
@@ -466,7 +466,7 @@ qSlicerLongPETCTReportTableWidget::updateView()
           "hhmmss");
 
       QStringList text;
-      text << date.toString(Qt::SystemLocaleLongDate);
+      text << date.toString(Qt::DefaultLocaleLongDate);
       text << time.toString(Qt::ISODate);
 
       d->LabelSelectedValue->setText(text.join("   "));

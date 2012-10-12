@@ -179,7 +179,7 @@ qSlicerLongPETCTStudySelectionTableWidget::addStudyToTable(vtkMRMLLongPETCTStudy
     checkboxItem->setCheckState(Qt::Unchecked);
 
 
-  QString dateStr = d->dateFromDICOMStr(study->GetAttribute("DICOM.StudyDate")).toString(Qt::SystemLocaleLongDate);
+  QString dateStr = d->dateFromDICOMStr(study->GetAttribute("DICOM.StudyDate")).toString(Qt::DefaultLocaleLongDate);
   QString timeStr = d->timeFromDICOMStr(study->GetAttribute("DICOM.StudyTime")).toString(Qt::ISODate);
   QString patientWeightStr = QString(study->GetAttribute("DICOM.PatientWeight")).trimmed();
   if( ! patientWeightStr.isEmpty())
