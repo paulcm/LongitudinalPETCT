@@ -48,7 +48,7 @@ vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
   segmentationModifiedForwarder->SetTarget(this);
 
   this->ObservedEvents = vtkSmartPointer<vtkIntArray>::New();
-  this->ObservedEvents->InsertNextValue(vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyUpdatedEvent);
+  this->ObservedEvents->InsertNextValue(vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent);
 }
 
 //----------------------------------------------------------------------------
@@ -196,11 +196,12 @@ void
 vtkMRMLLongitudinalPETCTFindingNode::ProcessMRMLEvents(vtkObject *caller,
     unsigned long event, void *callData)
 {
+  Superclass::ProcessMRMLEvents(caller, event, callData);
+
   vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(caller);
-  if (seg && event == vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyUpdatedEvent)
+  if (seg && event == vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent)
     this->UpdateSegmentationModelHierarchyParent(seg);
 
-  Superclass::ProcessMRMLEvents(caller, event, callData);
 }
 
 
