@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 2.8.7)
 
 #-----------------------------------------------------------------------------
 if(NOT Slicer_SOURCE_DIR)
-  set(EXTENSION_NAME LongPETCT)
+  set(EXTENSION_NAME LongitudinalPETCT)
   set(EXTENSION_HOMEPAGE "http://www.slicer.org/slicerWiki/index.php/Documentation/4.1/Extensions/LongPETCT")
   set(EXTENSION_CATEGORY "Examples")
-  set(EXTENSION_CONTRIBUTORS "Jean-Christophe Fillion-Robin (Kitware)")
+  set(EXTENSION_CONTRIBUTORS "Paul Mercea (University of Heidelberg), Andriy Fedorov(Surgical Planning Lab)")
   set(EXTENSION_DESCRIPTION "This is an example of extension bundling a scripted loadable module")
   set(EXTENSION_ICONURL "http://viewvc.slicer.org/viewvc.cgi/Slicer4/trunk/Extensions/Testing/LongPETCT/Resources/Icons/LongPETCT.png?revision=19437&view=co")
   set(EXTENSION_SCREENSHOTURLS "http://wiki.slicer.org/slicerWiki/images/e/e2/Slicer-r19441-LongPETCT-screenshot.png")
 endif()
 
 #-----------------------------------------------------------------------------
-set(MODULE_NAME LongPETCT)
+set(MODULE_NAME LongitudinalPETCT)
 set(MODULE_TITLE ${MODULE_NAME})
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
@@ -42,15 +42,15 @@ set(MODULE_INCLUDE_DIRECTORIES
   )
 
 set(MODULE_SRCS
-  qSlicerLongPETCTModule.cxx
-  qSlicerLongPETCTModule.h
-  qSlicerLongPETCTModuleWidget.cxx
-  qSlicerLongPETCTModuleWidget.h
+  qSlicerLongitudinalPETCTModule.cxx
+  qSlicerLongitudinalPETCTModule.h
+  qSlicerLongitudinalPETCTModuleWidget.cxx
+  qSlicerLongitudinalPETCTModuleWidget.h
   )
 
 set(MODULE_MOC_SRCS
-  qSlicerLongPETCTModule.h
-  qSlicerLongPETCTModuleWidget.h
+  qSlicerLongitudinalPETCTModule.h
+  qSlicerLongitudinalPETCTModuleWidget.h
   )  
   
 #-----------------------------------------------------------------------------  

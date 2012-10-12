@@ -1,16 +1,16 @@
 
 SET(KIT_PYTHON_SCRIPTS
-  qSlicerLongPETCTModuleWidget.py
-  SlicerLongPETCTModuleViewHelper.py
-  SlicerLongPETCTModuleSegmentationHelper.py
-  DICOMPetCtStudyPlugin.py
+  qSlicerLongitudinalPETCTModuleWidget.py
+  SlicerLongitudinalPETCTModuleViewHelper.py
+  SlicerLongitudinalPETCTModuleSegmentationHelper.py
+  DICOMLongitudinalPETCTPlugin.py
   )
 
 SET(KIT_PYTHON_RESOURCES
   )
 
 ctkMacroCompilePythonScript(
-  TARGET_NAME qSlicerLongPETCTModuleWidget
+  TARGET_NAME qSlicerLongitudinalPETCTModuleWidget
   SCRIPTS "${KIT_PYTHON_SCRIPTS}"
   RESOURCES "${KIT_PYTHON_RESOURCES}"
   DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_PYTHON_LIB_DIR}
@@ -19,11 +19,11 @@ ctkMacroCompilePythonScript(
   )
 
 SET(KIT_PYTHON_SCRIPTS
-  DICOMPetCtStudyPlugin.py
+  DICOMLongitudinalPETCTPlugin.py
   )
   
 ctkMacroCompilePythonScript(
-  TARGET_NAME DICOMPetCtStudyPlugin
+  TARGET_NAME DICOMLongitudinalPETCTPlugin
   SCRIPTS "${KIT_PYTHON_SCRIPTS}"
   RESOURCES "${KIT_PYTHON_RESOURCES}"
   DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
