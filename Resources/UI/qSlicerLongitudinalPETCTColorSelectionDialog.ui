@@ -68,5 +68,38 @@
  <resources>
   <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>ButtonSelect</sender>
+   <signal>clicked()</signal>
+   <receiver>qSlicerLongitudinalPETCTColorSelectionDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>284</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>158</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ListWidgetColors</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>qSlicerLongitudinalPETCTColorSelectionDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>158</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

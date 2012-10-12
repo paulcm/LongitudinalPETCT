@@ -140,8 +140,8 @@ qMRMLNodeComboBox* qSlicerLongitudinalPETCTFindingSelectionWidget::mrmlNodeCombo
 
 
 //-----------------------------------------------------------------------------
-void qSlicerLongitudinalPETCTFindingSelectionWidget
-::updateView()
+void
+qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
 {
   Q_D(qSlicerLongitudinalPETCTFindingSelectionWidget);
   Q_ASSERT(d->MRMLNodeComboBoxFinding);
@@ -149,9 +149,11 @@ void qSlicerLongitudinalPETCTFindingSelectionWidget
   Q_ASSERT(d->CheckBoxROIVisiblity);
   Q_ASSERT(d->FormLayout);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding = vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(d->MRMLNodeComboBoxFinding->currentNode());
+  vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
+      vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(
+          d->MRMLNodeComboBoxFinding->currentNode());
 
-  if(!finding || (finding && finding->GetSegmentationROI()))
+  if (!finding || (finding && finding->GetSegmentationROI()))
     d->ButtonPlaceROI->setDisabled(true);
 
   else
