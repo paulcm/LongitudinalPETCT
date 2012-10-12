@@ -583,6 +583,19 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     
     return col.name()
 
-                 
+  @staticmethod
+  def removeModelHierarchyAndChildModelNodesFromScene(modelHierarchyNode):
+    if modelHierarchyNode:
+      cmn = vtk.vtkCollection()
+      
+      modelHierarchyNode.GetChildrenModelNodes(cmn)
+      
+      for i in range(cmn.GetNumberOfItems()):
+        model = cmn.GetItemAsObject(i)
+        
+        if model.IsA('vtkMRMLModelNode'):
+          slicer.mrmlScene.RemoveNode(model)
+          
+      slicer.mrmlScene.RemoveNode(modelHierarchyNode)                   
     
     #return '#%02X%02X%02X' % (r,g,b)
