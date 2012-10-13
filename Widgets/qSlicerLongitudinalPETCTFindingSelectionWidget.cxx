@@ -153,7 +153,7 @@ qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
       vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(
           d->MRMLNodeComboBoxFinding->currentNode());
 
-  if (!finding || (finding && finding->GetSegmentationROI()))
+  if (!finding || (finding && finding->GetSegmentationROINode()))
     d->ButtonPlaceROI->setDisabled(true);
 
   else
@@ -178,7 +178,7 @@ void qSlicerLongitudinalPETCTFindingSelectionWidget
   if(d->ReportNode)
     {
       if(d->ReportNode->GetUserSelectedFinding())
-          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFinding()->GetSegmentationROI()));
+          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFinding()->GetSegmentationROINode()));
     }
   }
 

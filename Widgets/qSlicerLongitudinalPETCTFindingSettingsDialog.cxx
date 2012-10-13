@@ -245,7 +245,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
     }
 
   bool findingHasSegmentation =
-      d->ReportNode->GetUserSelectedFinding()->GetSegmentationsCount() > 0;
+      d->ReportNode->GetUserSelectedFinding()->GetNumberOfSegmentations() > 0;
 
   d->ComboBoxType->setDisabled(findingHasSegmentation);
 
