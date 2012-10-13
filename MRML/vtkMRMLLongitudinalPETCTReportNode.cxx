@@ -489,7 +489,7 @@ bool vtkMRMLLongitudinalPETCTReportNode::IsStudyInUse(const vtkMRMLLongitudinalP
 {
   for(unsigned int i=0; i < this->Findings.size(); ++i)
     {
-      if(study && this->GetFinding(i)->GetSegmentationForStudy(const_cast<vtkMRMLLongitudinalPETCTStudyNode*>(study)->GetID()) != NULL)
+      if(study && this->GetFinding(i)->GetSegmentationMappedByStudyNodeID(const_cast<vtkMRMLLongitudinalPETCTStudyNode*>(study)->GetID()) != NULL)
         return true;
     }
 
