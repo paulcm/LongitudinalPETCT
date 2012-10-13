@@ -68,7 +68,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   virtual void Copy(vtkMRMLNode *node);
 
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() {return "Longitudinal PET/CT Study";};
+  virtual const char* GetNodeTagName() {return "PETCT_Study";};
 
   vtkSetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
   vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
