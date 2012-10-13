@@ -211,7 +211,7 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetROIxyz(double roiXYZ[3])
   this->ROIxyz[1] = roiXYZ[1];
   this->ROIxyz[2] = roiXYZ[2];
 
-  this->InvokeEvent(vtkCommand::ModifiedEvent);
+  this->Modified();
 }
 
 //----------------------------------------------------------------------------
@@ -230,7 +230,7 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetROIRadius(double roiRadius[3])
   this->ROIRadius[1] = roiRadius[1];
   this->ROIRadius[2] = roiRadius[2];
 
-  this->InvokeEvent(vtkCommand::ModifiedEvent);
+  this->Modified();
 }
 
 //----------------------------------------------------------------------------
@@ -417,7 +417,7 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetModelVisible(bool visible)
         }
     }
 
-  this->InvokeEvent(vtkCommand::ModifiedEvent);
+  this->Modified();
 }
 
 
