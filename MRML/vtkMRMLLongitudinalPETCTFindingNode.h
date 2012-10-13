@@ -65,6 +65,8 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   vtkTypeMacro(vtkMRMLLongitudinalPETCTFindingNode,vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  typedef std::map<std::string,std::string> StudyIDSegIDMap;
+
   virtual vtkMRMLNode* CreateNodeInstance();
 
   /// Set node attributes
@@ -80,9 +82,9 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   virtual const char* GetNodeTagName() {return "PETCT_Finding";};
 
 
-  bool AddSegmentationNodeIDForStudy(const char* studyNodeID, const char* segmentationNodeID);
-  vtkMRMLLongitudinalPETCTSegmentationNode* RemoveSegmentationNodeIDForStudy(const char* studyNodeID);
-  vtkMRMLLongitudinalPETCTSegmentationNode* GetSegmentationForStudy(const char* studyNodeID);
+  bool MapStudyNodeIDToSegmentationNodeID(const char* studyNodeID, const char* segmentationNodeID);
+  vtkMRMLLongitudinalPETCTSegmentationNode* RemoveStudyNodeIDToSegmentationNodeIDMap(const char* studyNodeID);
+  vtkMRMLLongitudinalPETCTSegmentationNode* GetSegmentationMappedByStudyNodeID(const char* studyNodeID);
 
   vtkSetStringMacro(TypeName);
   vtkGetStringMacro(TypeName);
@@ -98,6 +100,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
 
   vtkGetMacro(SegmentationROINode, vtkMRMLAnnotationROINode*);
 
+  const StudyIDSegIDMap& GetStudyNodeIDToSegmentationNodeIDMap() const;
 
   void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
   void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
@@ -119,10 +122,13 @@ protected:
   vtkSetStringMacro(ModelHierarchyNodeID);
   vtkSetStringMacro(SegmentationROINodeID);
 
+  bool IsSegmentationNodeInMap(const char* segmentationNodeID);
 
   void UpdateSegmentationModelHierarchyParent(vtkMRMLLongitudinalPETCTSegmentationNode* segmentation);
 
-  std::map<std::string,std::string> StudyIDToSegmentationIDMap;
+  StudyIDSegIDMap StudyIDToSegmentationIDMap;
+
+
   //std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
 
   vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROINode;
@@ -135,6 +141,8 @@ protected:
   char* SegmentationROINodeID;
 
   vtkSmartPointer<vtkIntArray> ObservedEvents;
+
+
 
 };
 
