@@ -291,6 +291,20 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetSUVs(double max, double mean, 
   vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
       const char* labelVolumeNodeID)
   {
+
+    if(labelVolumeNodeID && this->LabelVolumeNodeID && !strcmp(labelVolumeNodeID, this->LabelVolumeNodeID))
+      return;
+
+    // first remove references and observers from old node
+    if(this->LabelVolumeNode)
+      {
+        vtkUnObserveMRMLObjectMacro(this->LabelVolumeNode);
+
+        if(this->Scene && this->Scene->IsNodeReferencingNodeID(this,this->LabelVolumeNode->GetID()))
+              this->Scene->RemoveReferencedNodeID(this->LabelVolumeNode->GetID(),this);
+      }
+
+    // than set new node
     vtkSmartPointer<vtkMRMLScalarVolumeNode> lvnode = NULL;
 
     if (this->GetScene() && labelVolumeNodeID)
@@ -305,9 +319,7 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetSUVs(double max, double mean, 
     this->AdjustModelTransformToLabelVolume();
 
     if (this->Scene)
-      {
-        this->Scene->AddReferencedNodeID(this->LabelVolumeNodeID, this);
-      }
+      this->Scene->AddReferencedNodeID(this->LabelVolumeNodeID, this);
 
   }
 
@@ -320,6 +332,19 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(co
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID)
 {
+
+  if(modelHierarchyNodeID && this->ModelHierarchyNodeID && !strcmp(modelHierarchyNodeID, this->ModelHierarchyNodeID))
+        return;
+
+      // first remove references and observers from old node
+      if(this->ModelHierarchyNode)
+        {
+          vtkUnObserveMRMLObjectMacro(this->ModelHierarchyNode);
+
+          if(this->Scene && this->Scene->IsNodeReferencingNodeID(this,this->ModelHierarchyNode->GetID()))
+                this->Scene->RemoveReferencedNodeID(this->ModelHierarchyNode->GetID(),this);
+        }
+
   vtkSmartPointer<vtkMRMLModelHierarchyNode> mhnode = NULL;
 
   if(this->GetScene() && modelHierarchyNodeID)
