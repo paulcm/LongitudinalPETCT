@@ -40,10 +40,11 @@
 
 #include <vtkSlicerLongitudinalPETCTModuleMRMLExport.h>
 
-class vtkMRMLScalarVolumeNode;
-class vtkMRMLLinearTransformNode;
-class vtkMRMLAnnotationROINode;
-class vtkMRMLVolumeRenderingDisplayNode;
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
+#include <vtkMRMLLinearTransformNode.h>
+#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLAnnotationROINode.h>
+
 
 
 /// \ingroup Slicer_QtModules_LongitudinalPETCTStudyNode
@@ -70,22 +71,48 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "PETCT_Study";};
 
-  vtkSetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkSetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkSetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
-  vtkSetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkSetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
 
-  //vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
+  void SetAndObservePETVolumeNodeID(const char* petVolumeNodeID);
+  void SetAndObservePETVolumeNodeID(const std::string& petVolumeNodeID);
+  vtkGetStringMacro(PETVolumeNodeID);
 
-  void SetSegmentationROI(vtkMRMLAnnotationROINode* roi);
+  vtkGetMacro(PETVolumeNode,vtkMRMLScalarVolumeNode*);
 
-  vtkGetMacro(PETVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkGetMacro(CTVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkGetMacro(CenteringTransform, vtkMRMLLinearTransformNode*);
-  vtkGetMacro(PETLabelVolumeNode, vtkMRMLScalarVolumeNode*);
-  vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
+
+  void SetAndObserveCTVolumeNodeID(const char* ctVolumeNodeID);
+  void SetAndObserveCTVolumeNodeID(const std::string& ctVolumeNodeID);
+  vtkGetStringMacro(CTVolumeNodeID);
+
+  vtkGetMacro(CTVolumeNode,vtkMRMLScalarVolumeNode*);
+
+
+  void SetAndObservePETLabelVolumeNodeID(const char* petLabelVolumeNodeID);
+  void SetAndObservePETLabelVolumeNodeID(const std::string& petLabelVolumeNodeID);
+  vtkGetStringMacro(PETLabelVolumeNodeID);
+
+  vtkGetMacro(PETLabelVolumeNode,vtkMRMLScalarVolumeNode*);
+
+
+  void SetAndObserveSegmentationROINodeID(const char* segmentationROINodeID);
+  void SetAndObserveSegmentationROINodeID(const std::string& segmentationROINodeID);
+  vtkGetStringMacro(SegmentationROINodeID);
+
+  vtkGetMacro(SegmentationROINode,vtkMRMLAnnotationROINode*);
+
+
+  void SetAndObserveCenteringTransformNodeID(const char* centeringTransformNodeID);
+  void SetAndObserveCenteringTransformNodeID(const std::string& centeringTransformNodeID);
+  vtkGetStringMacro(CenteringTransformNodeID);
+
+  vtkGetMacro(CenteringTransformNode,vtkMRMLLinearTransformNode*);
+
+
+  void SetAndObserveVolumeRenderingDisplayNodeID(const char* volumeRenderingDisplayNodeID);
+  void SetAndObserveVolumeRenderingDisplayNodeID(const std::string& volumeRenderingDisplayNodeID);
+  vtkGetStringMacro(VolumeRenderingDisplayNodeID);
+
   vtkGetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
+
 
   vtkBooleanMacro(SelectedForSegmentation, bool);
   vtkGetMacro(SelectedForSegmentation, bool);
@@ -99,7 +126,11 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
 
   void SetCenteredVolumes(bool centered);
 
-  void Initialize();
+
+  void SetScene(vtkMRMLScene* scene);
+  //void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
+  void UpdateReferences();
+  void UpdateReferenceID(const char *oldID, const char *newID);
 
 protected:
   vtkMRMLLongitudinalPETCTStudyNode();
@@ -109,19 +140,34 @@ protected:
 
   void ObserveCenteringTransform(bool observe);
 
+  vtkSetStringMacro(PETVolumeNodeID);
+  vtkSetStringMacro(CTVolumeNodeID);
+  vtkSetStringMacro(PETLabelVolumeNodeID);
+  vtkSetStringMacro(CenteringTransformNodeID);
+  vtkSetStringMacro(SegmentationROINodeID);
+  vtkSetStringMacro(VolumeRenderingDisplayNodeID);
+
+
   bool SelectedForSegmentation;
   bool SelectedForAnalysis;
   bool CenteredVolumes;
 
-  vtkMRMLScalarVolumeNode* PETVolumeNode;
-  vtkMRMLScalarVolumeNode* CTVolumeNode;
+  char* PETVolumeNodeID;
+  char* CTVolumeNodeID;
+  char* PETLabelVolumeNodeID;
+  char* CenteringTransformNodeID;
+  char* SegmentationROINodeID;
+  char* VolumeRenderingDisplayNodeID;
 
-  vtkMRMLScalarVolumeNode* PETLabelVolumeNode;
-  vtkMRMLLinearTransformNode* CenteringTransform;
 
-  vtkMRMLAnnotationROINode* SegmentationROI;
+  vtkSmartPointer<vtkMRMLScalarVolumeNode> PETVolumeNode;
+  vtkSmartPointer<vtkMRMLScalarVolumeNode> CTVolumeNode;
 
-  vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;
+  vtkSmartPointer<vtkMRMLScalarVolumeNode> PETLabelVolumeNode;
+  vtkSmartPointer<vtkMRMLLinearTransformNode> CenteringTransformNode;
+
+  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROINode;
+  vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode> VolumeRenderingDisplayNode;
 };
 
 #endif
