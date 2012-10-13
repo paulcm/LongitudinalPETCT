@@ -77,34 +77,37 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   virtual void Copy(vtkMRMLNode *node);
 
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() {return "PET/CT Finding";};
+  virtual const char* GetNodeTagName() {return "PETCT_Finding";};
 
 
-  bool AddSegmentationForStudy(vtkMRMLLongitudinalPETCTStudyNode* study, vtkMRMLLongitudinalPETCTSegmentationNode* segmentation);
-  vtkMRMLLongitudinalPETCTSegmentationNode* RemoveSegmentationForStudy(const vtkMRMLLongitudinalPETCTStudyNode* study);
+  bool AddSegmentationNodeIDForStudy(const char* studyNodeID, const char* segmentationNodeID);
+  vtkMRMLLongitudinalPETCTSegmentationNode* RemoveSegmentationNodeIDForStudy(const char* studyNodeID);
+  vtkMRMLLongitudinalPETCTSegmentationNode* GetSegmentationForStudy(const char* studyNodeID);
 
-  vtkMRMLLongitudinalPETCTSegmentationNode* GetSegmentationForStudy(const vtkMRMLLongitudinalPETCTStudyNode* study);
+  vtkSetStringMacro(TypeName);
+  vtkGetStringMacro(TypeName);
 
-  vtkGetMacro(TypeName, const char*);
-  vtkSetMacro(TypeName, const char*);
+  vtkGetMacro(ColorID, int);
+  vtkSetMacro(ColorID, int);
+
+  int GetNumberOfSegmentations();
+
+  void SetAndObserveSegmentationROINodeID(const char* segmentationROINodeID);
+  void SetAndObserveSegmentationROINodeID(const std::string& segmentationROINodeID);
+  vtkGetStringMacro(SegmentationROINodeID);
+
+  vtkGetMacro(SegmentationROINode, vtkMRMLAnnotationROINode*);
 
 
-  int GetSegmentationsCount();
+  void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
+  void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
+  vtkGetStringMacro(ModelHierarchyNodeID);
 
-  //vtkGetMacro(ColorID, int);
-  //vtkSetMacro(ColorID, int);
-
-  int GetColorID();
-  void SetColorID(int id);
-
-  vtkGetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
-  vtkSetMacro(SegmentationROI,vtkMRMLAnnotationROINode*);
-
-  vtkGetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
-  vtkSetMacro(ModelHierarchyNode,vtkMRMLModelHierarchyNode*);
+  vtkGetMacro(ModelHierarchyNode, vtkMRMLModelHierarchyNode*);
 
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
-
+  void UpdateReferences();
+  void UpdateReferenceID(const char *oldID, const char *newID);
   void SetScene(vtkMRMLScene* scene);
 
 protected:
@@ -113,20 +116,25 @@ protected:
   vtkMRMLLongitudinalPETCTFindingNode(const vtkMRMLLongitudinalPETCTFindingNode&);
   void operator=(const vtkMRMLLongitudinalPETCTFindingNode&);
 
+  vtkSetStringMacro(ModelHierarchyNodeID);
+  vtkSetStringMacro(SegmentationROINodeID);
+
 
   void UpdateSegmentationModelHierarchyParent(vtkMRMLLongitudinalPETCTSegmentationNode* segmentation);
 
-  std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
+  std::map<std::string,std::string> StudyIDToSegmentationIDMap;
+  //std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
 
-  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROI;
+  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROINode;
   vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
 
-  const char* TypeName;
+  char* TypeName;
   int ColorID;
 
-  vtkSmartPointer<vtkIntArray> ObservedEvents;
+  char* ModelHierarchyNodeID;
+  char* SegmentationROINodeID;
 
-  vtkSmartPointer<vtkEventForwarderCommand> segmentationModifiedForwarder;
+  vtkSmartPointer<vtkIntArray> ObservedEvents;
 
 };
 

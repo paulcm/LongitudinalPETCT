@@ -27,7 +27,6 @@ Version:   $Revision: 1.2 $
 #include <vtkNew.h>
 #include <vtkMRMLScalarVolumeNode.h>
 
-#include <vtkEventForwarderCommand.h>
 // STD includes
 
 
@@ -38,14 +37,14 @@ vtkMRMLNodeNewMacro(vtkMRMLLongitudinalPETCTFindingNode);
 vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->TypeName = "";
+  this->TypeName = NULL;
   this->ColorID = -1;
-  this->SegmentationROI = NULL;
 
-  this->ModelHierarchyNode = vtkSmartPointer<vtkMRMLModelHierarchyNode>::New();
+  this->SegmentationROINode = NULL;
+  this->SegmentationROINodeID = NULL;
 
-  this->segmentationModifiedForwarder = vtkSmartPointer<vtkEventForwarderCommand>::New();
-  segmentationModifiedForwarder->SetTarget(this);
+  this->ModelHierarchyNode = NULL;
+  this->ModelHierarchyNodeID = NULL;
 
   this->ObservedEvents = vtkSmartPointer<vtkIntArray>::New();
   this->ObservedEvents->InsertNextValue(vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent);
@@ -54,11 +53,7 @@ vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 {
-  this->SegmentationROI = NULL;
-
-  if(this->Scene && this->ModelHierarchyNode && this->Scene->GetNodeByID(this->ModelHierarchyNode->GetID()))
-    this->Scene->RemoveNode(this->ModelHierarchyNode);
-
+  this->SegmentationROINode = NULL;
   this->ModelHierarchyNode = NULL;
 }
 
@@ -95,23 +90,124 @@ void vtkMRMLLongitudinalPETCTFindingNode::Copy(vtkMRMLNode *anode)
 void vtkMRMLLongitudinalPETCTFindingNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os,indent);
+
+  os << indent << "ColorID: " << this->ColorID << "\n";
+  os << indent << "TypeName: " << (this->TypeName ? this->TypeName : "(none)")<< "\n";
+  os << indent << "SegmentationROINodeID: " << (this->SegmentationROINodeID ? this->SegmentationROINodeID : "(none)") << "\n";
+  os << indent << "ModelHierarchyNodeID: " << (this->ModelHierarchyNodeID ? this->ModelHierarchyNodeID : "(none)") << "\n";
+  os << indent << "StudyNodeIDs to SegmentationNodeIDs mapping: "<< (this->GetNumberOfSegmentations() == 0 ? "(none)" : "" ) <<"\n";
+
+  std::map<std::string,std::string>::iterator it;
+  for ( it=this->StudyIDToSegmentationIDMap.begin() ; it != this->StudyIDToSegmentationIDMap.end(); it++ )
+    os << indent << (*it).first.c_str() << " => " << (*it).second.c_str() << "\n";
+
+}
+
+//----------------------------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
+    const char* segmentationROINodeID)
+{
+
+  if (segmentationROINodeID && this->SegmentationROINodeID
+      && !strcmp(segmentationROINodeID, this->SegmentationROINodeID))
+    return;
+
+  // first remove references and observers from old node
+  if (this->SegmentationROINode)
+    {
+      vtkUnObserveMRMLObjectMacro(this->SegmentationROINode);
+
+      if (this->Scene
+          && this->Scene->IsNodeReferencingNodeID(this,
+              this->SegmentationROINode->GetID()))
+        this->Scene->RemoveReferencedNodeID(this->SegmentationROINode->GetID(),
+            this);
+    }
+
+  vtkSmartPointer<vtkMRMLAnnotationROINode> roiNode = NULL;
+
+  if (this->GetScene() && segmentationROINodeID)
+    {
+      roiNode = vtkMRMLAnnotationROINode::SafeDownCast(
+          this->GetScene()->GetNodeByID(segmentationROINodeID));
+    }
+
+  vtkSetAndObserveMRMLObjectMacro(this->SegmentationROINode, roiNode);
+  this->SetSegmentationROINodeID(segmentationROINodeID);
+
+  if (this->Scene && this->SegmentationROINode)
+    this->Scene->AddReferencedNodeID(this->SegmentationROINodeID, this);
 }
 
 
 //----------------------------------------------------------------------------
-bool vtkMRMLLongitudinalPETCTFindingNode::AddSegmentationForStudy(vtkMRMLLongitudinalPETCTStudyNode* study, vtkMRMLLongitudinalPETCTSegmentationNode* segmentation)
+void
+vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
+    const std::string& segmentationROINodeID)
 {
-  bool ok = this->StudyToSegmentationMap.insert(std::make_pair(study,segmentation)).second;
+  this->SetAndObserveSegmentationROINodeID(segmentationROINodeID.c_str());
+}
 
-  if(ok && segmentationModifiedForwarder != NULL)
+
+//----------------------------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveModelHierarchyNodeID(
+    const char* modelHierarchyNodeID)
+{
+
+  if (modelHierarchyNodeID && this->ModelHierarchyNodeID
+      && !strcmp(modelHierarchyNodeID, this->ModelHierarchyNodeID))
+    return;
+
+  // first remove references and observers from old node
+  if (this->ModelHierarchyNode)
     {
-      vtkObserveMRMLObjectEventsMacro(segmentation, this->ObservedEvents);
-      segmentation->AddObserver(vtkCommand::ModifiedEvent,this->segmentationModifiedForwarder);
+      vtkUnObserveMRMLObjectMacro(this->ModelHierarchyNode);
 
-      this->UpdateSegmentationModelHierarchyParent(segmentation);
-
+      if (this->Scene
+          && this->Scene->IsNodeReferencingNodeID(this,
+              this->ModelHierarchyNode->GetID()))
+        this->Scene->RemoveReferencedNodeID(this->ModelHierarchyNode->GetID(),
+            this);
     }
 
+  vtkSmartPointer<vtkMRMLModelHierarchyNode> mhnode = NULL;
+
+  if (this->GetScene() && modelHierarchyNodeID)
+    {
+      mhnode = vtkMRMLModelHierarchyNode::SafeDownCast(
+          this->GetScene()->GetNodeByID(modelHierarchyNodeID));
+    }
+
+  vtkSetAndObserveMRMLObjectMacro(this->ModelHierarchyNode, mhnode);
+  this->SetModelHierarchyNodeID(modelHierarchyNodeID);
+
+  if (this->Scene && this->ModelHierarchyNode)
+    this->Scene->AddReferencedNodeID(this->ModelHierarchyNodeID, this);
+}
+
+
+//----------------------------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveModelHierarchyNodeID(
+    const std::string& modelHierarchyNodeID)
+{
+  this->SetAndObserveModelHierarchyNodeID(modelHierarchyNodeID.c_str());
+}
+
+//----------------------------------------------------------------------------
+bool
+vtkMRMLLongitudinalPETCTFindingNode::AddSegmentationNodeIDForStudy(
+    const char* studyNodeID, const char* segmentationNodeID)
+{
+  bool ok = this->StudyIDToSegmentationIDMap.insert(
+      std::make_pair(studyNodeID, segmentationNodeID)).second;
+
+  if (ok && this->Scene)
+    {
+       vtkObserveMRMLObjectMacro(this->Scene->GetNodeByID(segmentationNodeID));
+    }
 
   this->InvokeEvent(vtkCommand::ModifiedEvent);
 
@@ -119,19 +215,24 @@ bool vtkMRMLLongitudinalPETCTFindingNode::AddSegmentationForStudy(vtkMRMLLongitu
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::RemoveSegmentationForStudy(const vtkMRMLLongitudinalPETCTStudyNode* study)
+vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::RemoveSegmentationNodeIDForStudy(const char* studyNodeID)
 {
-  vtkMRMLLongitudinalPETCTSegmentationNode* segmentationToRemove = this->GetSegmentationForStudy(study);
+  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentationToRemove = this->GetSegmentationForStudy(studyNodeID);
 
   int removed = 0;
 
-  if( segmentationToRemove != NULL )
+  if( segmentationToRemove )
     {
-      removed = this->StudyToSegmentationMap.erase(const_cast<vtkMRMLLongitudinalPETCTStudyNode*>(study));
+      removed = this->StudyIDToSegmentationIDMap.erase(studyNodeID);
     }
 
   if(removed > 0)
-    this->InvokeEvent(vtkCommand::ModifiedEvent);
+    {
+      if(this->Scene)
+        vtkUnObserveMRMLObjectMacro(segmentationToRemove);
+
+      this->InvokeEvent(vtkCommand::ModifiedEvent);
+    }
   else
     segmentationToRemove = NULL;
 
@@ -141,54 +242,86 @@ vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::R
 
 
 //----------------------------------------------------------------------------
-vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::GetSegmentationForStudy(const vtkMRMLLongitudinalPETCTStudyNode* study)
+vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::GetSegmentationForStudy(const char* studyNodeID)
 {
-  vtkMRMLLongitudinalPETCTSegmentationNode* segmentation = NULL;
+  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentation = NULL;
 
-  if(this->StudyToSegmentationMap.find(const_cast<vtkMRMLLongitudinalPETCTStudyNode*>(study)) != this->StudyToSegmentationMap.end())
+  if(this->StudyIDToSegmentationIDMap.find(studyNodeID) != this->StudyIDToSegmentationIDMap.end())
     {
-      segmentation = this->StudyToSegmentationMap[const_cast<vtkMRMLLongitudinalPETCTStudyNode*>(study)];
+      std::string segmentationID = this->StudyIDToSegmentationIDMap[studyNodeID];
+      if(this->Scene && !segmentationID.empty())
+        segmentation = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(this->Scene->GetNodeByID(segmentationID.c_str()));
     }
 
   return segmentation;
 }
 
-//----------------------------------------------------------------------------
-int vtkMRMLLongitudinalPETCTFindingNode::GetColorID()
-{
-  return this->ColorID;
-}
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTFindingNode::SetColorID(int id)
+int vtkMRMLLongitudinalPETCTFindingNode::GetNumberOfSegmentations()
 {
-  this->ColorID = id;
-  this->InvokeEvent(vtkCommand::ModifiedEvent);
-}
-
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongitudinalPETCTFindingNode::GetSegmentationsCount()
-{
-  return this->StudyToSegmentationMap.size();
+  return this->StudyIDToSegmentationIDMap.size();
 }
 
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTFindingNode::SetScene(vtkMRMLScene* scene)
 {
-  if(scene && this->ModelHierarchyNode && ! scene->GetNodeByID(this->ModelHierarchyNode->GetID()))
-    scene->AddNode(this->ModelHierarchyNode);
-
   Superclass::SetScene(scene);
+
+  if(this->Scene && this->Scene->GetNodeByID(this->ModelHierarchyNodeID))
+      this->SetAndObserveModelHierarchyNodeID(this->ModelHierarchyNodeID);
+
+  if(this->Scene && this->Scene->GetNodeByID(this->SegmentationROINodeID))
+        this->SetAndObserveSegmentationROINodeID(this->SegmentationROINodeID);
+
 }
 
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTFindingNode::UpdateSegmentationModelHierarchyParent(vtkMRMLLongitudinalPETCTSegmentationNode* segmentation)
+void
+vtkMRMLLongitudinalPETCTFindingNode::UpdateSegmentationModelHierarchyParent(
+    vtkMRMLLongitudinalPETCTSegmentationNode* segmentation)
 {
-  if(segmentation && segmentation->GetModelHierarchyNode() && this->ModelHierarchyNode)
-    segmentation->GetModelHierarchyNode()->SetParentNodeID(this->GetModelHierarchyNode()->GetID());
+  if (segmentation && segmentation->GetModelHierarchyNode())
+    {
+      if (segmentation->GetModelHierarchyNode() != this->ModelHierarchyNode)
+        {
+          segmentation->GetModelHierarchyNode()->SetParentNodeID(
+              this->GetModelHierarchyNode()->GetID());
+          this->InvokeEvent(vtkCommand::ModifiedEvent);
+        }
+    }
+
+}
+
+//----------------------------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTFindingNode::UpdateReferences()
+{
+  this->Superclass::UpdateReferences();
+
+  if(this->Scene)
+    {
+      if(this->SegmentationROINodeID && this->Scene->GetNodeByID(this->SegmentationROINodeID) == NULL)
+        this->SetAndObserveSegmentationROINodeID(NULL);
+
+      else if(this->ModelHierarchyNodeID && this->GetScene()->GetNodeByID(this->ModelHierarchyNodeID) == NULL)
+        this->SetAndObserveModelHierarchyNodeID(NULL);
+    }
+}
+
+//----------------------------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTFindingNode::UpdateReferenceID(const char *oldID, const char *newID)
+{
+  this->Superclass::UpdateReferenceID(oldID,newID);
+
+  if(this->SegmentationROINode && !strcmp(oldID,this->SegmentationROINodeID))
+    this->SetAndObserveSegmentationROINodeID(newID);
+
+  else if(this->ModelHierarchyNode && !strcmp(oldID,this->ModelHierarchyNodeID))
+    this->SetAndObserveModelHierarchyNodeID(newID);
 }
 
 //----------------------------------------------------------------------------
@@ -198,10 +331,16 @@ vtkMRMLLongitudinalPETCTFindingNode::ProcessMRMLEvents(vtkObject *caller,
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(caller);
-  if (seg && event == vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent)
-    this->UpdateSegmentationModelHierarchyParent(seg);
+  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segCaller = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(caller);
 
+  if(segCaller)
+    {
+      if(event == vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent)
+        this->UpdateSegmentationModelHierarchyParent(segCaller);
+
+      else if(event == vtkCommand::ModifiedEvent)
+        this->InvokeEvent(vtkCommand::ModifiedEvent); // forwarding Modified
+    }
 }
 
 
