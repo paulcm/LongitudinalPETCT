@@ -303,7 +303,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
           //qSlicerLongitudinalPETCTSegmentationTableCellWidget* cellWidget = qobject_cast<qSlicerLongitudinalPETCTSegmentationTableCellWidget*>(this->cellWidget(i,j));
           ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(d->TableReport->cellWidget(i,j));
 
-          if (finding->GetSegmentationForStudy(
+          if (finding->GetSegmentationMappedByStudyNodeID(
               d->ReportNode->GetSelectedStudy(j)->GetID()) != NULL)
             {
               if (!cellWidget)
@@ -406,7 +406,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
 
               vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentation = NULL;
               if(study)
-                segmentation = finding->GetSegmentationForStudy(study->GetID());
+                segmentation = finding->GetSegmentationMappedByStudyNodeID(study->GetID());
 
               switch (this->SelMode)
                 {
@@ -573,7 +573,7 @@ void qSlicerLongitudinalPETCTReportTableWidget
                           vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = NULL;
 
                           if(study)
-                            seg = finding->GetSegmentationForStudy(study->GetID());
+                            seg = finding->GetSegmentationMappedByStudyNodeID(study->GetID());
 
                           if(seg)
                             seg->SetModelVisible(toggled);
