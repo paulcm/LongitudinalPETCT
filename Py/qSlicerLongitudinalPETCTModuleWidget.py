@@ -264,7 +264,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentFinding = self.getCurrentFinding()
     
     if (currentStudy != None) & (currentFinding != None):
-      currentSegmentation = currentFinding.GetSegmentationForStudy(currentStudy.GetID())
+      currentSegmentation = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
           
       if currentSegmentation:
         xyz = [0.,0.,0.]
@@ -603,7 +603,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
      
       self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
       
-      studySeg = currentFinding.GetSegmentationForStudy(currentStudy.GetID())
+      studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
       
       if studySeg != None:
         SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
@@ -630,7 +630,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
           
       pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
-      studySeg = currentFinding.GetSegmentationForStudy(currentStudy.GetID())
+      studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
 
       if studySeg:
         #self.calculateSUVs()
@@ -687,7 +687,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
      
       studySeg = None
      
-      if currentFinding.GetSegmentationForStudy(currentStudy.GetID()) == None:
+      if currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID()) == None:
         a = time.time()
         studySeg = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTSegmentationNode')
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
@@ -699,11 +699,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
         studySeg.SetAndObserveModelHierarchyNode(mh.GetID())
         studySeg.SetAndObserveLabelVolumeNodeID(currentStudy.GetPETLabelVolumeNode().GetID())
         
-        currentFinding.AddSegmentationNodeIDForStudy(currentStudy.GetID(),studySeg.GetID())
+        currentFinding.MapStudyNodeIDToSegmentationNodeID(currentStudy.GetID(),studySeg.GetID())
         b = time.time()
         print "DURATION OF SEGMENTATION CREATION: " + str(b-a)+  " s" 
       else:
-        studySeg = currentFinding.GetSegmentationForStudy(currentStudy.GetID())        
+        studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())        
       
       a = time.time()
       SegmentationHelper.removeSegmentationFromVolume(studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())       
@@ -723,7 +723,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         
         
       if SegmentationHelper.containsSegmentation(studySeg.GetLabelVolumeNode(),currentFinding.GetColorID()) == False:
-        currentFinding.RemoveSegmentationNodeIDForStudy(currentStudy.GetID())
+        currentFinding.RemoveStudyNodeIDToSegmentationNodeIDMap(currentStudy.GetID())
         
         mh = studySeg.GetModelHierarchyNode()
         if mh:
@@ -848,10 +848,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       for i in range(currentReport.GetSelectedStudiesCount()):
         study = currentReport.GetStudy(i)
         
-        seg = findingNode.GetSegmentationForStudy(study.GetID())
+        seg = findingNode.GetSegmentationMappedByStudyNodeID(study.GetID())
         if seg:
           SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
-          findingNode.RemoveSegmentationNodeIDForStudy(study.GetID())
+          findingNode.RemoveStudyNodeIDToSegmentationNodeIDMap(study.GetID())
           slicer.mrmlScene.RemoveNode(seg)
           study.SetSegmentationROI(None)
           
@@ -956,7 +956,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           study = currentReport.GetSelectedStudy(i)
           
           if study:
-            seg = findingNode.GetSegmentationForStudy(study.GetID())
+            seg = findingNode.GetSegmentationMappedByStudyNodeID(study.GetID())
             petVolume = study.GetPETVolumeNode()
             
             if (seg != None) & (petVolume != None):
@@ -970,7 +970,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if (currentStudy != None) & (currentFinding != None):
      
-      currentSeg = currentFinding.GetSegmentationForStudy(currentStudy.GetID())
+      currentSeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
       
       if currentSeg:
         labelVolume = currentSeg.GetLabelVolumeNode()
@@ -1066,7 +1066,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         #if self.reportTableWidget:
           #self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,max,mean,min)   
       
-          currentSeg = currentFinding.GetSegmentationForStudy(currentStudy.GetID())
+          currentSeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
         
           if currentSeg:
             currentSeg.SetSUVs(max,mean,min)
@@ -1193,7 +1193,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         for j in range(currentReport.GetSelectedStudiesCount()):
           study = currentReport.GetSelectedStudy(j)
           
-          seg = finding.GetSegmentationForStudy(study.GetID())
+          seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
           if seg:
             mh = seg.GetModelHierarchyNode()
             if mh:
@@ -1252,7 +1252,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         for j in range(currentReport.GetSelectedStudiesCount()):
           study = currentReport.GetSelectedStudy(j)
           
-          seg = finding.GetSegmentationForStudy(study.GetID())
+          seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
           if seg:
             mh = seg.GetModelHierarchyNode()
             if mh:
@@ -1395,7 +1395,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           for j in xrange(samples):
             study = currentReport.GetStudySelectedForAnalysis(j)
-            seg = finding.GetSegmentationForStudy(study.GetID())
+            seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
             del suvs[:]
             suvs.append(0.)
             suvs.append(0.)
