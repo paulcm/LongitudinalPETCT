@@ -189,7 +189,6 @@ vtkMRMLLongitudinalPETCTFindingNode::Copy(vtkMRMLNode *anode)
         }
 
       StudyIDSegIDMap map = node->GetStudyNodeIDToSegmentationNodeIDMap();
-
       for (it = map.begin(); it != map.end(); it++)
         {
           std::string studyID = (*it).first;
@@ -301,7 +300,20 @@ vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveModelHierarchyNodeID(
   this->SetModelHierarchyNodeID(modelHierarchyNodeID);
 
   if (this->Scene && this->ModelHierarchyNode)
-    this->Scene->AddReferencedNodeID(this->ModelHierarchyNodeID, this);
+    {
+
+      this->Scene->AddReferencedNodeID(this->ModelHierarchyNodeID, this);
+
+      // update all mapped segmentations model hierarchies
+      StudyIDSegIDMap::iterator it;
+      for (it = this->StudyIDToSegmentationIDMap.begin();
+          it != this->StudyIDToSegmentationIDMap.end(); it++)
+        {
+          vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(this->Scene->GetNodeByID((*it).second));
+          this->UpdateSegmentationModelHierarchyParent(seg);
+        }
+    }
+
 }
 
 
@@ -442,7 +454,6 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateSegmentationModelHierarchyParent(
           this->Modified();
         }
     }
-
 }
 
 //----------------------------------------------------------------------------
