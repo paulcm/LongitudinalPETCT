@@ -38,15 +38,16 @@
 
 #include <vtkSlicerLongitudinalPETCTModuleMRMLExport.h>
 
+#include "vtkMRMLLongitudinalPETCTStudyNode.h"
 #include "vtkMRMLLongitudinalPETCTFindingNode.h"
 #include <vtkSmartPointer.h>
 #include <vtkMRMLModelHierarchyNode.h>
+#include <vtkMRMLColorTableNode.h>
 
-class vtkMRMLLongitudinalPETCTStudyNode;
 class vector;
 class string;
 class vtkMRMLColorNode;
-class vtkMRMLColorTableNode;
+
 
 
 
@@ -75,16 +76,15 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "Longitudinal PET/CT Report";};
 
-  void Initialize();
 
-  int AddStudy(vtkMRMLLongitudinalPETCTStudyNode* study);
+  int AddStudyNodeID(const char* studyNodeID);
   //bool RemoveStudy(vtkMRMLLongitudinalPETCTStudyNode study);
 
   void AddFinding(vtkMRMLLongitudinalPETCTFindingNode* finding);
 
-  int GetStudiesCount() const;
-  int GetSelectedStudiesCount() const;
-  int GetStudiesSelectedForAnalysisCount() const;
+  int GetNumberOfStudyIDs() const;
+  int GetNumberOfSelectedStudies() const;
+  int GetNumberOfStudiesSelectedForAnalysis() const;
   int GetFindingsCount() const;
 
   vtkMRMLLongitudinalPETCTFindingNode* GetFinding(int index) const;
@@ -94,35 +94,43 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   vtkMRMLLongitudinalPETCTStudyNode* GetStudy(int index) const;
 
   vtkMRMLLongitudinalPETCTStudyNode* GetSelectedStudy(int index);
-  vtkMRMLLongitudinalPETCTStudyNode* GetStudySelectedForAnalysis(int index);
+  vtkMRMLLongitudinalPETCTStudyNode* GetSelectedStudySelectedForAnalysis(int index);
   vtkMRMLLongitudinalPETCTStudyNode* GetSelectedStudyFirst();
   vtkMRMLLongitudinalPETCTStudyNode* GetSelectedStudyLast();
 
   std::vector<vtkMRMLLongitudinalPETCTStudyNode*> GetSelectedStudies();
-  std::vector<vtkMRMLLongitudinalPETCTStudyNode*> GetStudiesSelectedForAnalysis();
+  std::vector<vtkMRMLLongitudinalPETCTStudyNode*> GetSelectedStudiesSelectedForAnalysis();
 
-  int GetIndexOfStudy(const vtkMRMLLongitudinalPETCTStudyNode* study);
+  int GetIndexOfStudyNodeID(const char* studyNodeID);
   int GetIndexOfSelectedStudy(const vtkMRMLLongitudinalPETCTStudyNode* study);
-  int GetIndexOfStudySelectedForAnalysis(const vtkMRMLLongitudinalPETCTStudyNode* study);
+  int GetIndexOfSelectedStudySelectedForAnalysis(const vtkMRMLLongitudinalPETCTStudyNode* study);
   int GetIndexOfFinding(const vtkMRMLLongitudinalPETCTFindingNode* finding);
 
-  vtkGetMacro(UserSelectedStudy,vtkMRMLLongitudinalPETCTStudyNode*);
-  vtkSetMacro(UserSelectedStudy,vtkMRMLLongitudinalPETCTStudyNode*);
 
-  vtkGetMacro(UserSelectedFinding,vtkMRMLLongitudinalPETCTFindingNode*);
-  vtkSetMacro(UserSelectedFinding,vtkMRMLLongitudinalPETCTFindingNode*);
+  void SetReportsModelHierarchyNodeID(const char* modelHierarchyNodeID);
+  vtkGetStringMacro(ModelHierarchyNodeID);
 
-  vtkGetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
-  vtkSetMacro(FindingTypesColorTable,vtkMRMLColorTableNode*);
+  void SetAndObserveFindingTypesColorTableNodeID(const char* findingTypesColorTableNodeID);
+  vtkGetStringMacro(FindingTypesColorTableNodeID);
 
-  void SetModelHierarchyNode(vtkMRMLModelHierarchyNode* modelHierarchy);
-  vtkGetMacro(ModelHierarchyNode, vtkMRMLModelHierarchyNode*);
+  vtkGetMacro(FindingTypesColorTableNode, vtkMRMLColorTableNode*);
 
 
+  vtkSetStringMacro(UserSelectedStudyNodeID);
+  vtkGetStringMacro(UserSelectedStudyNodeID);
+
+  vtkSetStringMacro(UserSelectedFindingNodeID);
+  vtkGetStringMacro(UserSelectedFindingNodeID);
+
+  vtkSetStringMacro(ColorNodeID);
+  vtkGetStringMacro(ColorNodeID);
+
+  vtkMRMLLongitudinalPETCTStudyNode* GetUserSelectedStudyNode();
+  vtkMRMLLongitudinalPETCTFindingNode* GetUserSelectedFindingNode();
   const vtkMRMLColorNode* GetColorNode();
 
   int GetFindingTypesCount();
-  void AddFindingType(std::string name, double color[4]);
+  void AddFindingType(const char* name, double color[4]);
   void RemoveLastFindingType();
 
   const char* GetFindingTypeName(int colorID);
@@ -135,6 +143,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
 
   int GetNumberOfDefaultFindingTypes();
 
+  void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void SetScene(vtkMRMLScene* scene);
 
 protected:
@@ -143,18 +152,23 @@ protected:
   vtkMRMLLongitudinalPETCTReportNode(const vtkMRMLLongitudinalPETCTReportNode&);
   void operator=(const vtkMRMLLongitudinalPETCTReportNode&);
 
-  std::vector<vtkMRMLLongitudinalPETCTStudyNode*> Studies;
+  std::vector<std::string> StudyNodeIDs;
   std::vector<vtkMRMLLongitudinalPETCTFindingNode*> Findings;
 
-  vtkMRMLLongitudinalPETCTStudyNode* UserSelectedStudy;
-  vtkMRMLLongitudinalPETCTFindingNode* UserSelectedFinding;
+  vtkSmartPointer<vtkMRMLColorTableNode> FindingTypesColorTableNode;
 
-  vtkSmartPointer<vtkEventForwarderCommand> studyModifiedForwarder;
-  vtkSmartPointer<vtkEventForwarderCommand> findingModifiedForwarder;
+  bool IsStudyNodeIDPresent(const char* studyNodeID);
 
-  vtkMRMLColorTableNode* FindingTypesColorTable;
+  vtkSetStringMacro(ModelHierarchyNodeID);
+  vtkSetStringMacro(FindingTypesColorTableNodeID);
 
-  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
+  char* ModelHierarchyNodeID;
+  char* UserSelectedStudyNodeID;
+  char* UserSelectedFindingNodeID;
+  char* FindingTypesColorTableNodeID;
+  char* ColorNodeID;
+
+  vtkSmartPointer<vtkIntArray> ObservedEvents;
 
 private:
   int NumberOfDefaultFindingTypes;

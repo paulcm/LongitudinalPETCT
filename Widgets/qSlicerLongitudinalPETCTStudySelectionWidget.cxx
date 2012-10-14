@@ -140,7 +140,7 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
 
   d->TableStudySelection->deselectTableAll();
 
-  for(int i=0; i < d->ReportNode->GetStudiesCount(); ++i)
+  for(int i=0; i < d->ReportNode->GetNumberOfStudyIDs(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = d->ReportNode->GetStudy(i);
       bool disabled = d->ReportNode->IsStudyInUse(study);

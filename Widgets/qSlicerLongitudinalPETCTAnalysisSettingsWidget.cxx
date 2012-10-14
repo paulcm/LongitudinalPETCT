@@ -149,9 +149,9 @@ void qSlicerLongitudinalPETCTAnalysisSettingsWidget
     return;
 
 
-  bool lastSelected = d->ReportNode->GetStudiesSelectedForAnalysisCount() == 1;
+  bool lastSelected = d->ReportNode->GetNumberOfStudiesSelectedForAnalysis() == 1;
 
-  for(int i=0; i < d->ReportNode->GetSelectedStudiesCount(); ++i)
+  for(int i=0; i < d->ReportNode->GetNumberOfSelectedStudies(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(i);
 

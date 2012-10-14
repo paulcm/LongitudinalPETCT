@@ -418,7 +418,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
       colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
       
-      reportNode.SetAttribute('ColorNodeID',defaultColorNodeID)
+      reportNode.SetColorNodeID(defaultColorNodeID)
       logic = slicer.modules.longitudinalpetct.logic()
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
       reportNode.SetFindingTypesColorTable(colorTable)

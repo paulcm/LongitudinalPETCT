@@ -175,7 +175,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareHorizontalHeaders()
 
   bool empty = d->TableReport->columnCount() == 0;
 
-  int diff = d->ReportNode->GetSelectedStudiesCount() - d->TableReport->columnCount();
+  int diff = d->ReportNode->GetNumberOfSelectedStudies() - d->TableReport->columnCount();
 
   for (int i = 0; i < std::abs(diff); ++i)
     {
@@ -238,7 +238,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
 {
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
 
-  if (d->ReportNode == NULL || d->TableReport->columnCount() != d->ReportNode->GetSelectedStudiesCount())
+  if (d->ReportNode == NULL || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
 
   int vhwidth = 0;
@@ -249,10 +249,10 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
 
   int colwidth = 0;
 
-  if(d->ReportNode->GetSelectedStudiesCount() > 0)
-    colwidth = std::max(30,static_cast<int>(w / d->ReportNode->GetSelectedStudiesCount()));
+  if(d->ReportNode->GetNumberOfSelectedStudies() > 0)
+    colwidth = std::max(30,static_cast<int>(w / d->ReportNode->GetNumberOfSelectedStudies()));
 
-  for (int i = 0; i < d->ReportNode->GetSelectedStudiesCount(); ++i)
+  for (int i = 0; i < d->ReportNode->GetNumberOfSelectedStudies(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study =
           d->ReportNode->GetSelectedStudy(i);
@@ -287,7 +287,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
   if (d->ReportNode == NULL
       || d->TableReport->rowCount() != d->ReportNode->GetFindingsCount()
-      || d->TableReport->columnCount() != d->ReportNode->GetSelectedStudiesCount())
+      || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
 
   for (int i = 0; i < d->ReportNode->GetFindingsCount(); ++i)
@@ -298,7 +298,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
       if (finding.GetPointer() == NULL)
         continue;
 
-      for (int j = 0; j < d->ReportNode->GetSelectedStudiesCount(); ++j)
+      for (int j = 0; j < d->ReportNode->GetNumberOfSelectedStudies(); ++j)
         {
           //qSlicerLongitudinalPETCTSegmentationTableCellWidget* cellWidget = qobject_cast<qSlicerLongitudinalPETCTSegmentationTableCellWidget*>(this->cellWidget(i,j));
           ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(d->TableReport->cellWidget(i,j));
@@ -314,8 +314,8 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
                 }
 
               int colorID = finding->GetColorID();
-              vtkMRMLColorTableNode* colorTable =
-                  d->ReportNode->GetFindingTypesColorTable();
+              vtkSmartPointer<vtkMRMLColorTableNode> colorTable =
+                  d->ReportNode->GetFindingTypesColorTableNode();
               if (colorTable)
                 {
                   double color[3];
@@ -375,14 +375,14 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   this->updateHorizontalHeaders();
 
   int lastSelectedStudyIndex = d->ReportNode->GetIndexOfSelectedStudy(
-      d->ReportNode->GetUserSelectedStudy());
+      d->ReportNode->GetUserSelectedStudyNode());
 
   if (lastSelectedStudyIndex >= 0
-      && lastSelectedStudyIndex < d->ReportNode->GetSelectedStudiesCount())
+      && lastSelectedStudyIndex < d->ReportNode->GetNumberOfSelectedStudies())
     this->selectStudyColumn(lastSelectedStudyIndex);
 
   int lastSelectedFindingIndex = d->ReportNode->GetIndexOfFinding(
-      d->ReportNode->GetUserSelectedFinding());
+      d->ReportNode->GetUserSelectedFindingNode());
 
   if (lastSelectedFindingIndex >= 0
       && lastSelectedFindingIndex < d->ReportNode->GetFindingsCount())
@@ -415,11 +415,11 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
                 break;
               case qSlicerLongitudinalPETCTReportTableWidget::RowSelectable:
                 cellWidget->setCheckable(
-                    finding == d->ReportNode->GetUserSelectedFinding());
+                    finding == d->ReportNode->GetUserSelectedFindingNode());
                 break;
               case qSlicerLongitudinalPETCTReportTableWidget::ColumnSelectable:
                 cellWidget->setCheckable(
-                    study == d->ReportNode->GetUserSelectedStudy());
+                    study == d->ReportNode->GetUserSelectedStudyNode());
                 break;
               default:
                 break;
@@ -456,7 +456,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
     }
 
   vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study =
-      d->ReportNode->GetUserSelectedStudy();
+      d->ReportNode->GetUserSelectedStudyNode();
 
   if (study)
     {

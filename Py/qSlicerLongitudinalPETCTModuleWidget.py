@@ -167,8 +167,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     findingsLayout.addWidget(self.findingSelectionWidget)
     
     if self.reportSelector.currentNode():
-      if self.reportSelector.currentNode().GetUserSelectedFinding():
-        if self.reportSelector.currentNode().GetUserSelectedFinding().GetSegmentationROI():
+      if self.reportSelector.currentNode().GetUserSelectedFindingNode():
+        if self.reportSelector.currentNode().GetUserSelectedFindingNode().GetSegmentationROI():
           self.editorWidget.editLabelMapsFrame.setEnabled(True)
         
     self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
@@ -230,7 +230,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     # update model/logic
     if currentReport:
       study = currentReport.GetSelectedStudy(newIndex)
-      currentReport.SetUserSelectedStudy(study)      
+      if study:
+        currentReport.SetUserSelectedStudyNodeID(study.GetID())      
     
       currentFinding = self.getCurrentFinding()
       currentStudy = self.getCurrentStudy()
@@ -242,11 +243,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
         currentSegROI = currentFinding.GetSegmentationROI()
       
         if (currentStudy != None) & ( currentSegROI != None):
-          currentStudy.SetSegmentationROI(currentSegROI)
+          currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
           self.updateSegmentationROIPosition()
           
         elif study:
-          currentStudy.SetSegmentationROI(None)
+          currentStudy.SetAndObserveSegmentationROINodeID(None)
     
     # update view
     self.updateBgFgToUserSelectedStudy(currentStudy)
@@ -255,7 +256,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.manageModelsVisibility(self.isQuantitativeViewActive()) 
     
     if self.isQuantitativeViewActive():
-      self.updateQuantitativeView(currentReport.GetUserSelectedFinding())    
+      self.updateQuantitativeView(currentReport.GetUserSelectedFindingNode())    
                 
           
        
@@ -352,12 +353,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
       if self.viewNodeObserverID == -1:
         self.viewNodeObserverID = viewNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.viewNodeModified) 
-        
-      
-      #if currentReport.GetUserSelectedStudy():
-        #self.enableFindingsCollapsibleButton(True)
-      #else:
-        #self.enableFindingsCollapsibleButton(False)                  
+                   
    
   
   def manageVRDisplayNodesVisibility(self, selectedStudy):
@@ -426,15 +422,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.reportTableWidget.setReportNode(reportNode)
     
     if reportNode:
-      
-      #self.manageVRDisplayNodesVisibility(reportNode.GetUserSelectedStudy())
-      
-      #if reportNode.GetUserSelectedStudy():
-        #self.onUpdateVolumeRendering(reportNode.GetUserSelectedStudy().GetPETVolumeNode())
-      #else:
-        #self.onUpdateVolumeRendering(None)
-    
-      self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudy())
+      self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudyNode())
     
     else:
      # self.manageVRDisplayNodesVisibility(None)
@@ -750,10 +738,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if findingNode:
       currentReport = self.getCurrentReport()
       if currentReport:
-        currentReport.SetUserSelectedFinding(findingNode)
+        currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
         segROI = findingNode.GetSegmentationROI()
         if (segROI != None) & (self.getCurrentStudy() != None):
-          self.getCurrentStudy().SetSegmentationROI(segROI)
+          self.getCurrentStudy().SetAndObserveSegmentationROINodeID(segROI.GetID())
           
         if self.findingSettingsDialog == None:
           self.findingSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSettingsDialog(self.parent)
@@ -782,42 +770,48 @@ class qSlicerLongitudinalPETCTModuleWidget:
           mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
           findingNode.SetAndObserveModelHierarchyNodeID(mh.GetID())
           currentReport.AddFinding(findingNode)
-          currentReport.SetUserSelectedFinding(findingNode)
+          currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
           
         else:
           self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           slicer.mrmlScene.RemoveNode(findingNode)
 
-          currentReport.SetUserSelectedFinding(self.findingSelector.currentNode())
+          if self.findingSelector.currentNode():
+            currentReport.SetUserSelectedFindingNodeID(self.findingSelector.currentNode().GetID())
+          else:
+            currentReport.SetUserSelectedFindingNodeID(None)
 
           self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           
           return
           
       else:
-        currentReport.SetUserSelectedFinding(findingNode) 
+        if findingNode:
+          currentReport.SetUserSelectedFindingNodeID(findingNode.GetID)
+        else:
+          currentReport.SetUserSelectedFindingNodeID(None)
         
-    if currentReport.GetUserSelectedFinding():
+    if currentReport.GetUserSelectedFindingNode():
       
-      segROI = currentReport.GetUserSelectedFinding().GetSegmentationROI()
+      segROI = currentReport.GetUserSelectedFindingNode().GetSegmentationROI()
       
       if (segROI != None) & (self.getCurrentStudy() != None):
         self.editorWidget.editLabelMapsFrame.setEnabled(True)
-        self.getCurrentStudy().SetSegmentationROI(segROI)
+        self.getCurrentStudy().SetAndObserveSegmentationROINodeID(segROI.GetID())
         self.updateSegmentationROIPosition()
       else:
         self.editorWidget.editLabelMapsFrame.setEnabled(False)
         
       
       if self.isQuantitativeViewActive():
-        self.updateQuantitativeView(currentReport.GetUserSelectedFinding())    
+        self.updateQuantitativeView(currentReport.GetUserSelectedFindingNode())    
         
   
     else:
       self.editorWidget.editLabelMapsFrame.setEnabled(False)
       if self.getCurrentStudy():
-        self.getCurrentStudy().SetSegmentationROI(None)    
+        self.getCurrentStudy().SetAndObserveSegmentationROINodeID(None)    
     
     self.onManageFindingROIsVisibility()
     
@@ -853,7 +847,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
           findingNode.RemoveStudyNodeIDToSegmentationNodeIDMap(study.GetID())
           slicer.mrmlScene.RemoveNode(seg)
-          study.SetSegmentationROI(None)
+          study.SetAndObserveSegmentationROINodeID(None)
           
       slicer.mrmlScene.RemoveNode(findingNode.GetSegmentationROI())
       currentReport.RemoveFinding(findingNode)  
@@ -886,14 +880,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
   def getCurrentStudy(self):
     currentReport = self.getCurrentReport()
     if currentReport:
-      return currentReport.GetUserSelectedStudy()
+      return currentReport.GetUserSelectedStudyNode()
     
     return None    
   
   def getCurrentFinding(self):
     currentReport = self.getCurrentReport()
     if currentReport:
-      return currentReport.GetUserSelectedFinding()
+      return currentReport.GetUserSelectedFindingNode()
     
     return None    
                  
@@ -1496,7 +1490,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           roiNode.SetVisibility(self.findingSelectionWidget.property('roiVisibility'))  
           currentFinding.SetAndObserveSegmentationROINodeID(roiNode.GetID())
-          currentStudy.SetSegmentationROI(roiNode)
+          currentStudy.SetAndObserveSegmentationROINodeID(roiNode.GetID())
           appLogic = slicer.app.applicationLogic()
           if appLogic:
             intnode = appLogic.GetInteractionNode()

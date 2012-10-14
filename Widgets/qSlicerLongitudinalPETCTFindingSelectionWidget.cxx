@@ -177,8 +177,8 @@ void qSlicerLongitudinalPETCTFindingSelectionWidget
 
   if(d->ReportNode)
     {
-      if(d->ReportNode->GetUserSelectedFinding())
-          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFinding()->GetSegmentationROINode()));
+      if(d->ReportNode->GetUserSelectedFindingNode())
+          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFindingNode()->GetSegmentationROINode()));
     }
   }
 

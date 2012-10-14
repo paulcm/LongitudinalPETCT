@@ -216,19 +216,15 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
 
 
 
-  std::cout << d->ReportNode << std::endl;
-  std::cout << d->ReportNode->GetUserSelectedFinding() << std::endl;
-  std::cout << d->ReportNode->GetFindingTypesColorTable() << std::endl;
-
-  if ( ! d->ReportNode  || ! d->ReportNode->GetUserSelectedFinding() || ! d->ReportNode->GetFindingTypesColorTable() )
+  if ( ! d->ReportNode  || ! d->ReportNode->GetUserSelectedFindingNode() || ! d->ReportNode->GetFindingTypesColorTableNode() )
       return;
 
 
-  if (!d->UpdatingFindingTypes && d->ReportNode->GetUserSelectedFinding())
-    d->LineEditName->setText(d->ReportNode->GetUserSelectedFinding()->GetName());
+  if (!d->UpdatingFindingTypes && d->ReportNode->GetUserSelectedFindingNode())
+    d->LineEditName->setText(d->ReportNode->GetUserSelectedFindingNode()->GetName());
 
-  vtkMRMLColorTableNode* colorTableNode =
-      d->ReportNode->GetFindingTypesColorTable();
+  vtkSmartPointer<vtkMRMLColorTableNode> colorTableNode =
+      d->ReportNode->GetFindingTypesColorTableNode();
 
   double col[3];
 
@@ -245,7 +241,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
     }
 
   bool findingHasSegmentation =
-      d->ReportNode->GetUserSelectedFinding()->GetNumberOfSegmentations() > 0;
+      d->ReportNode->GetUserSelectedFindingNode()->GetNumberOfSegmentations() > 0;
 
   d->ComboBoxType->setDisabled(findingHasSegmentation);
 
@@ -258,7 +254,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   d->ExpandButton->setDisabled(findingHasSegmentation);
 
   d->selectFindingType(
-      d->ReportNode->GetUserSelectedFinding()->GetColorID() - 1); // -1 because of "None" not in list
+      d->ReportNode->GetUserSelectedFindingNode()->GetColorID() - 1); // -1 because of "None" not in list
 
 }
 
@@ -377,7 +373,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::addTypeButtonClicked()
       const_cast<vtkMRMLColorNode*>(d->ReportNode->GetColorNode())->GetColor(
           d->ColorIDForAdding, color);
 
-      d->ReportNode->AddFindingType(typeNameToAdd.toStdString(), color);
+      d->ReportNode->AddFindingType(typeNameToAdd.toStdString().c_str(), color);
 
       d->LineEditTypeName->clear();
       d->LineEditTypeName->setPlaceholderText(
@@ -411,7 +407,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::selectionChanged(int index)
     d->ButtonRemove->setEnabled(false);
 
   vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
-      d->ReportNode->GetUserSelectedFinding();
+      d->ReportNode->GetUserSelectedFindingNode();
 
   QPushButton* okBtn = d->ButtonBox->button(QDialogButtonBox::Ok);
 
@@ -451,7 +447,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::accept()
   if(d->ReportNode)
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
-            d->ReportNode->GetUserSelectedFinding();
+            d->ReportNode->GetUserSelectedFindingNode();
 
       if(finding)
         {
