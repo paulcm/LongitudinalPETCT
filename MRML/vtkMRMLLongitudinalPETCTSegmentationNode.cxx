@@ -287,41 +287,45 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetSUVs(double max, double mean, 
 
 
 //----------------------------------------------------------------------------
-  void
-  vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
-      const char* labelVolumeNodeID)
-  {
+void
+vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
+    const char* labelVolumeNodeID)
+{
 
-    if(labelVolumeNodeID && this->LabelVolumeNodeID && !strcmp(labelVolumeNodeID, this->LabelVolumeNodeID))
-      return;
+  if (labelVolumeNodeID && this->LabelVolumeNodeID
+      && !strcmp(labelVolumeNodeID, this->LabelVolumeNodeID))
+    return;
 
-    // first remove references and observers from old node
-    if(this->LabelVolumeNode)
-      {
-        vtkUnObserveMRMLObjectMacro(this->LabelVolumeNode);
+  // first remove references and observers from old node
+  if (this->LabelVolumeNode)
+    {
+      vtkUnObserveMRMLObjectMacro(this->LabelVolumeNode);
 
-        if(this->Scene && this->Scene->IsNodeReferencingNodeID(this,this->LabelVolumeNode->GetID()))
-              this->Scene->RemoveReferencedNodeID(this->LabelVolumeNode->GetID(),this);
-      }
+      if (this->Scene
+          && this->Scene->IsNodeReferencingNodeID(this,
+              this->LabelVolumeNode->GetID()))
+        this->Scene->RemoveReferencedNodeID(this->LabelVolumeNode->GetID(),
+            this);
+    }
 
-    // than set new node
-    vtkSmartPointer<vtkMRMLScalarVolumeNode> lvnode = NULL;
+  // than set new node
+  vtkSmartPointer<vtkMRMLScalarVolumeNode> lvnode = NULL;
 
-    if (this->GetScene() && labelVolumeNodeID)
-      {
-        lvnode = vtkMRMLScalarVolumeNode::SafeDownCast(
-            this->GetScene()->GetNodeByID(labelVolumeNodeID));
-      }
+  if (this->GetScene() && labelVolumeNodeID)
+    {
+      lvnode = vtkMRMLScalarVolumeNode::SafeDownCast(
+          this->GetScene()->GetNodeByID(labelVolumeNodeID));
+    }
 
-    vtkSetAndObserveMRMLObjectMacro(this->LabelVolumeNode, lvnode);
-    this->SetLabelVolumeNodeID(labelVolumeNodeID);
+  vtkSetAndObserveMRMLObjectMacro(this->LabelVolumeNode, lvnode);
+  this->SetLabelVolumeNodeID(labelVolumeNodeID);
 
-    this->AdjustModelTransformToLabelVolume();
+  this->AdjustModelTransformToLabelVolume();
 
-    if (this->Scene)
-      this->Scene->AddReferencedNodeID(this->LabelVolumeNodeID, this);
+  if (this->Scene)
+    this->Scene->AddReferencedNodeID(this->LabelVolumeNodeID, this);
 
-  }
+}
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(const std::string& labelVolumeNodeID)
