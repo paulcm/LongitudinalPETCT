@@ -216,7 +216,7 @@ bool vtkMRMLLongitudinalPETCTReportNode::RemoveFindingNodeID(const char* finding
 
           if(finding)
             {
-              vtkUnObserveMRMLObjectMacro(finding.GetPointer());
+              vtkUnObserveMRMLObjectMacro(finding);
               if(this->Scene)
                 this->Scene->RemoveReferencedNodeID(findingNodeID, this);
             }
@@ -258,7 +258,7 @@ vtkMRMLLongitudinalPETCTReportNode::RemoveStudyNodeID(const char* studyNodeID)
 
           if(study)
             {
-              vtkUnObserveMRMLObjectMacro(study.GetPointer());
+              vtkUnObserveMRMLObjectMacro(study);
               if(this->Scene)
                 this->Scene->RemoveReferencedNodeID(studyNodeID, this);
             }
@@ -813,7 +813,7 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 
   bool callerIsStudy = node->IsA("vtkMRMLLongitudinalPETCTStudyNode");
   bool callerIsFinding = node->IsA("vtkMRMLLongitudinalPETCTFindingNode");
-  bool callerIsFindingTypesTable = this->FindingTypesColorTableNode && node.GetPointer() == this->FindingTypesColorTableNode;
+  bool callerIsFindingTypesTable = this->FindingTypesColorTableNode && node == this->FindingTypesColorTableNode;
 
   if(callerIsStudy || callerIsFinding || callerIsFindingTypesTable)
     {
