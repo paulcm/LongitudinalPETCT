@@ -87,7 +87,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
 
   int GetNumberOfStudyNodeIDs() const;
   int GetNumberOfSelectedStudies() const;
-  int GetNumberOfStudiesSelectedForAnalysis() const;
+  int GetNumberOfSelectedStudiesSelectedForAnalysis() const;
   int GetNumberOfFindingNodeIDs() const;
 
   vtkMRMLLongitudinalPETCTFindingNode* GetFinding(int index) const;
