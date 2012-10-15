@@ -255,7 +255,7 @@
   <customwidget>
    <class>qSlicerLongitudinalPETCTStudySelectionTableWidget</class>
    <extends>QWidget</extends>
-   <header>qslicerlongitudinalpetctstudyselectiontablewidget.h</header>
+   <header>qSlicerLongitudinalPETCTStudySelectionTableWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
