@@ -237,7 +237,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       currentStudy = self.getCurrentStudy()
     
       if currentStudy:
-        self.studySelectionWidget.selectStudyInRow(currentReport.GetIndexOfStudy(study))
+        self.studySelectionWidget.selectStudyInRow(currentReport.GetIndexOfStudyNodeID(study.GetID()))
         
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROI()
@@ -283,7 +283,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           ViewHelper.setSliceNodesCrossingPositionRAS(xyzRAS)
           
           if self.analysisCollapsibleButton.property('collapsed') == False:
-            ViewHelper.setCompareSliceNodesCrossingPositionRAS(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(currentStudy), xyzRAS)   
+            ViewHelper.setCompareSliceNodesCrossingPositionRAS(self.getCurrentReport().GetIndexOfSelectedStudySelectedForAnalysis(currentStudy), xyzRAS)   
 
 
   def onStudySelected(self, idx):
@@ -362,7 +362,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
     
     if currentReport:
-      for i in range(currentReport.GetStudiesCount()):
+      for i in range(currentReport.GetNumberOfStudyIDs()):
         study = currentReport.GetStudy(i)
         if study:
           vrDisplayNode = study.GetVolumeRenderingDisplayNode()
@@ -485,7 +485,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
     
     if currentReport:
-      for i in range(currentReport.GetStudiesCount()):
+      for i in range(currentReport.GetNumberOfStudyIDs()):
         study = currentReport.GetStudy(i)
         if study:
           vrdn = study.GetVolumeRenderingDisplayNode()
@@ -503,7 +503,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentStudy = self.getCurrentStudy()
     if currentReport:
 
-      for i in range(0,currentReport.GetStudiesCount(),1): 
+      for i in range(0,currentReport.GetNumberOfStudyIDs(),1): 
         currentReport.GetStudy(i).SetCenteredVolumes(centered)
       
       if currentStudy:
@@ -760,8 +760,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
         
     if currentReport:
+        
+      idx = -1
             
-      idx = currentReport.GetIndexOfFinding(findingNode)
+      if findingNode:
+        idx = currentReport.GetIndexOfFindingNodeID(findingNode.GetID())
       
       if idx == -1:
         applied = self.onShowFindingSettingsDialog(findingNode)
@@ -769,7 +772,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if applied:
           mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
           findingNode.SetAndObserveModelHierarchyNodeID(mh.GetID())
-          currentReport.AddFinding(findingNode)
+          currentReport.AddFindingNodeID(findingNode.GetID())
           currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
           
@@ -850,7 +853,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           study.SetAndObserveSegmentationROINodeID(None)
           
       slicer.mrmlScene.RemoveNode(findingNode.GetSegmentationROI())
-      currentReport.RemoveFinding(findingNode)  
+      currentReport.RemoveFindingNodeID(findingNode.GetID())  
    
   def onManageFindingROIsVisibility(self):
     currentStudy = self.getCurrentStudy()
@@ -865,7 +868,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if finding: 
           roi = finding.GetSegmentationROI()
           if roi:
-            if (currentFinding != None) & (self.getCurrentReport().GetIndexOfFinding(currentFinding) == x) & (self.analysisCollapsibleButton.property('collapsed') == True):
+            if (currentFinding != None) & (self.getCurrentReport().GetIndexOfFindingNodeID(currentFinding.GetID()) == x) & (self.analysisCollapsibleButton.property('collapsed') == True):
               roi.SetVisibility(self.findingSelectionWidget.property('roiVisibility'))
             else:
               roi.SetVisibility(0)                   
@@ -1133,7 +1136,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if currentReport:
     # remove viewnode from all studies and set them invisible
-      for i in xrange(currentReport.GetStudiesCount()):
+      for i in xrange(currentReport.GetNumberOfStudyIDs()):
         study = currentReport.GetStudy(i)
         if study:
           vrdn = study.GetVolumeRenderingDisplayNode()
@@ -1221,7 +1224,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
             if vrdn.IsViewNodeIDPresent(cvn.GetID()):
               vrdn.RemoveViewNodeID(cvn.GetID())
               
-            id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
+            id = currentReport.GetIndexOfSelectedStudySelectedForAnalysis(study)
             if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
               vrdn.AddViewNodeID(compareViewNodes[id].GetID())
   
@@ -1258,7 +1261,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
                     if mdn.IsViewNodeIDPresent(cvn.GetID()):
                       mdn.RemoveViewNodeID(cvn.GetID())
                   
-                  id = currentReport.GetIndexOfStudySelectedForAnalysis(study)
+                  id = currentReport.GetIndexOfSelectedStudySelectedForAnalysis(study)
                   if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
                     mdn.AddViewNodeID(compareViewNodes[id].GetID())         
     
@@ -1388,7 +1391,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
        
           
           for j in xrange(samples):
-            study = currentReport.GetStudySelectedForAnalysis(j)
+            study = currentReport.GetSelectedStudySelectedForAnalysis(j)
             seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
             del suvs[:]
             suvs.append(0.)
@@ -1441,9 +1444,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.qualitativeViewLastID = currentLayoutID
     
       for i in range(self.getCurrentReport().GetStudiesSelectedForAnalysisCount()):
-        study = self.getCurrentReport().GetStudySelectedForAnalysis(i)
+        study = self.getCurrentReport().GetSelectedStudySelectedForAnalysis(i)
         if study:
-          ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
+          ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfSelectedStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
         
 
 

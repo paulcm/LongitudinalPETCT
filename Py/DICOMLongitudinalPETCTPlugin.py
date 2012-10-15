@@ -421,7 +421,10 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       reportNode.SetColorNodeID(defaultColorNodeID)
       logic = slicer.modules.longitudinalpetct.logic()
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
-      reportNode.SetFindingTypesColorTable(colorTable)
+      reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
+      
+      mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
+      reportNode.SetReportsModelHierarchyNodeID(mh.GetID())
         
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
     
@@ -476,7 +479,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           
         
           
-          reportNode.AddStudy(studyNode)
+          reportNode.AddStudyNodeID(studyNode.GetID())
           
           
           if logic:

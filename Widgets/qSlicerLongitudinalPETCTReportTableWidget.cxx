@@ -209,7 +209,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareVerticalHeaders()
 
   bool empty = d->TableReport->rowCount() == 0;
 
-  int diff = d->ReportNode->GetFindingsCount() - d->TableReport->rowCount();
+  int diff = d->ReportNode->GetNumberOfFindingNodeIDs() - d->TableReport->rowCount();
 
   for (int i = 0; i < std::abs(diff); ++i)
     {
@@ -286,11 +286,11 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
 
   if (d->ReportNode == NULL
-      || d->TableReport->rowCount() != d->ReportNode->GetFindingsCount()
+      || d->TableReport->rowCount() != d->ReportNode->GetNumberOfFindingNodeIDs()
       || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
 
-  for (int i = 0; i < d->ReportNode->GetFindingsCount(); ++i)
+  for (int i = 0; i < d->ReportNode->GetNumberOfFindingNodeIDs(); ++i)
     {
       vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
           d->ReportNode->GetFinding(i);
@@ -381,11 +381,11 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
       && lastSelectedStudyIndex < d->ReportNode->GetNumberOfSelectedStudies())
     this->selectStudyColumn(lastSelectedStudyIndex);
 
-  int lastSelectedFindingIndex = d->ReportNode->GetIndexOfFinding(
-      d->ReportNode->GetUserSelectedFindingNode());
+  int lastSelectedFindingIndex = d->ReportNode->GetIndexOfFindingNodeID(
+      d->ReportNode->GetUserSelectedFindingNode()->GetID());
 
   if (lastSelectedFindingIndex >= 0
-      && lastSelectedFindingIndex < d->ReportNode->GetFindingsCount())
+      && lastSelectedFindingIndex < d->ReportNode->GetNumberOfFindingNodeIDs())
     this->selectFindingRow(lastSelectedFindingIndex);
 
   for (int i = 0; i < d->TableReport->rowCount(); ++i)
