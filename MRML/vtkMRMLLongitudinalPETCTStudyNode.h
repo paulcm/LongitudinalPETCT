@@ -160,14 +160,14 @@ protected:
   char* VolumeRenderingDisplayNodeID;
 
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> PETVolumeNode;
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> CTVolumeNode;
+  vtkMRMLScalarVolumeNode* PETVolumeNode;
+  vtkMRMLScalarVolumeNode* CTVolumeNode;
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> PETLabelVolumeNode;
-  vtkSmartPointer<vtkMRMLLinearTransformNode> CenteringTransformNode;
+  vtkMRMLScalarVolumeNode* PETLabelVolumeNode;
+  vtkMRMLLinearTransformNode* CenteringTransformNode;
 
-  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROINode;
-  vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode> VolumeRenderingDisplayNode;
+  vtkMRMLAnnotationROINode* SegmentationROINode;
+  vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;
 };
 
 #endif

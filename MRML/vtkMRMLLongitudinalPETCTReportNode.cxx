@@ -813,7 +813,7 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 
   bool callerIsStudy = node->IsA("vtkMRMLLongitudinalPETCTStudyNode");
   bool callerIsFinding = node->IsA("vtkMRMLLongitudinalPETCTFindingNode");
-  bool callerIsFindingTypesTable = this->FindingTypesColorTableNode && node.GetPointer() == this->FindingTypesColorTableNode.GetPointer();
+  bool callerIsFindingTypesTable = this->FindingTypesColorTableNode && node.GetPointer() == this->FindingTypesColorTableNode;
 
   if(callerIsStudy || callerIsFinding || callerIsFindingTypesTable)
     {

@@ -131,8 +131,8 @@ protected:
   char* LabelVolumeNodeID;
   char* ModelHierarchyNodeID;
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> LabelVolumeNode;
-  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
+  vtkMRMLScalarVolumeNode* LabelVolumeNode;
+  vtkMRMLModelHierarchyNode* ModelHierarchyNode;
 
   double ROIxyz[3];
   double ROIRadius[3];

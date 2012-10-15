@@ -300,11 +300,6 @@ void
 vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
     const char* labelVolumeNodeID)
 {
-
-  if (labelVolumeNodeID && this->LabelVolumeNodeID
-      && !strcmp(labelVolumeNodeID, this->LabelVolumeNodeID))
-    return;
-
   // first remove references and observers from old node
   if (this->LabelVolumeNode)
     {
@@ -343,32 +338,35 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(co
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID)
+void
+vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(
+    const char* modelHierarchyNodeID)
 {
+  // first remove references and observers from old node
+  if (this->ModelHierarchyNode)
+    {
+      vtkUnObserveMRMLObjectMacro(this->ModelHierarchyNode);
 
-  if(modelHierarchyNodeID && this->ModelHierarchyNodeID && !strcmp(modelHierarchyNodeID, this->ModelHierarchyNodeID))
-        return;
-
-      // first remove references and observers from old node
-      if(this->ModelHierarchyNode)
-        {
-          vtkUnObserveMRMLObjectMacro(this->ModelHierarchyNode);
-
-          if(this->Scene && this->Scene->IsNodeReferencingNodeID(this,this->ModelHierarchyNode->GetID()))
-                this->Scene->RemoveReferencedNodeID(this->ModelHierarchyNode->GetID(),this);
-        }
+      if (this->Scene
+          && this->Scene->IsNodeReferencingNodeID(this,
+              this->ModelHierarchyNode->GetID()))
+        this->Scene->RemoveReferencedNodeID(this->ModelHierarchyNode->GetID(),
+            this);
+    }
 
   vtkSmartPointer<vtkMRMLModelHierarchyNode> mhnode = NULL;
 
-  if(this->GetScene() && modelHierarchyNodeID)
+  if (this->GetScene() && modelHierarchyNodeID)
     {
-      mhnode = vtkMRMLModelHierarchyNode::SafeDownCast(this->GetScene()->GetNodeByID(modelHierarchyNodeID));
+      mhnode = vtkMRMLModelHierarchyNode::SafeDownCast(
+          this->GetScene()->GetNodeByID(modelHierarchyNodeID));
     }
 
   vtkSetAndObserveMRMLObjectMacro(this->ModelHierarchyNode, mhnode);
   this->SetModelHierarchyNodeID(modelHierarchyNodeID);
 
-  this->InvokeEvent(vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent);
+  this->InvokeEvent(
+      vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent);
 
   this->AdjustModelTransformToLabelVolume();
 
@@ -441,7 +439,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::ProcessMRMLEvents(vtkObject *caller,
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
 
-  if (caller == this->LabelVolumeNode.GetPointer()
+  if (caller == this->LabelVolumeNode
       && event == vtkCommand::ModifiedEvent)
     this->AdjustModelTransformToLabelVolume();
 

@@ -157,7 +157,7 @@ protected:
   IDsVectorType StudyNodeIDs;
   IDsVectorType FindingNodeIDs;
 
-  vtkSmartPointer<vtkMRMLColorTableNode> FindingTypesColorTableNode;
+  vtkMRMLColorTableNode* FindingTypesColorTableNode;
 
   bool IsStudyNodeIDPresent(const char* studyNodeID);
   bool IsFindingNodeIDPresent(const char* findingNodeID);

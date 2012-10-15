@@ -504,7 +504,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
       if (this->CenteredVolumes)
         {
           if (this->SegmentationROINode->GetParentTransformNode()
-              != this->CenteringTransformNode.GetPointer())
+              != this->CenteringTransformNode)
             {
               this->SegmentationROINode->SetAndObserveTransformNodeID(
                   this->CenteringTransformNode->GetID());
@@ -543,22 +543,22 @@ vtkMRMLLongitudinalPETCTStudyNode::ObserveCenteringTransform(bool observe)
     {
       if (this->PETVolumeNode
           && this->PETVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode.GetPointer())
+              != this->CenteringTransformNode)
         this->PETVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransformNode->GetID());
       if (this->CTVolumeNode
           && this->CTVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode.GetPointer())
+              != this->CenteringTransformNode)
         this->CTVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransformNode->GetID());
       if (this->PETLabelVolumeNode
           && this->PETLabelVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode.GetPointer())
+              != this->CenteringTransformNode)
         this->PETLabelVolumeNode->SetAndObserveTransformNodeID(
             this->CenteringTransformNode->GetID());
       if (this->SegmentationROINode
           && this->SegmentationROINode->GetParentTransformNode()
-              != this->CenteringTransformNode.GetPointer())
+              != this->CenteringTransformNode)
         this->SegmentationROINode->SetAndObserveTransformNodeID(
             this->CenteringTransformNode->GetID());
     }

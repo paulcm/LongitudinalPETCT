@@ -131,8 +131,8 @@ protected:
 
   //std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
 
-  vtkSmartPointer<vtkMRMLAnnotationROINode> SegmentationROINode;
-  vtkSmartPointer<vtkMRMLModelHierarchyNode> ModelHierarchyNode;
+  vtkMRMLAnnotationROINode* SegmentationROINode;
+  vtkMRMLModelHierarchyNode* ModelHierarchyNode;
 
   char* TypeName;
   int ColorID;
