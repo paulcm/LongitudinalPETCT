@@ -182,7 +182,7 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::Copy(vtkMRMLNode *anode)
   
   Superclass::Copy(anode);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> node = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(anode);
+  vtkMRMLLongitudinalPETCTSegmentationNode* node = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(anode);
   if (node)
     {
       this->SetAndObserveLabelVolumeNodeID(node->GetLabelVolumeNodeID());
@@ -313,7 +313,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
     }
 
   // than set new node
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> lvnode = NULL;
+  vtkMRMLScalarVolumeNode* lvnode = NULL;
 
   if (this->GetScene() && labelVolumeNodeID)
     {
@@ -354,7 +354,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLModelHierarchyNode> mhnode = NULL;
+  vtkMRMLModelHierarchyNode* mhnode = NULL;
 
   if (this->GetScene() && modelHierarchyNodeID)
     {
@@ -394,7 +394,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::AdjustModelTransformToLabelVolume()
 
       for(int i=0; i < cmn->GetNumberOfItems(); ++i)
         {
-          vtkSmartPointer<vtkMRMLModelNode> tempModelNode = vtkMRMLModelNode::SafeDownCast(cmn->GetItemAsObject(i));
+          vtkMRMLModelNode* tempModelNode = vtkMRMLModelNode::SafeDownCast(cmn->GetItemAsObject(i));
 
           if(!tempModelNode)
             continue;
@@ -418,11 +418,11 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetModelVisible(bool visible)
 
   if(this->ModelHierarchyNode)
     {
-      vtkSmartPointer<vtkMRMLModelNode> tempMN = this->ModelHierarchyNode->GetModelNode();
+      vtkMRMLModelNode* tempMN = this->ModelHierarchyNode->GetModelNode();
 
       if(tempMN)
         {
-          vtkSmartPointer<vtkMRMLModelDisplayNode> tempMDN = tempMN->GetModelDisplayNode();
+          vtkMRMLModelDisplayNode* tempMDN = tempMN->GetModelDisplayNode();
           if(tempMDN)
             tempMDN->SetVisibility(visible);
         }

@@ -170,7 +170,7 @@ vtkMRMLLongitudinalPETCTFindingNode::Copy(vtkMRMLNode *anode)
 
   Superclass::Copy(anode);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> node =
+  vtkMRMLLongitudinalPETCTFindingNode* node =
       vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(anode);
   if (node)
     {
@@ -241,7 +241,7 @@ vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLAnnotationROINode> roiNode = NULL;
+  vtkMRMLAnnotationROINode* roiNode = NULL;
 
   if (this->GetScene() && segmentationROINodeID)
     {
@@ -288,7 +288,7 @@ vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveModelHierarchyNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLModelHierarchyNode> mhnode = NULL;
+  vtkMRMLModelHierarchyNode* mhnode = NULL;
 
   if (this->GetScene() && modelHierarchyNodeID)
     {
@@ -309,7 +309,7 @@ vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveModelHierarchyNodeID(
       for (it = this->StudyIDToSegmentationIDMap.begin();
           it != this->StudyIDToSegmentationIDMap.end(); it++)
         {
-          vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(this->Scene->GetNodeByID((*it).second));
+          vtkMRMLLongitudinalPETCTSegmentationNode* seg = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(this->Scene->GetNodeByID((*it).second));
           this->UpdateSegmentationModelHierarchyParent(seg);
         }
     }
@@ -353,7 +353,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode*
 vtkMRMLLongitudinalPETCTFindingNode::RemoveStudyNodeIDToSegmentationNodeIDMap(
     const char* studyNodeID)
 {
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentationToRemove =
+  vtkMRMLLongitudinalPETCTSegmentationNode* segmentationToRemove =
       this->GetSegmentationMappedByStudyNodeID(studyNodeID);
 
   int removed = 0;
@@ -385,7 +385,7 @@ vtkMRMLLongitudinalPETCTFindingNode::RemoveStudyNodeIDToSegmentationNodeIDMap(
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTSegmentationNode* vtkMRMLLongitudinalPETCTFindingNode::GetSegmentationMappedByStudyNodeID(const char* studyNodeID)
 {
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentation = NULL;
+  vtkMRMLLongitudinalPETCTSegmentationNode* segmentation = NULL;
 
   if(this->StudyIDToSegmentationIDMap.find(studyNodeID) != this->StudyIDToSegmentationIDMap.end())
     {
@@ -449,6 +449,7 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateSegmentationModelHierarchyParent(
     {
       if (segmentation->GetModelHierarchyNode() != this->ModelHierarchyNode)
         {
+          std::cout << "UPDATED MH" << std::endl;
           segmentation->GetModelHierarchyNode()->SetParentNodeID(
               this->GetModelHierarchyNode()->GetID());
           this->Modified();
@@ -476,8 +477,8 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateReferences()
           const char* studyNodeID = (*it).first.c_str();
           const char* segNodeID = (*it).second.c_str();
 
-          vtkSmartPointer<vtkMRMLNode> studyNode = this->Scene->GetNodeByID(studyNodeID);
-          vtkSmartPointer<vtkMRMLNode> segNode = this->Scene->GetNodeByID(segNodeID);
+          vtkMRMLNode* studyNode = this->Scene->GetNodeByID(studyNodeID);
+          vtkMRMLNode* segNode = this->Scene->GetNodeByID(segNodeID);
 
           this->Modified();
 
@@ -546,7 +547,7 @@ vtkMRMLLongitudinalPETCTFindingNode::ProcessMRMLEvents(vtkObject *caller,
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segCaller = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(caller);
+  vtkMRMLLongitudinalPETCTSegmentationNode* segCaller = vtkMRMLLongitudinalPETCTSegmentationNode::SafeDownCast(caller);
 
   if(segCaller)
     {

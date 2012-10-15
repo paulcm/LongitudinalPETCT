@@ -144,7 +144,7 @@ int vtkMRMLLongitudinalPETCTReportNode::GetNumberOfSelectedStudies() const
 
   for(unsigned int i=0; i < this->StudyNodeIDs.size(); ++i)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = this->GetStudy(i);
+      vtkMRMLLongitudinalPETCTStudyNode* study = this->GetStudy(i);
       if(study && study->GetSelectedForSegmentation())
         count++;
     }
@@ -159,7 +159,7 @@ int vtkMRMLLongitudinalPETCTReportNode::GetNumberOfSelectedStudiesSelectedForAna
 
   for(unsigned int i=0; i < this->StudyNodeIDs.size(); ++i)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = this->GetStudy(i);
+      vtkMRMLLongitudinalPETCTStudyNode* study = this->GetStudy(i);
       if(study && study->GetSelectedForSegmentation() && study->GetSelectedForAnalysis())
         count++;
     }
@@ -210,7 +210,7 @@ bool vtkMRMLLongitudinalPETCTReportNode::RemoveFindingNodeID(const char* finding
     {
       if((*it).compare(findingNodeID) == 0)
         {
-          vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding = this->GetFinding(pos);
+          vtkMRMLLongitudinalPETCTFindingNode* finding = this->GetFinding(pos);
 
           this->FindingNodeIDs.erase(it);
 
@@ -252,7 +252,7 @@ vtkMRMLLongitudinalPETCTReportNode::RemoveStudyNodeID(const char* studyNodeID)
 
       if((*it).compare(studyNodeID) == 0)
         {
-          vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = this->GetStudy(pos);
+          vtkMRMLLongitudinalPETCTStudyNode* study = this->GetStudy(pos);
 
           this->StudyNodeIDs.erase(it);
 
@@ -285,7 +285,7 @@ vtkMRMLLongitudinalPETCTReportNode::AddFindingNodeID(const char* findingNodeID)
       || this->IsFindingNodeIDPresent(findingNodeID))
     return false;
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
+  vtkMRMLLongitudinalPETCTFindingNode* finding =
       vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(
           this->Scene->GetNodeByID(findingNodeID));
 
@@ -320,7 +320,7 @@ vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID)
   if (!this->Scene || !studyNodeID || this->IsStudyNodeIDPresent(studyNodeID))
     return pos;
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study =
+  vtkMRMLLongitudinalPETCTStudyNode* study =
       vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(
           this->Scene->GetNodeByID(studyNodeID));
 
@@ -378,7 +378,7 @@ vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID)
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetStudy(int index) const
 {
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> node = NULL;
+  vtkMRMLLongitudinalPETCTStudyNode* node = NULL;
 
   if(this->Scene && index >= 0 && index < this->GetNumberOfStudyNodeIDs())
     node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(this->Scene->GetNodeByID(this->StudyNodeIDs[index]));
@@ -390,7 +390,7 @@ vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetStudy(
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode* vtkMRMLLongitudinalPETCTReportNode::GetFinding(int index) const
 {
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> node = NULL;
+  vtkMRMLLongitudinalPETCTFindingNode* node = NULL;
 
     if(this->Scene && index >= 0 && index < this->GetNumberOfFindingNodeIDs())
       node = vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(this->Scene->GetNodeByID(this->FindingNodeIDs[index]));
@@ -419,7 +419,7 @@ std::vector<vtkMRMLLongitudinalPETCTStudyNode*> vtkMRMLLongitudinalPETCTReportNo
 
   for(int i=0; i < this->GetNumberOfStudyNodeIDs();++i)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = this->GetStudy(i);
+      vtkMRMLLongitudinalPETCTStudyNode* study = this->GetStudy(i);
       if(study && study->GetSelectedForSegmentation())
         selectedStudies.push_back(study);
     }
@@ -434,7 +434,7 @@ std::vector<vtkMRMLLongitudinalPETCTStudyNode*> vtkMRMLLongitudinalPETCTReportNo
 
   for(int i=0; i < this->GetNumberOfStudyNodeIDs();++i)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = this->GetStudy(i);
+      vtkMRMLLongitudinalPETCTStudyNode* study = this->GetStudy(i);
       if(study && study->GetSelectedForSegmentation() && study->GetSelectedForAnalysis())
         studiesSelectedForAnalysis.push_back(study);
     }
@@ -569,7 +569,7 @@ int vtkMRMLLongitudinalPETCTReportNode::GetIndexOfFindingNodeID(const char* find
 //----------------------------------------------------------------------------
 const vtkMRMLColorNode* vtkMRMLLongitudinalPETCTReportNode::GetColorNode()
 {
-  vtkSmartPointer<vtkMRMLColorNode> node = NULL;
+  vtkMRMLColorNode* node = NULL;
   if(this->GetScene() && this->ColorNodeID)
     {
       node = vtkMRMLColorNode::SafeDownCast(this->Scene->GetNodeByID(this->ColorNodeID));
@@ -700,7 +700,7 @@ vtkMRMLLongitudinalPETCTReportNode::SetReportsModelHierarchyNodeID(
       // update all findings model hierarchy node's parent node to the set node
       for (int i = 0; i < this->GetNumberOfFindingNodeIDs(); ++i)
         {
-          vtkSmartPointer<vtkMRMLModelHierarchyNode> tempMH = this->GetFinding(
+          vtkMRMLModelHierarchyNode* tempMH = this->GetFinding(
               i)->GetModelHierarchyNode();
 
           if (tempMH)
@@ -735,7 +735,7 @@ vtkMRMLLongitudinalPETCTReportNode::SetAndObserveFindingTypesColorTableNodeID(
     }
 
   // than set new node
-  vtkSmartPointer<vtkMRMLColorTableNode> ctnode = NULL;
+  vtkMRMLColorTableNode* ctnode = NULL;
 
   if (this->GetScene() && findingTypesColorTableNodeID)
     {
@@ -754,7 +754,7 @@ vtkMRMLLongitudinalPETCTReportNode::SetAndObserveFindingTypesColorTableNodeID(
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetUserSelectedStudyNode()
 {
-    vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> node = NULL;
+    vtkMRMLLongitudinalPETCTStudyNode* node = NULL;
     if(this->GetScene() && this->UserSelectedStudyNodeID)
       {
         node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(this->Scene->GetNodeByID(this->UserSelectedStudyNodeID));
@@ -766,7 +766,7 @@ vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetUserSe
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode* vtkMRMLLongitudinalPETCTReportNode::GetUserSelectedFindingNode()
 {
-    vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> node = NULL;
+    vtkMRMLLongitudinalPETCTFindingNode* node = NULL;
     if(this->GetScene() && this->UserSelectedFindingNodeID)
       {
         node = vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(this->Scene->GetNodeByID(this->UserSelectedFindingNodeID));
@@ -809,7 +809,7 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
 
-  vtkSmartPointer<vtkMRMLNode> node = vtkMRMLNode::SafeDownCast(caller);
+  vtkMRMLNode* node = vtkMRMLNode::SafeDownCast(caller);
 
   bool callerIsStudy = node->IsA("vtkMRMLLongitudinalPETCTStudyNode");
   bool callerIsFinding = node->IsA("vtkMRMLLongitudinalPETCTFindingNode");

@@ -198,7 +198,7 @@ void vtkMRMLLongitudinalPETCTStudyNode::Copy(vtkMRMLNode *anode)
   
   Superclass::Copy(anode);
 
-  vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(anode);
+  vtkMRMLLongitudinalPETCTStudyNode* node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(anode);
     if (node)
       {
         this->SetSelectedForSegmentation(node->GetSelectedForSegmentation());
@@ -253,7 +253,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETVolumeNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> petNode = NULL;
+  vtkMRMLScalarVolumeNode* petNode = NULL;
 
   if (this->GetScene() && petVolumeNodeID)
     {
@@ -305,7 +305,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCTVolumeNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> ctNode = NULL;
+  vtkMRMLScalarVolumeNode* ctNode = NULL;
 
   if (this->GetScene() && ctVolumeNodeID)
     {
@@ -351,7 +351,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETLabelVolumeNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLScalarVolumeNode> petLblNode = NULL;
+  vtkMRMLScalarVolumeNode* petLblNode = NULL;
 
   if (this->GetScene() && petLabelVolumeNodeID)
     {
@@ -395,7 +395,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCenteringTransformNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLLinearTransformNode> tnode = NULL;
+  vtkMRMLLinearTransformNode* tnode = NULL;
 
   if (this->GetScene() && centeringTransformNodeID)
     {
@@ -440,7 +440,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveVolumeRenderingDisplayNodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLVolumeRenderingDisplayNode> vrdNode = NULL;
+  vtkMRMLVolumeRenderingDisplayNode* vrdNode = NULL;
 
   if (this->GetScene() && volumeRenderingDisplayNodeID)
     {
@@ -488,7 +488,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
             this);
     }
 
-  vtkSmartPointer<vtkMRMLAnnotationROINode> roiNode = NULL;
+  vtkMRMLAnnotationROINode* roiNode = NULL;
 
   if (this->GetScene() && segmentationROINodeID)
     {
