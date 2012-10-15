@@ -397,6 +397,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
 
     reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTReportNode')
     reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1) 
+    slicer.mrmlScene.AddNode(reportNode)
 
     if self.petFileLoadables:
       files = self.petFileLoadables[0].files
@@ -412,39 +413,39 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
       reportNode.SetAttribute('DICOM.PatientSex',patientSex)
       reportNode.SetAttribute('DICOM.PatientSize',patientSize)
-      reportNode.SetScene(slicer.mrmlScene)
       
       colorLogic = slicer.modules.colors.logic()
       defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
       colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
-      
+
       reportNode.SetColorNodeID(defaultColorNodeID)
       logic = slicer.modules.longitudinalpetct.logic()
+
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
       reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
-      
+
       mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
       reportNode.SetReportsModelHierarchyNodeID(mh.GetID())
-        
+
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
-    
 
       if len(self.petFileLoadables) == len(self.ctFileLoadables):
         i = 0
         while i < len(self.petFileLoadables):
+
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
-        
+
           volLogic  = slicer.modules.volumes.logic() 
           #petLabelVolume = slicer.vtkMRMLScalarVolumeNode()
           #petLabelVolume.Copy(petScalarVolume)
           petLabelVolume = volLogic.CreateLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
-          
+
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
           studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
           studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
-    
+
           radioPharmaconStartTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radioPharmaconStartTime'])
           decayCorrection = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayCorrection'])
           decayFactor = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayFactor'])
@@ -452,12 +453,15 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           radionuclideHalfLife = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radionuclideHalfLife'])
           seriesTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['seriesTime'])
           patientWeight = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['patientWeight'])
-    
+
+          
           #Study Node
           studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTStudyNode')
-          studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)   
-        
+          studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)  
+          
+
           studyNode.SetName('Study_'+str(i))
+
           studyNode.SetAttribute('DICOM.StudyID',studyID)
           studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
           studyNode.SetAttribute('DICOM.StudyDate',studyDate)
@@ -470,15 +474,14 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           studyNode.SetAttribute('DICOM.SeriesTime',seriesTime)
           studyNode.SetAttribute('DICOM.PatientWeight',patientWeight)
 
-
-          slicer.mrmlScene.AddNode(studyNode)
           
           studyNode.SetAndObservePETVolumeNodeID(petScalarVolume.GetID())
           studyNode.SetAndObserveCTVolumeNodeID(ctScalarVolume.GetID())
           studyNode.SetAndObservePETLabelVolumeNodeID(petLabelVolume.GetID())
           
-        
-          
+
+          slicer.mrmlScene.AddNode(studyNode) 
+                  
           reportNode.AddStudyNodeID(studyNode.GetID())
           
           
@@ -486,8 +489,8 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
             logic.CenterStudyVolumeNodes(studyNode,slicer.mrmlScene)
         
           i += 1 
-        
-      slicer.mrmlScene.AddNode(reportNode)
+
+      
     
     return reportNode
   
