@@ -55,6 +55,13 @@ vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 {
   this->SegmentationROINode = NULL;
   this->ModelHierarchyNode = NULL;
+  this->ObservedEvents = NULL;
+
+  if(this->SegmentationROINodeID)
+    delete [] this->SegmentationROINodeID;
+
+  if(this->ModelHierarchyNodeID)
+    delete [] this->ModelHierarchyNodeID;
 }
 
 //----------------------------------------------------------------------------

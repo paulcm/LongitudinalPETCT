@@ -58,7 +58,6 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
   this->SegmentationROINode = NULL;
   this->SegmentationROINodeID = NULL;
 
-
   this->CenteringTransformNode = NULL;
   this->CenteringTransformNodeID = NULL;
 
@@ -70,7 +69,31 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
 {
+  this->PETVolumeNode = NULL;
+  this->CTVolumeNode = NULL;
+  this->PETLabelVolumeNode = NULL;
+  this->SegmentationROINode = NULL;
+  this->CenteringTransformNode = NULL;
+  this->VolumeRenderingDisplayNode = NULL;
 
+
+  if(this->PETVolumeNodeID)
+    delete [] this->PETVolumeNodeID;
+
+  if(this->CTVolumeNodeID)
+    delete [] this->CTVolumeNodeID;
+
+  if(this->PETLabelVolumeNodeID)
+    delete [] this->PETLabelVolumeNodeID;
+
+  if(this->SegmentationROINodeID)
+    delete [] this->PETLabelVolumeNodeID;
+
+  if(this->CenteringTransformNodeID)
+    delete [] this->CenteringTransformNodeID;
+
+  if(this->VolumeRenderingDisplayNodeID)
+    delete [] this->VolumeRenderingDisplayNodeID;
 }
 
 //----------------------------------------------------------------------------
