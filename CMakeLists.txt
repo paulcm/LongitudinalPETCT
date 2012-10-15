@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 2.8.7)
 #-----------------------------------------------------------------------------
 if(NOT Slicer_SOURCE_DIR)
   set(EXTENSION_NAME LongitudinalPETCT)
-  set(EXTENSION_HOMEPAGE "http://www.slicer.org/slicerWiki/index.php/Documentation/4.1/Extensions/LongPETCT")
+  set(EXTENSION_HOMEPAGE "http://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Extensions/LongitudinalPETCT")
   set(EXTENSION_CATEGORY "Examples")
-  set(EXTENSION_CONTRIBUTORS "Paul Mercea (University of Heidelberg), Andriy Fedorov(Surgical Planning Lab)")
+  set(EXTENSION_CONTRIBUTORS "Paul Mercea (University of Heidelberg), Andrey Fedorov(Surgical Planning Lab)")
   set(EXTENSION_DESCRIPTION "This is an example of extension bundling a scripted loadable module")
-  set(EXTENSION_ICONURL "http://viewvc.slicer.org/viewvc.cgi/Slicer4/trunk/Extensions/Testing/LongPETCT/Resources/Icons/LongPETCT.png?revision=19437&view=co")
-  set(EXTENSION_SCREENSHOTURLS "http://wiki.slicer.org/slicerWiki/images/e/e2/Slicer-r19441-LongPETCT-screenshot.png")
+  set(EXTENSION_ICONURL "http://www.slicer.org/slicerWiki/images/0/08/LongitudinalPETCTLogo.png")
+  set(EXTENSION_SCREENSHOTURLS "http://www.slicer.org/slicerWiki/images/3/31/LongitudinalPETCT_Screenshot.jpg")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -39,6 +39,8 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${CMAKE_CURRENT_BINARY_DIR}/Logic
   ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
   ${CMAKE_CURRENT_BINARY_DIR}/Widgets
+  #${vtkSlicerVolumesModuleLogic_SOURCE_DIR}
+  #${vtkSlicerVolumesModuleLogic_BINARY_DIR}
   )
 
 set(MODULE_SRCS
@@ -57,6 +59,7 @@ set(MODULE_MOC_SRCS
   set(MODULE_TARGET_LIBRARIES
   vtkSlicer${MODULE_NAME}ModuleLogic
   qSlicer${MODULE_NAME}ModuleWidgets
+  #vtkSlicerVolumesModuleLogic
   )
   
 
