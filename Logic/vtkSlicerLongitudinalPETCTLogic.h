@@ -37,10 +37,12 @@
 //Qt inlcudes
 #include <QStringList>
 
+
 // CTK forward declarations
 class ctkDICOMDatabase;
 
 #include "vtkSlicerLongitudinalPETCTModuleLogicExport.h"
+
 
 class vtkMRMLLongitudinalPETCTReportNode;
 class vtkMRMLLongitudinalPETCTStudyNode;
@@ -48,6 +50,7 @@ class vtkMRMLVolumeNode;
 class vtkMRMLColorNode;
 class vtkMRMLColorTableNode;
 class vtkMRMLScene;
+class vtkMRMLScalarVolumeNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_LONGITUDINALPETCT_MODULE_LOGIC_EXPORT vtkSlicerLongitudinalPETCTLogic :
@@ -102,6 +105,9 @@ public:
 
 
   vtkMRMLColorTableNode* GetDefaultFindingTypesColorTable(vtkMRMLColorNode* defaultEditorColorNode);
+
+  // TODO check which imports are needed
+  //static vtkMRMLScalarVolumeNode* CreateLabelVolumeForScalarVolume(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScene* scene);
 
 protected:
 

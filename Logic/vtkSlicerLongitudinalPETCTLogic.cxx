@@ -52,11 +52,14 @@
 
 #include <vtkNew.h>
 #include <vtkMatrix4x4.h>
+#include <vtkSmartPointer.h>
+
 #include <vtkImageData.h>
 #include <vtkLookupTable.h>
 
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
+
 #include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLColorTableNode.h>
 #include <vtkMRMLColorLogic.h>
@@ -103,8 +106,8 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
   if (petVolume == NULL || ctVolume == NULL || petLabelVolume == NULL || petVolume->GetImageData() == NULL
       || ctVolume->GetImageData() == NULL || petLabelVolume->GetImageData() == NULL)
     {
-      vtkDebugMacro(
-          "vtkSlicerLongitudinalPETCTLogic: PETVolume and/or CTVolume to be centered have NULL value or their image data is NULL");
+      //vtkDebugMacro(
+          //"vtkSlicerLongitudinalPETCTLogic: PETVolume and/or CTVolume to be centered have NULL value or their image data is NULL");
       return false;
     }
 
@@ -156,8 +159,8 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
 
   if (!center)
     {
-      vtkDebugMacro(
-          "vtkSlicerLongitudinalPETCTLogic: Centering of reference volume failed!");
+      //vtkDebugMacro(
+         // "vtkSlicerLongitudinalPETCTLogic: Centering of reference volume failed!");
       return false;
     }
 
@@ -190,13 +193,14 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
 
   scene->AddNode(translationTransform.GetPointer());
 
-  petVolume->SetAndObserveTransformNodeID(
+  /*petVolume->SetAndObserveTransformNodeID(
       translationTransform->GetID());
   ctVolume->SetAndObserveTransformNodeID(
       translationTransform->GetID());
   petLabelVolume->SetAndObserveTransformNodeID(translationTransform->GetID());
+  */
 
-  study->SetCenteringTransform(translationTransform.GetPointer());
+  study->SetAndObserveCenteringTransformNodeID(translationTransform->GetID());
 
 
   return true;
@@ -594,3 +598,20 @@ vtkSlicerLongitudinalPETCTLogic::GetDirectoryOfDICOMSeries(const char* sopInstan
 
   return directoryPath.toStdString().c_str();
 }
+
+//vtkMRMLScalarVolumeNode* vtkSlicerLongitudinalPETCTLogic::CreateLabelVolumeForScalarVolume(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScene* scene)
+//{
+//  if(!volumeNode || !scene)
+//    return NULL;
+//
+//  vtkSlicerVolumesLogic* volumesLogic = vtkSlicerVolumesLogic::New();
+//
+//  std::string name = volumeNode->GetName();
+//  name.append("_Label");
+//  vtkSmartPointer<vtkMRMLScalarVolumeNode> labelVolume = volumesLogic->CreateLabelVolume(scene, volumeNode, name.c_str());
+//
+//  volumesLogic->Delete();
+//
+//  return labelVolume;
+//
+//}
