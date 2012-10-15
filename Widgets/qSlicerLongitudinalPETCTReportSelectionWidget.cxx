@@ -172,6 +172,8 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
   Q_ASSERT(d->LabelInformation);
   Q_ASSERT(d->LabelSizeInfo);
 
+  std::cout << "UPDATING REPORT SELECTION" << std::endl;
+
   if(d->ReportNode != NULL)
     {
         d->LabelNameInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientName"));
@@ -194,6 +196,8 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
 
     bool infoVisible = d->MRMLNodeComboBoxReport->nodeCount() == 0;
     d->LabelInformation->setVisible(infoVisible);
+
+    std::cout << "END UPDATING REPORT SELECTION" << std::endl;
 }
 
 //-----------------------------------------------------------------------------

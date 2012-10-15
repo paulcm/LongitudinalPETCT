@@ -285,10 +285,13 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
 
+  std::cout << "UPDATING REPORT TABLE WIDGET" << std::endl;
+
   if (d->ReportNode == NULL
       || d->TableReport->rowCount() != d->ReportNode->GetNumberOfFindingNodeIDs()
       || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
+
 
   for (int i = 0; i < d->ReportNode->GetNumberOfFindingNodeIDs(); ++i)
     {
@@ -318,7 +321,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
                   d->ReportNode->GetFindingTypesColorTableNode();
               if (colorTable)
                 {
-                  double color[3];
+                  double color[4];
                   colorTable->GetColor(colorID, color);
                   QColor findingColor =
                       qSlicerLongitudinalPETCTColorSelectionDialog::getRGBColorFromDoubleValues(
@@ -353,6 +356,8 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
       d->TableReport->setVerticalHeaderItem(i, item);
 
     }
+
+  std::cout << "END UPDATING REPORT TABLE WIDGET" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -363,7 +368,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   Q_ASSERT(d->TableReport);
   Q_ASSERT(d->LabelSelectedValue);
 
-  if (d->ReportNode == NULL)
+  if ( ! d->ReportNode)
     {
       d->TableReport->clear();
       return;
@@ -374,6 +379,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   this->updateVerticalHeaders();
   this->updateHorizontalHeaders();
 
+
   int lastSelectedStudyIndex = d->ReportNode->GetIndexOfSelectedStudy(
       d->ReportNode->GetUserSelectedStudyNode());
 
@@ -381,8 +387,9 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
       && lastSelectedStudyIndex < d->ReportNode->GetNumberOfSelectedStudies())
     this->selectStudyColumn(lastSelectedStudyIndex);
 
-  int lastSelectedFindingIndex = d->ReportNode->GetIndexOfFindingNodeID(
-      d->ReportNode->GetUserSelectedFindingNode()->GetID());
+  int lastSelectedFindingIndex = -1;
+  if(d->ReportNode->GetUserSelectedFindingNode())
+    lastSelectedFindingIndex = d->ReportNode->GetIndexOfFindingNodeID(d->ReportNode->GetUserSelectedFindingNode()->GetID());
 
   if (lastSelectedFindingIndex >= 0
       && lastSelectedFindingIndex < d->ReportNode->GetNumberOfFindingNodeIDs())
@@ -475,6 +482,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
     }
   else
     d->LabelSelectedValue->setText(NULL);
+
 }
 
 

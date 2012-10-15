@@ -133,6 +133,8 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
 {
   Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
 
+  std::cout << "UPDATING STUDY SELECTION WIDGET" << std::endl;
+
   d->TableStudySelection->clearRows(); // clear table first
 
   if(!d->ReportNode)
@@ -148,6 +150,7 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
       d->TableStudySelection->addStudyToTable(study, disabled);
     }
 
+  std::cout << "END UPDATING STUDY SELECTION WIDGET" << std::endl;
 }
 
 //-----------------------------------------------------------------------------

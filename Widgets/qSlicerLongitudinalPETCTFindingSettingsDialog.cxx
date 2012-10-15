@@ -201,20 +201,22 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   Q_ASSERT(d->ComboBoxType);
   Q_ASSERT(d->LineEditName);
 
+  std::cout << "UPDATING FINDING SETTINGS DIALOG" << std::endl;
 
   QObject::disconnect(d->ComboBoxType, SIGNAL(currentIndexChanged(int)), this,
         SLOT(selectionChanged(int)));
+
   d->ComboBoxType->clear();
+
   QObject::connect(d->ComboBoxType, SIGNAL(currentIndexChanged(int)), this,
         SLOT(selectionChanged(int)));
+
   if (!d->UpdatingFindingTypes)
     d->LineEditName->clear();
   d->LineEditTypeName->clear();
   d->LineEditTypeName->setPlaceholderText(d->LineEditTypeNamePlaceholderText);
   d->ButtonColor->setStyleSheet(d->ButtonColorDefaultStyleSheet);
   d->ButtonColor->setText(d->ButtonColorDefaultText);
-
-
 
   if ( ! d->ReportNode  || ! d->ReportNode->GetUserSelectedFindingNode() || ! d->ReportNode->GetFindingTypesColorTableNode() )
       return;
@@ -226,19 +228,17 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   vtkSmartPointer<vtkMRMLColorTableNode> colorTableNode =
       d->ReportNode->GetFindingTypesColorTableNode();
 
-  double col[3];
+  double col[4];
 
   for (int i = 1; i < colorTableNode->GetNumberOfColors(); ++i) // i = 1 because "None" is not selectable
     {
-      QString findingType = d->ReportNode->GetFindingTypeName(i);
 
+      QString findingType(d->ReportNode->GetFindingTypeName(i));
       colorTableNode->GetColor(i, col);
-      QColor color =
-          qSlicerLongitudinalPETCTColorSelectionDialog::getRGBColorFromDoubleValues(
-              col[0], col[1], col[2]);
-
+      QColor color = qSlicerLongitudinalPETCTColorSelectionDialog::getRGBColorFromDoubleValues(col[0], col[1], col[2]);
       d->addFindingTypeToComboBox(findingType, color);
     }
+
 
   bool findingHasSegmentation =
       d->ReportNode->GetUserSelectedFindingNode()->GetNumberOfSegmentations() > 0;
@@ -256,6 +256,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::updateView()
   d->selectFindingType(
       d->ReportNode->GetUserSelectedFindingNode()->GetColorID() - 1); // -1 because of "None" not in list
 
+  std::cout << "END UPDATING FINDING SETTINGS DIALOG" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -398,6 +399,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::selectionChanged(int index)
   Q_ASSERT(d->LineEditName);
   Q_ASSERT(d->ComboBoxType);
 
+  if( ! d->ReportNode)
     return;
 
   if (index >= d->ReportNode->GetNumberOfDefaultFindingTypes() - 1
@@ -431,6 +433,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::selectionChanged(int index)
           okBtn->setToolTip(NULL);
         }
     }
+
 
   if (finding->GetColorID() == -1)
     d->LineEditName->setText(d->ComboBoxType->currentText());

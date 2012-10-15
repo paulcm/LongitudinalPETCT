@@ -143,13 +143,15 @@ void qSlicerLongitudinalPETCTAnalysisSettingsWidget
   Q_D(qSlicerLongitudinalPETCTAnalysisSettingsWidget);
   Q_ASSERT(d->TableStudyAnalysisSelection);
 
+  std::cout << "UPDATING ANALYSIS SETTINGS" << std::endl;
+
   d->TableStudyAnalysisSelection->clearRows();
 
   if(d->ReportNode == NULL)
     return;
 
 
-  bool lastSelected = d->ReportNode->GetNumberOfStudiesSelectedForAnalysis() == 1;
+  bool lastSelected = d->ReportNode->GetNumberOfSelectedStudiesSelectedForAnalysis() == 1;
 
   for(int i=0; i < d->ReportNode->GetNumberOfSelectedStudies(); ++i)
     {
@@ -159,6 +161,7 @@ void qSlicerLongitudinalPETCTAnalysisSettingsWidget
       d->TableStudyAnalysisSelection->addStudyToTable(study, disabled);
     }
 
+  std::cout << "END UPDATING ANALYSIS SETTINGS" << std::endl;
 }
 
 

@@ -149,6 +149,8 @@ qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
   Q_ASSERT(d->CheckBoxROIVisiblity);
   Q_ASSERT(d->FormLayout);
 
+  std::cout << "UPDATING FINDING SELECTION" << std::endl;
+
   vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
       vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(
           d->MRMLNodeComboBoxFinding->currentNode());
@@ -159,6 +161,7 @@ qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
   else
     d->ButtonPlaceROI->setEnabled(true);
 
+  std::cout << "END UPDATING FINDING SELECTION" << std::endl;
 }
 
 
