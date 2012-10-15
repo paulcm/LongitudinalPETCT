@@ -66,6 +66,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::vtkMRMLLongitudinalPETCTSegmentationNo
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTSegmentationNode::~vtkMRMLLongitudinalPETCTSegmentationNode()
 {
+  /*
   this->LabelVolumeNode = NULL;
   this->ModelHierarchyNode = NULL;
 
@@ -74,6 +75,8 @@ vtkMRMLLongitudinalPETCTSegmentationNode::~vtkMRMLLongitudinalPETCTSegmentationN
 
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
+
+    */
 }
 
 //----------------------------------------------------------------------------

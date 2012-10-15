@@ -245,7 +245,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.updateSegmentationROIPosition()
           
         elif study:
-          currentStudy.SetAndObserveSegmentationROINodeID(None)
+          currentStudy.SetAndObserveSegmentationROINodeID("") #TODO see why None doesn't work
     
     # update view
     self.updateBgFgToUserSelectedStudy(study)
@@ -841,6 +841,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if seg:
           SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), findingNode.GetColorID())
           findingNode.RemoveStudyNodeIDToSegmentationNodeIDMap(study.GetID())
+          
+          if seg.GetModelHierarchyNode():
+            ViewHelper.removeModelHierarchyAndChildModelNodesFromScene(seg.GetModelHierarchyNode())
           slicer.mrmlScene.RemoveNode(seg)
           
           
@@ -984,31 +987,27 @@ class qSlicerLongitudinalPETCTModuleWidget:
           genModelNodes = vtk.vtkCollection()
           tempMH.GetChildrenModelNodes(genModelNodes)
 
-          print "Z1"
           if genModelNodes.GetNumberOfItems() > 0:
             modelNode = genModelNodes.GetItemAsObject(0)
             if modelNode:
-              print "Z2"
               if modelNode.IsA('vtkMRMLModelNode'):
                 hnode = slicer.vtkMRMLHierarchyNode.GetAssociatedHierarchyNode(modelNode.GetScene(), modelNode.GetID())
                 if hnode:
-                  print "Z3"
+                  if currentSeg.GetModelHierarchyNode():
+                    ViewHelper.removeModelHierarchyAndChildModelNodesFromScene(currentSeg.GetModelHierarchyNode())
+                  
                   currentSeg.SetAndObserveModelHierarchyNodeID(hnode.GetID())
                   modelNode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_M")
                   if modelNode.GetDisplayNode():
-                    print "Z4"
                     modelNode.GetDisplayNode().SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_D")
                     modelNode.GetDisplayNode().AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
                   hnode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_H")
                   modelNode.SetHideFromEditors(False)
                   modelNode.SetHideFromEditors(False)
-                  print "Z5"
                 else:
-                  print "Z6"
                   currentSeg.SetAndObserveModelHierarchyNodeID(None)
                   slicer.mrmlScene.RemoveNode(modelNode)   
                   slicer.mrmlScene.RemoveNode(hnode)
-                  print "Z7"
    
           slicer.mrmlScene.RemoveNode(tempMH.GetDisplayNode())
           slicer.mrmlScene.RemoveNode(tempMH)         

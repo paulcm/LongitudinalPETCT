@@ -69,6 +69,7 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
 {
+  /*
   this->PETVolumeNode = NULL;
   this->CTVolumeNode = NULL;
   this->PETLabelVolumeNode = NULL;
@@ -94,6 +95,7 @@ vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
 
   if(this->VolumeRenderingDisplayNodeID)
     delete [] this->VolumeRenderingDisplayNodeID;
+    */
 }
 
 //----------------------------------------------------------------------------

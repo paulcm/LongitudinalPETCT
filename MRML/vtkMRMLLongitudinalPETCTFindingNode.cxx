@@ -53,6 +53,7 @@ vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 {
+  /*
   this->SegmentationROINode = NULL;
   this->ModelHierarchyNode = NULL;
   this->ObservedEvents = NULL;
@@ -62,6 +63,7 @@ vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
+    */
 }
 
 //----------------------------------------------------------------------------
@@ -82,27 +84,22 @@ vtkMRMLLongitudinalPETCTFindingNode::ReadXMLAttributes(const char** atts)
 
       if (!strcmp(attName, "ColorID"))
         {
-          std::cout << "D1" << std::endl;
           this->SetColorID(atoi(attValue));
         }
       else if (!strcmp(attName, "TypeName"))
         {
-          std::cout << "D2" << std::endl;
           this->SetTypeName(attValue);
         }
       else if (!strcmp(attName, "SegmentationROINodeID"))
         {
-          std::cout << "D3" << std::endl;
           this->SetAndObserveSegmentationROINodeID(attValue);
         }
       else if (!strcmp(attName, "ModelHierarchyNodeID"))
         {
-          std::cout << "D4" << std::endl;
           this->SetAndObserveModelHierarchyNodeID(attValue);
         }
       else if (!strcmp(attName, "StudyNodeIDSegmentationNodeIDMap"))
         {
-          std::cout << "D5" << std::endl;
           this->StudyIDToSegmentationIDMap.clear(); // just to be sure
 
           // format is 'StudyNodeID':'SegmentationNodeID'
@@ -111,19 +108,15 @@ vtkMRMLLongitudinalPETCTFindingNode::ReadXMLAttributes(const char** atts)
           const std::string::size_type n = text.length();
           std::string::size_type first = 0, second, third, fourth;
           first = text.find_first_of("'");
-          std::cout << "D6" << std::endl;
           while (first < n)
             {
               second = text.find_first_of("'", first + 1);
               third = text.find_first_of("'", second + 1);
               fourth = text.find_first_of("'", third + 1);
-              std::cout << "D7a" << std::endl;
               std::string studyID = text.substr(first + 1, second - first - 1);
               std::string segID = text.substr(third + 1, fourth - third - 1);
-              std::cout << "D7b" << std::endl;
               this->StudyIDToSegmentationIDMap.insert(
                   std::make_pair(studyID, segID));
-              std::cout << "D7c" << std::endl;
               first = text.find_first_of("'",fourth+1);
             }
         }

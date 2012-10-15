@@ -65,6 +65,7 @@ vtkMRMLLongitudinalPETCTReportNode::vtkMRMLLongitudinalPETCTReportNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 {
+  /*
   this->FindingTypesColorTableNode = NULL;
   this->ObservedEvents = NULL;
 
@@ -82,7 +83,7 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 
   if(this->ColorNodeID)
     delete [] this->ColorNodeID;
-
+  */
 }
 
 //----------------------------------------------------------------------------
@@ -816,7 +817,6 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 
   if(callerIsStudy || callerIsFinding || callerIsFindingTypesTable)
     {
-      std::cout << "Study, Finding or FindingType Modifed" << std::endl;
       this->Modified();
     }
 }
