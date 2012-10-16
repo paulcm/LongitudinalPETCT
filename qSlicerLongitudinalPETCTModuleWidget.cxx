@@ -62,8 +62,7 @@ qSlicerLongitudinalPETCTModuleWidget::~qSlicerLongitudinalPETCTModuleWidget()
 //-----------------------------------------------------------------------------
 void qSlicerLongitudinalPETCTModuleWidget::setup()
 {
-  Q_D(qSlicerLongitudinalPETCTModuleWidget);
-  // d->setupUi(this); no UI file
+
   this->Superclass::setup();
 }
 
