@@ -155,7 +155,7 @@ qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
       vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(
           d->MRMLNodeComboBoxFinding->currentNode());
 
-  if (!finding || (finding && finding->GetSegmentationROINode()))
+  if (!finding) // || (finding && finding->GetSegmentationROINode()))
     d->ButtonPlaceROI->setDisabled(true);
 
   else
@@ -177,12 +177,13 @@ void qSlicerLongitudinalPETCTFindingSelectionWidget
   d->LabelSelectFinding->setEnabled(enabled);
   d->MRMLNodeComboBoxFinding->setEnabled(enabled);
   d->LabelPlaceROI->setEnabled(enabled);
+  d->ButtonPlaceROI->setEnabled(enabled);
 
-  if(d->ReportNode)
-    {
-      if(d->ReportNode->GetUserSelectedFindingNode())
-          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFindingNode()->GetSegmentationROINode()));
-    }
+//  if(d->ReportNode)
+//    {
+//      if(d->ReportNode->GetUserSelectedFindingNode())
+//          d->ButtonPlaceROI->setEnabled(enabled && !(d->ReportNode->GetUserSelectedFindingNode()->GetSegmentationROINode()));
+//    }
   }
 
 //-----------------------------------------------------------------------------
