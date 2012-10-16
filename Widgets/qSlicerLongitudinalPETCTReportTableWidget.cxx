@@ -187,7 +187,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareHorizontalHeaders()
         d->TableReport->removeColumn(newColumnID - 1);
     }
 
-  if(empty & d->TableReport->columnCount() > 0)
+  if(empty && (d->TableReport->columnCount() > 0))
     {
       QHeaderView* horizontalHeaderView = d->TableReport->horizontalHeader();
       if(horizontalHeaderView != NULL)
@@ -222,7 +222,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareVerticalHeaders()
         d->TableReport->removeRow(newRowID - 1);
     }
 
-  if(empty & d->TableReport->rowCount() > 0)
+  if(empty && (d->TableReport->rowCount() > 0))
      {
        QHeaderView* verticalHeaderView = d->TableReport->verticalHeader();
        if(verticalHeaderView != NULL)
