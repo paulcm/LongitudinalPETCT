@@ -49,6 +49,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.logic  = slicer.modules.longitudinalpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
+    self.anLogic = logic = slicer.modules.annotations.logic()
 
     self.findingSettingsDialog = None
 
@@ -1471,7 +1472,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.reportTableWidget.setProperty('enabled',False)
 
   def assignNewROIToFinding(self, caller, event):
+
     
+    if caller == slicer.mrmlScene:
+      nrOfNodes = slicer.mrmlScene.GetNumberOfNodes()
+      lastAddedNode = slicer.mrmlScene.GetNthNode(nrOfNodes-1)
+      if lastAddedNode.IsA('vtkMRMLAnnotationROINode') == False:
+        return
+      
+    print "ENTERED ASSIGN"
+      
     if self.roiPlacementNodeAddedEventObserverID != None:
       roiNodes = ViewHelper.getROINodesCollection()
       roiNode = roiNodes.GetItemAsObject(roiNodes.GetNumberOfItems()-1)
@@ -1480,28 +1490,48 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
 
       if (roiNode != None) & (roiNode != self.lastAddedROINode) & (currentStudy != None) & (currentFinding != None):
+        roiXYZ = [0.,0.,0.]
+        roiNode.GetXYZ(roiXYZ)
+        
+        if currentStudy.GetCenteredVolumes() & (currentStudy.GetCenteringTransformNode() != None):
+          centerTransform = currentStudy.GetCenteringTransformNode()
+          centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
+          roiXYZ = [roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3)] 
+          
         if currentFinding.GetSegmentationROINode() == None:
+          print "NO FINDING ROI"
           #adjust roi position if volumes in study are centered so that it's position doesn't get changed when set under transform
-          if currentStudy.GetCenteredVolumes() & (currentStudy.GetCenteringTransformNode() != None):
-            roiXYZ = [0.,0.,0.]
-            roiNode.GetXYZ(roiXYZ)
-            centerTransform = currentStudy.GetCenteringTransformNode()
-            centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
-            roiNode.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
+          roiNode.SetXYZ(roiXYZ)  
           
           roiNode.SetDisplayVisibility(self.findingSelectionWidget.property('roiVisibility'))  
           currentFinding.SetAndObserveSegmentationROINodeID(roiNode.GetID())
           currentStudy.SetAndObserveSegmentationROINodeID(roiNode.GetID())
-          appLogic = slicer.app.applicationLogic()
-          if appLogic:
-            intnode = appLogic.GetInteractionNode()
-            if intnode:
-              slicer.mrmlScene.RemoveObserver(self.roiPlacementNodeAddedEventObserverID)
-              self.roiPlacementNodeAddedEventObserverID = None
-              self.lastAddedROINode = roiNode
-              self.editorWidget.editLabelMapsFrame.setEnabled(True)
-     
-                 
+          
+          self.lastAddedROINode = roiNode
+          self.editorWidget.editLabelMapsFrame.setEnabled(True)
+              
+         
+        else:
+          print "HAS FINDING ROI"
+          roiRadius = [0.,0.,0.]
+          roiNode.GetRadiusXYZ(roiRadius)
+          
+          roiInFinding = currentFinding.GetSegmentationROINode()
+          roiInFinding.SetXYZ(roiXYZ)
+          roiInFinding.SetRadiusXYZ(roiRadius)
+          
+          if(self.anLogic):
+            hn = slicer.vtkMRMLDisplayableHierarchyNode.GetDisplayableHierarchyNode(slicer.mrmlScene,roiNode.GetID())
+            print "HIERARCHY NODE: " + hn.GetID()
+            self.anLogic.RemoveAnnotationNode(roiNode)
+
+        
+        appLogic = slicer.app.applicationLogic()
+        if appLogic:
+          intnode = appLogic.GetInteractionNode()
+          if intnode:
+            slicer.mrmlScene.RemoveObserver(self.roiPlacementNodeAddedEventObserverID)
+            self.roiPlacementNodeAddedEventObserverID = None           
    
   def endROIPlacement(self, caller, event): 
     appLogic = slicer.app.applicationLogic()
