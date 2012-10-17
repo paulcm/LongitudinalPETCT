@@ -65,9 +65,6 @@ vtkMRMLLongitudinalPETCTReportNode::vtkMRMLLongitudinalPETCTReportNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 {
-  /*
-  this->FindingTypesColorTableNode = NULL;
-  this->ObservedEvents = NULL;
 
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
@@ -83,7 +80,7 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 
   if(this->ColorNodeID)
     delete [] this->ColorNodeID;
-  */
+
 }
 
 //----------------------------------------------------------------------------
@@ -109,11 +106,41 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
 {
   int disabledModify = this->StartModify();
   
-  this->SetAttribute("DICOM.PatientName",anode->GetAttribute("DICOM.PatientName"));
-  this->SetAttribute("DICOM.PatientBirthDate",anode->GetAttribute("DICOM.PatientBirthDate"));
-  this->SetAttribute("DICOM.PatientSex",anode->GetAttribute("DICOM.PatientSex"));
-
   Superclass::Copy(anode);
+
+  vtkMRMLLongitudinalPETCTReportNode* node = vtkMRMLLongitudinalPETCTReportNode::SafeDownCast(anode);
+
+  if (node)
+    {
+      this->SetReportsModelHierarchyNodeID(node->GetModelHierarchyNodeID());
+      this->SetUserSelectedStudyNodeID(node->GetUserSelectedStudyNodeID());
+      this->SetUserSelectedFindingNodeID(node->GetUserSelectedFindingNodeID());
+      this->SetAndObserveFindingTypesColorTableNodeID(
+          node->GetFindingTypesColorTableNodeID());
+      this->SetColorNodeID(node->GetColorNodeID());
+
+      IDsVectorType::iterator it;
+      while (this->GetNumberOfStudyNodeIDs() > 0)
+        {
+          it = this->StudyNodeIDs.begin();
+          this->RemoveStudyNodeID((*it).c_str());
+        }
+      for (int i = 0; i < node->GetNumberOfStudyNodeIDs(); ++i)
+        {
+          this->AddStudyNodeID(node->GetNthStudyNodeID(i));
+        }
+
+      while (this->GetNumberOfFindingNodeIDs() > 0)
+        {
+          it = this->FindingNodeIDs.begin();
+          this->RemoveFindingNodeID((*it).c_str());
+        }
+      for (int i = 0; i < node->GetNumberOfFindingNodeIDs(); ++i)
+        {
+          this->AddFindingNodeID(node->GetNthFindingNodeID(i));
+        }
+
+    }
 
   this->EndModify(disabledModify);
 }
@@ -122,8 +149,52 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
 void vtkMRMLLongitudinalPETCTReportNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os,indent);
+
+  os << indent << "ModelHierarchyNodeID: " << (this->ModelHierarchyNodeID ? this->ModelHierarchyNodeID : "(none)") << "\n";
+  os << indent << "UserSelectedStudyNodeID: " << (this->UserSelectedStudyNodeID ? this->UserSelectedStudyNodeID : "(none)") << "\n";
+  os << indent << "UserSelectedFindingNodeID: " << (this->UserSelectedFindingNodeID ? this->UserSelectedFindingNodeID : "(none)") << "\n";
+  os << indent << "FindingTypesColorTableNodeID: " << (this->FindingTypesColorTableNodeID ? this->FindingTypesColorTableNodeID : "(none)") << "\n";
+  os << indent << "DefaultColorNodeID: " << (this->ColorNodeID ? this->ColorNodeID : "(none)") << "\n";
+
+  IDsVectorType::iterator it;
+
+  os << indent << "StudyNodeIDs: " << (this->StudyNodeIDs.empty() ? "(none)" : "") << "\n";
+  for (it = this->StudyNodeIDs.begin(); it != StudyNodeIDs.end(); ++it)
+    {
+      if(! (*it).empty())
+              os << indent << indent << (*it).c_str() << "\n";
+    }
+  os << indent << "FindingNodeIDs: " << (this->FindingNodeIDs.empty() ? "(none)" : "") << "\n";
+
+  for (it = this->FindingNodeIDs.begin(); it != FindingNodeIDs.end(); ++it)
+    {
+      if(! (*it).empty())
+        os << indent << indent << (*it).c_str() << "\n";
+    }
 }
 
+//----------------------------------------------------------------------------
+const char* vtkMRMLLongitudinalPETCTReportNode::GetNthStudyNodeID(int index)
+{
+  const char* nodeID = NULL;
+
+  if(index >= 0 && index < this->GetNumberOfStudyNodeIDs())
+    nodeID = this->StudyNodeIDs.at(index).c_str();
+
+
+  return nodeID;
+}
+
+//----------------------------------------------------------------------------
+const char* vtkMRMLLongitudinalPETCTReportNode::GetNthFindingNodeID(int index)
+{
+  const char* nodeID = NULL;
+
+  if(index >= 0 && index < this->GetNumberOfFindingNodeIDs())
+    nodeID = this->FindingNodeIDs.at(index).c_str();
+
+  return nodeID;
+}
 
 //----------------------------------------------------------------------------
 int vtkMRMLLongitudinalPETCTReportNode::GetNumberOfStudyNodeIDs() const

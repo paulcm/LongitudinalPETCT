@@ -50,7 +50,6 @@ class vtkMRMLColorNode;
 
 
 
-
 class vtkEventForwarderCommand;
 
 /// \ingroup Slicer_QtModules_LongitudinalPETCTReportNode
@@ -93,6 +92,9 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   vtkMRMLLongitudinalPETCTFindingNode* GetFinding(int index) const;
 
   bool FindingNameInList(const std::string& name);
+
+  const char* GetNthStudyNodeID(int index);
+  const char* GetNthFindingNodeID(int index);
 
   vtkMRMLLongitudinalPETCTStudyNode* GetStudy(int index) const;
 
