@@ -42,10 +42,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.tempObserverEditorTag = None
     self.viewNodeObserverID = -1
     self.segmentationROIOldPosition = [0.,0.,0.]
+    
+    self.tempThresholdMin = None
+    self.tempThresholdMax = None
     #self.tempCroppedLblVolObserverTag = -1
     
     self.chartArrayNodes = []
     self.chartNode = None
+    
+    self.fileDialog = None
 
     self.logic  = slicer.modules.longitudinalpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
@@ -53,15 +58,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.findingSettingsDialog = None
 
-    self.tempCroppedVol = slicer.vtkMRMLScalarVolumeNode()
-    self.tempCroppedVol.SetName("TempCroppedVolume")
-    self.tempCroppedVol.SetHideFromEditors(False)
-    slicer.mrmlScene.AddNode(self.tempCroppedVol)
-    
-    self.tempLabelVol = slicer.vtkMRMLScalarVolumeNode()
-    self.tempLabelVol.SetName("TempLabelVolume")
-    self.tempLabelVol.SetHideFromEditors(False)
-    slicer.mrmlScene.AddNode(self.tempLabelVol)
+    self.tempCroppedVol = None
+    self.tempLabelVol = None
     
     self.selectedPETWindow = 0.0
     self.selectedPETLevel = 0.0
@@ -190,6 +188,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.analysisSettingsWidget.connect('studySelectedForAnalysis(int, bool)', self.onStudyForAnalysisChanged)
     self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
+    self.analysisSettingsWidget.connect('exportCSV()',self.onSaveResultsCSV)
     
     analysisLayout.addWidget(self.analysisSettingsWidget)  
 
@@ -512,7 +511,24 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.manageVolumeRenderingVisibility()
         #self.manageVRDisplayNodesVisibility(currentStudy)
         self.updateBgFgToUserSelectedStudy(currentStudy)
-        
+  
+  def getTempCroppedVolume(self):
+    if self.tempCroppedVol == None:
+      self.tempCroppedVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
+      self.tempCroppedVol.SetName("TempCroppedVolume")
+      self.tempCroppedVol.SetHideFromEditors(True)
+      self.tempCroppedVol.SetSaveWithScene(False)
+
+    return self.tempCroppedVol     
+   
+  def getTempLabelVolume(self):
+    if self.tempLabelVol == None:
+      self.tempLabelVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
+      self.tempLabelVol.SetName("TempLabelVolume")
+      self.tempLabelVol.SetHideFromEditors(True) 
+      self.tempLabelVol.SetSaveWithScene(False)
+      
+    return self.tempLabelVol     
 
   def onSegmentationROIModified(self, caller, event):
     
@@ -532,12 +548,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentFinding = self.getCurrentFinding()
     
     if (currentStudy != None) & (currentFinding != None):
-      
-      self.tempCroppedVol.Copy(currentStudy.GetPETVolumeNode())
-      self.tempCroppedVol.SetName("LongitudinalPETCT_CroppedVolume") 
+
+      self.getTempCroppedVolume().Copy(currentStudy.GetPETVolumeNode())
+      self.getTempCroppedVolume().SetName("LongitudinalPETCT_CroppedVolume") 
     
-      self.tempLabelVol.Copy(currentStudy.GetPETLabelVolumeNode())
-      self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
+      self.getTempLabelVolume().Copy(currentStudy.GetPETLabelVolumeNode())
+      self.getTempLabelVolume().SetName("LongitudinalPETCT_CroppedLabelVolume")
       
       cropLogic = slicer.modules.cropvolume.logic()
       
@@ -545,43 +561,30 @@ class qSlicerLongitudinalPETCTModuleWidget:
       croppingROI = slicer.vtkMRMLAnnotationROINode()
       croppingROI.Copy(currentFinding.GetSegmentationROINode())
       
-      cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETVolumeNode(),self.tempCroppedVol)
+      cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETVolumeNode(),self.getTempCroppedVolume())
       cropLogic.CropVoxelBased(croppingROI,currentStudy.GetPETLabelVolumeNode(),self.tempLabelVol)
       
       #///
-      self.tempCroppedVol.SetAndObserveTransformNodeID(None)
-      self.tempLabelVol.SetAndObserveTransformNodeID(None)
+      self.getTempCroppedVolume().SetAndObserveTransformNodeID(None)
+      self.getTempLabelVolume().SetAndObserveTransformNodeID(None)
             
       currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(None)
       
-      #volLogic  = slicer.modules.volumes.logic()    
-    
-      #createdLabelVol = volLogic.CreateLabelVolume(slicer.mrmlScene, self.tempCroppedVol,'TempLabelVolume')
-   
 
-      #if self.tempLabelVol.GetScalarVolumeDisplayNode():
-        #slicer.mrmlScene.RemoveNode(tempLabelVol.GetScalarVolumeDisplayNode())
-      #if self.tempLabelVol.GetDisplayNode():
-        #slicer.mrmlScene.RemoveNode(self.tempLabelVol.GetDisplayNode())
-      #self.tempLabelVol.Copy(createdLabelVol)   
-      #self.tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
-      
-      #slicer.mrmlScene.RemoveNode(createdLabelVol)
       
       propagate = caller == self
-      ViewHelper.SetRYGBgFgLblVolumes(self.tempCroppedVol.GetID(),None,self.tempLabelVol.GetID(),propagate)  
+      ViewHelper.SetRYGBgFgLblVolumes(self.getTempCroppedVolume().GetID(),None,self.getTempLabelVolume().GetID(),propagate)  
     
-    self.tempLabelVol.GetDisplayNode().SetAndObserveColorNodeID(self.getCurrentReport().GetFindingTypesColorTableNodeID())
+    self.getTempLabelVolume().GetDisplayNode().SetAndObserveColorNodeID(self.getCurrentReport().GetFindingTypesColorTableNodeID())
         
 
-  
   def onEnterEditMode(self,enter):
     
     self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
     self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
     self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
     
-    
+
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
       
@@ -596,23 +599,23 @@ class qSlicerLongitudinalPETCTModuleWidget:
       studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
       
       if studySeg != None:
-        SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.tempLabelVol, currentFinding.GetColorID())  
+        SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.getTempLabelVolume(), currentFinding.GetColorID())  
     
-
-      self.editorWidget.setMasterNode(self.tempCroppedVol) 
-      self.editorWidget.setMergeNode(self.tempLabelVol)      
+      self.editorWidget.setMasterNode(self.getTempCroppedVolume()) 
+      self.editorWidget.setMergeNode(self.getTempLabelVolume())      
       
       self.editorWidget.editUtil.getParameterNode().SetParameter('storedLabel',"")
       self.editorWidget.editUtil.getParameterNode().SetParameter('label',str(currentFinding.GetColorID()))
-        
     
       self.editorWidget.enter()  
     
       self.tempObserverEditorTag = currentFinding.GetSegmentationROINode().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
-      #self.tempCroppedLblVolObserverTag = self.tempLabelVol.GetImageData().AddObserver(vtk.vtkCommand.ModifiedEvent, self.pasteFromCroppedToMainLblVolume)    
 
     elif enter == False:
 
+      print "Threshold MIN on exit: " + self.editorWidget.editUtil.getParameterNode().GetParameter("ThresholdEffect,min")
+      print "Threshold MAX on exit: " + self.editorWidget.editUtil.getParameterNode().GetParameter("ThresholdEffect,max")
+      
       self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(True)
       self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(True)
       self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(True)
@@ -701,7 +704,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       SegmentationHelper.removeSegmentationFromVolume(studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())       
       b = time.time()
       print "DURATION OF SEGMENTATION REMOVAL: " + str(b-a)+  " s" 
-      pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.tempLabelVol, studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
+      pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.getTempLabelVolume(), studySeg.GetLabelVolumeNode(), currentFinding.GetColorID())    
  
       if segmentationROI:
         xyz = [0.,0.,0.]
@@ -724,9 +727,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
               
         slicer.mrmlScene.RemoveNode(studySeg)
         
-    
-    #if self.tempCroppedLblVolObserverTag != -1:      
-      #self.tempLabelVol.GetImageData().RemoveObserver(self.tempCroppedLblVolObserverTag)      
     return pasted 
   
   def onShowFindingSettingsDialog(self, findingNode):
@@ -1330,6 +1330,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         
       if self.chartNode == None:
         self.chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
+        self.chartNode.SetSaveWithScene(False)
         self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
         self.chartNode.SetProperty('default', 'type', 'Scatter');
         self.chartNode.SetProperty('default', 'showLegend', 'on') 
@@ -1379,6 +1380,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         for i in xrange(len(arrayNodeNames)):
       
           arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())
+          arrayNode.SetSaveWithScene(False)
           arrayNode.SetName(finding.GetName()+" "+arrayNodeNames[i])
           self.chartArrayNodes.append(arrayNode)
       
@@ -1556,14 +1558,67 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.segmentationColorChangeMessageBox.setProperty('dontShowAgainVisible',True)
         self.segmentationColorChangeMessageBox.setDontShowAgain(False)  
     
-
       selectedLabelValue = self.editorWidget.toolsColor.colorSpin.property('value')
       if (selectedLabelValue > 0) & ( selectedLabelValue != currentFinding.GetColorID() ):     
         self.segmentationColorChangeMessageBox.show()
     
+
+  def onSaveResultsCSV(self):
+    if not self.fileDialog:
+      self.fileDialog = qt.QFileDialog(self.parent)
+      self.fileDialog.options = self.fileDialog.DontUseNativeDialog
+      self.fileDialog.acceptMode = self.fileDialog.AcceptSave
+      self.fileDialog.defaultSuffix = "csv"
+      self.fileDialog.setNameFilter("Comma Separated Values (*.csv)")
+      self.fileDialog.connect("fileSelected(QString)", self.onFileSelected)
+    self.fileDialog.show()
+    
+
+  def onFileSelected(self,fileName):
+    fp = open(fileName, "w")
+    fp.write(self.resultsAsCSV())
+    fp.close()
+        
+  def resultsAsCSV(self):
+    """
+    print comma separated value file with header keys in quotes
+    """
+    currentReport = self.getCurrentReport()
+    if currentReport:
+
+      csv = "\"Finding Names\"" # empty because of findings column
+      
+      for i in xrange(currentReport.GetNumberOfSelectedStudies()):
+        csv += ",\""+currentReport.GetStudy(i).GetAttribute('DICOM.StudyDate')+"\""
+    
+      for j in xrange(currentReport.GetNumberOfFindingNodeIDs()):
+        finding = currentReport.GetFinding(j)
+        if finding == None:
+          continue
+        csv += "\n\""+finding.GetName()+"_MAX\""
+        for k in xrange(currentReport.GetNumberOfSelectedStudies()):
+          seg = finding.GetSegmentationMappedByStudyNodeID(currentReport.GetStudy(k).GetID())
+          if seg == None:
+            csv += ",,"
+          else:
+            csv += ","+str(seg.GetSUVMax())
+        
+        csv += "\n\""+finding.GetName()+"_MEAN\""
+        for k in xrange(currentReport.GetNumberOfSelectedStudies()):
+          seg = finding.GetSegmentationMappedByStudyNodeID(currentReport.GetStudy(k).GetID())
+          if seg == None:
+            csv += ",,"
+          else:
+            csv += ","+str(seg.GetSUVMean())    
+            
+        csv += "\n\""+finding.GetName()+"_MIN\""
+        for k in xrange(currentReport.GetNumberOfSelectedStudies()):
+          seg = finding.GetSegmentationMappedByStudyNodeID(currentReport.GetStudy(k).GetID())
+          if seg == None:
+            csv += ",,"
+          else:
+            csv += ","+str(seg.GetSUVMin())        
+          
+    return csv
+       
    
-   #lm = slicer.app.layoutManager()
-   
-   #if analysisCollapsed:
-     #if lm:
-      #lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView)
