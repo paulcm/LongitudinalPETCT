@@ -69,14 +69,13 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
 {
-  /*
-  this->PETVolumeNode = NULL;
-  this->CTVolumeNode = NULL;
-  this->PETLabelVolumeNode = NULL;
-  this->SegmentationROINode = NULL;
-  this->CenteringTransformNode = NULL;
-  this->VolumeRenderingDisplayNode = NULL;
 
+  this->SetAndObservePETVolumeNodeID(NULL);
+  this->SetAndObserveCTVolumeNodeID(NULL);
+  this->SetAndObservePETLabelVolumeNodeID(NULL);
+  this->SetAndObserveSegmentationROINodeID(NULL);
+  this->SetAndObserveVolumeRenderingDisplayNodeID(NULL);
+  this->SetAndObserveCenteringTransformNodeID(NULL);
 
   if(this->PETVolumeNodeID)
     delete [] this->PETVolumeNodeID;
@@ -95,7 +94,6 @@ vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
 
   if(this->VolumeRenderingDisplayNodeID)
     delete [] this->VolumeRenderingDisplayNodeID;
-    */
 }
 
 //----------------------------------------------------------------------------

@@ -75,7 +75,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   virtual void Copy(vtkMRMLNode *node);
 
   /// Get node XML tag name (like Volume, Model)
-  virtual const char* GetNodeTagName() {return "Longitudinal PET/CT Report";};
+  virtual const char* GetNodeTagName() {return "PETCT_Report";};
 
 
   int AddStudyNodeID(const char* studyNodeID);
@@ -155,6 +155,9 @@ protected:
   ~vtkMRMLLongitudinalPETCTReportNode();
   vtkMRMLLongitudinalPETCTReportNode(const vtkMRMLLongitudinalPETCTReportNode&);
   void operator=(const vtkMRMLLongitudinalPETCTReportNode&);
+
+  bool RemoveAllStudyNodeIDs();
+  bool RemoveAllFindingNodeIDs();
 
   IDsVectorType StudyNodeIDs;
   IDsVectorType FindingNodeIDs;

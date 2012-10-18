@@ -66,6 +66,15 @@ vtkMRMLLongitudinalPETCTReportNode::vtkMRMLLongitudinalPETCTReportNode()
 vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 {
 
+  this->RemoveAllStudyNodeIDs();
+  this->RemoveAllFindingNodeIDs();
+
+  if(this->FindingTypesColorTableNode)
+    this->SetFindingTypesColorTableNodeID(NULL);
+
+  if(this->ObservedEvents)
+    this->ObservedEvents = NULL;
+
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
 
@@ -84,24 +93,121 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTReportNode::ReadXMLAttributes(const char** atts)
+void
+vtkMRMLLongitudinalPETCTReportNode::ReadXMLAttributes(const char** atts)
 {
   int disabledModify = this->StartModify();
 
   Superclass::ReadXMLAttributes(atts);
 
+  const char* attName;
+  const char* attValue;
+
+  while (*atts != NULL)
+    {
+      attName = *(atts++);
+      attValue = *(atts++);
+
+      if (!strcmp(attName, "ModelHierarchyNodeID"))
+      {
+        this->SetReportsModelHierarchyNodeID(attValue);
+      }
+      else if (!strcmp(attName, "UserSelectedStudyNodeID"))
+      {
+        this->SetUserSelectedStudyNodeID(attValue);
+      }
+      else if (!strcmp(attName, "UserSelectedFindingNodeID"))
+      {
+        this->SetUserSelectedFindingNodeID(attValue);
+      }
+      else if (!strcmp(attName, "UserSelectedFindingNodeID"))
+      {
+        this->SetUserSelectedFindingNodeID(attValue);
+      }
+      else if (!strcmp(attName, "FindingTypesColorTableNodeID"))
+      {
+        this->SetAndObserveFindingTypesColorTableNodeID(attValue);
+      }
+      else if (!strcmp(attName, "ColorNodeID"))
+      {
+        this->SetColorNodeID(attValue);
+      }
+      else if (!strcmp(attName, "StudyNodeIDs"))
+        {
+          std::stringstream ss(attValue);
+          while (!ss.eof())
+            {
+              std::string id;
+              ss >> id;
+              this->AddStudyNodeID(id.c_str());
+            }
+        }
+      else if (!strcmp(attName, "FindingNodeIDs"))
+        {
+          std::stringstream ss(attValue);
+          while (!ss.eof())
+            {
+              std::string id;
+              ss >> id;
+              this->AddFindingNodeID(id.c_str());
+            }
+        }
+    }
+
   this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTReportNode::WriteXML(ostream& of, int nIndent)
+void
+vtkMRMLLongitudinalPETCTReportNode::WriteXML(ostream& of, int nIndent)
 {
   Superclass::WriteXML(of, nIndent);
+
+  vtkIndent indent(nIndent);
+
+  if (this->ModelHierarchyNodeID)
+    of << indent << " ModelHierarchyNodeID=\"" << this->ModelHierarchyNodeID
+        << "\"";
+  if (this->UserSelectedStudyNodeID)
+    of << indent << " UserSelectedStudyNodeID=\""
+        << this->UserSelectedStudyNodeID << "\"";
+  if (this->UserSelectedFindingNodeID)
+    of << indent << " UserSelectedFindingNodeID=\""
+        << this->UserSelectedFindingNodeID << "\"";
+  if (this->FindingTypesColorTableNodeID)
+    of << indent << " FindingTypesColorTableNodeID=\""
+        << this->FindingTypesColorTableNodeID << "\"";
+  if (this->ColorNodeID)
+    of << indent << " ColorNodeID=\"" << this->ColorNodeID << "\"";
+
+  std::stringstream stdyss;
+  unsigned int n;
+  for (n = 0; n < this->StudyNodeIDs.size(); n++)
+    {
+      stdyss << this->StudyNodeIDs[n];
+      if (n < StudyNodeIDs.size() - 1)
+        stdyss << " ";
+    }
+  if (this->StudyNodeIDs.size() > 0)
+    {
+      of << indent << " StudyNodeIDs=\"" << stdyss.str().c_str() << "\"";
+    }
+
+  std::stringstream fndss;
+
+  for (n = 0; n < this->FindingNodeIDs.size(); n++)
+    {
+      fndss << this->FindingNodeIDs[n];
+      if (n < FindingNodeIDs.size() - 1)
+        fndss << " ";
+    }
+  if (this->FindingNodeIDs.size() > 0)
+    {
+      of << indent << " FindingNodeIds=\"" << fndss.str().c_str() << "\"";
+    }
 }
 
 //----------------------------------------------------------------------------
-// Copy the node\"s attributes to this object.
-// Does NOT copy: ID, FilePrefix, Name, SliceID
 void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
 {
   int disabledModify = this->StartModify();
@@ -119,22 +225,15 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
           node->GetFindingTypesColorTableNodeID());
       this->SetColorNodeID(node->GetColorNodeID());
 
-      IDsVectorType::iterator it;
-      while (this->GetNumberOfStudyNodeIDs() > 0)
-        {
-          it = this->StudyNodeIDs.begin();
-          this->RemoveStudyNodeID((*it).c_str());
-        }
+      this->RemoveAllStudyNodeIDs();
+
       for (int i = 0; i < node->GetNumberOfStudyNodeIDs(); ++i)
         {
           this->AddStudyNodeID(node->GetNthStudyNodeID(i));
         }
 
-      while (this->GetNumberOfFindingNodeIDs() > 0)
-        {
-          it = this->FindingNodeIDs.begin();
-          this->RemoveFindingNodeID((*it).c_str());
-        }
+      this->RemoveAllFindingNodeIDs();
+
       for (int i = 0; i < node->GetNumberOfFindingNodeIDs(); ++i)
         {
           this->AddFindingNodeID(node->GetNthFindingNodeID(i));
@@ -143,6 +242,33 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
     }
 
   this->EndModify(disabledModify);
+}
+
+//----------------------------------------------------------------------------
+bool
+vtkMRMLLongitudinalPETCTReportNode::RemoveAllStudyNodeIDs()
+{
+  IDsVectorType::iterator it;
+  while (this->GetNumberOfStudyNodeIDs() > 0)
+    {
+      it = this->StudyNodeIDs.begin();
+      this->RemoveStudyNodeID((*it).c_str());
+    }
+
+  return this->StudyNodeIDs.empty();
+}
+
+//----------------------------------------------------------------------------
+bool vtkMRMLLongitudinalPETCTReportNode::RemoveAllFindingNodeIDs()
+{
+  IDsVectorType::iterator it;
+  while (this->GetNumberOfFindingNodeIDs() > 0)
+    {
+      it = this->FindingNodeIDs.begin();
+      this->RemoveFindingNodeID((*it).c_str());
+    }
+
+  return this->FindingNodeIDs.empty();
 }
 
 //----------------------------------------------------------------------------

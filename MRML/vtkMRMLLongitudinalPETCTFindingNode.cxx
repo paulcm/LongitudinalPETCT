@@ -53,9 +53,9 @@ vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 {
-  /*
-  this->SegmentationROINode = NULL;
-  this->ModelHierarchyNode = NULL;
+  this->SetAndObserveModelHierarchyNodeID(NULL);
+  this->SetAndObserveSegmentationROINodeID(NULL);
+
   this->ObservedEvents = NULL;
 
   if(this->SegmentationROINodeID)
@@ -63,7 +63,6 @@ vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
-    */
 }
 
 //----------------------------------------------------------------------------

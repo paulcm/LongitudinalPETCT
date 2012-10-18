@@ -66,17 +66,15 @@ vtkMRMLLongitudinalPETCTSegmentationNode::vtkMRMLLongitudinalPETCTSegmentationNo
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTSegmentationNode::~vtkMRMLLongitudinalPETCTSegmentationNode()
 {
-  /*
-  this->LabelVolumeNode = NULL;
-  this->ModelHierarchyNode = NULL;
+  this->SetAndObserveLabelVolumeNodeID(NULL);
+  this->SetAndObserveModelHierarchyNodeID(NULL);
+
 
   if(this->LabelVolumeNodeID)
     delete [] this->LabelVolumeNodeID;
 
   if(this->ModelHierarchyNodeID)
     delete [] this->ModelHierarchyNodeID;
-
-    */
 }
 
 //----------------------------------------------------------------------------
@@ -138,7 +136,6 @@ vtkMRMLLongitudinalPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
           ss >> this->ROIRadius[1];
           ss >> this->ROIRadius[2];
         }
-
     }
 
   this->EndModify(disabledModify);
