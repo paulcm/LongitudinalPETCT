@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>222</height>
+    <height>190</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,22 +17,6 @@
    <property name="spacing">
     <number>16</number>
    </property>
-   <item>
-    <widget class="QLabel" name="LabelInformation">
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
      <property name="horizontalSpacing">
@@ -46,7 +30,27 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxReport" native="true"/>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <item>
+        <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxReport" native="true"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="LabelInfo">
+         <property name="styleSheet">
+          <string notr="true">QLabel QToolTip {background-color: #858585; color: #FFF;}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap resource="../qSlicerLongitudinalPETCTModule.qrc">:/Icons/help.png</pixmap>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -197,7 +201,9 @@
    <header>ctkExpandButton.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>ExpandButton</sender>

@@ -84,8 +84,8 @@ void qSlicerLongitudinalPETCTReportSelectionWidgetPrivate
   this->MRMLNodeComboBoxReport->setRemoveEnabled(false);
   this->MRMLNodeComboBoxReport->setRenameEnabled(true);
 
-  this->LabelInformation->setText("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /></head><body style=\"font-family:\'LucidaGrande\'; font-size:13pt; font-weight:400; font-style:normal; text-align:justify;\"><p style=\"margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">There are no Longitudinalitudinal PET/CT Analysis Reports in the scene.<br/>Please import PET/CT image data using the <span style=\"font-style: italic;\">Longitudinalitudinal PET/CT Analysis Reader</span> in the <img src=\":/Icons/SlicerLoadDICOM.png\" />  <span style=\"font-weight:600;\">DICOM Module</span>.</p></body></html>");
-
+  this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td><img src=\":/Icons/SlicerLoadDICOM.png\" /></td><td>Import valid PET/CT image data with the DICOM Module using the <strong>Longitudinal PET/CT Analysis Reader<strong></td></tr><tr><td>-</td><td>Select a <strong>Report</strong> to perform longitudinal PET/CT analysis</td></tr></tbody></table></body></html>");
+  this->MRMLNodeComboBoxReport->setToolTip("Select a Report for the PET/CT Analysis");
   QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(selectionChanged(vtkMRMLNode*)) );
   //QObject::connect(this->MRMLNodeComboBoxReport, SIGNAL(nodeAdded()), q, SLOT(updateView()) );
 
@@ -194,8 +194,6 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
         d->LabelSizeInfo->setText(NULL);
     }
 
-    bool infoVisible = d->MRMLNodeComboBoxReport->nodeCount() == 0;
-    d->LabelInformation->setVisible(infoVisible);
 
     std::cout << "END UPDATING REPORT SELECTION" << std::endl;
 }

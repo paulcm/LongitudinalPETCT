@@ -95,6 +95,8 @@ void qSlicerLongitudinalPETCTStudySelectionWidgetPrivate
 
   this->TableStudySelection->setTableMode(qSlicerLongitudinalPETCTStudySelectionTableWidget::WorkflowSelection);
 
+  this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Add/remove Studies to/from the workflow</td></tr><tr><td><img src=\":/Icons/help/expdbtn.png\" /></td><td>Open expandable advanced settings panel to modify/disable volume rendering</td></tr><tr><td>-</td><td>Select/deselect centering of images</td></tr></tbody></table></body></html>");
+
   QObject::connect(this->TableStudySelection, SIGNAL(studySelectionChanged(int, bool)), q, SLOT(studySelectedInTable(int, bool)) );
 
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );

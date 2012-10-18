@@ -84,9 +84,11 @@ void qSlicerLongitudinalPETCTReportTableWidgetPrivate
 
   this->Ui_qSlicerLongitudinalPETCTReportTableWidget::setupUi(widget);
 
-  widget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+  q->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
   this->TableReport->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
   this->TableReport->setSelectionMode(QAbstractItemView::NoSelection);
+
+  this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Click on table cell to select Study and Finding</td></tr><tr><td>-</td><td>Mouse over table cell to display SUV values for a segmentation</td></tr><tr><td>-</td><td>Enable/disable visibility of Models representing segmentations</td></tr></tbody></table></body></html>");
 
   QObject::connect(this->TableReport, SIGNAL(cellClicked(int,int)), q,SLOT(segmentationCellClicked(int,int)));
 
@@ -99,10 +101,11 @@ qSlicerLongitudinalPETCTReportTableWidgetPrivate::createCellWidgetCheckBox()
 
   ctkCheckBox* cellWidgetCheckBox = new ctkCheckBox(this->TableReport);
   QIcon icon;
-  icon.addFile(":/Icons/Model_On.png", QSize(16, 14), QIcon::Normal,
+  icon.addFile(":/Icons/VisibleOnSmall.png", QSize(32, 16), QIcon::Normal,
       QIcon::Off);
-  icon.addFile(":/Icons/Model_Off.png", QSize(16, 14), QIcon::Normal,
+  icon.addFile(":/Icons/VisibleOffSmall.png", QSize(32, 16), QIcon::Normal,
       QIcon::On);
+  cellWidgetCheckBox->setIconSize(QSize(32,16));
   cellWidgetCheckBox->setIndicatorIcon(icon);
   cellWidgetCheckBox->setChecked(true);
 
@@ -237,6 +240,8 @@ void
 qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
 {
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
+  Q_ASSERT(d->TableReport);
+  Q_ASSERT(d->LabelFindings);
 
   if (d->ReportNode == NULL || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
@@ -245,7 +250,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
   if(d->TableReport->verticalHeader() != NULL)
     vhwidth = d->TableReport->verticalHeader()->width();
 
-  int w = this->width() - vhwidth - 5;
+  int w = this->width() - vhwidth - d->LabelFindings->width() - 5;
 
   int colwidth = 0;
 
@@ -524,8 +529,9 @@ qSlicerLongitudinalPETCTReportTableWidget::arrangeColumns()
 {
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
+  Q_ASSERT(d->LabelFindings);
 
-  int width = this->width() - d->TableReport->verticalHeader()->width() - 5;
+  int width = this->width() - d->TableReport->verticalHeader()->width() - d->LabelFindings->width() - 5;
   int columns = d->TableReport->columnCount();
 
   for (int i = 0; i < columns; ++i)

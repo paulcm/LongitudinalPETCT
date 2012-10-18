@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>423</width>
+    <width>486</width>
     <height>364</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <number>16</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -93,6 +93,22 @@
        <attribute name="buttonGroup">
         <string notr="true">ButtonGroupAnalysisType</string>
        </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="LabelInfo">
+       <property name="styleSheet">
+        <string notr="true">QLabel QToolTip {background-color: #858585; color: #FFF;}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../qSlicerLongitudinalPETCTModule.qrc">:/Icons/help.png</pixmap>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+       </property>
       </widget>
      </item>
     </layout>
@@ -225,9 +241,9 @@
     </layout>
    </item>
    <item>
-    <widget class="QPushButton" name="ButtonShowSummary">
+    <widget class="QPushButton" name="ButtonExportCSV">
      <property name="text">
-      <string>Show Report Summary</string>
+      <string>Export csv-file </string>
      </property>
     </widget>
    </item>

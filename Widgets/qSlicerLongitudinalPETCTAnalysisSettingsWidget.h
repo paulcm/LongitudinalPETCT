@@ -75,6 +75,7 @@ signals:
   void studySelectedForAnalysis(int index, bool selected);
   void volumeRenderingToggled(bool toggled);
   void spinViewToggled(bool toggled);
+  void exportCSV();
 
 public slots:
   void updateView();
