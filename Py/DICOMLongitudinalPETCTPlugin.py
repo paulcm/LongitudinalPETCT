@@ -422,6 +422,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       logic = slicer.modules.longitudinalpetct.logic()
 
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
+      #colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
       reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
 
       mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
@@ -437,9 +438,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
 
           volLogic  = slicer.modules.volumes.logic() 
-          #petLabelVolume = slicer.vtkMRMLScalarVolumeNode()
-          #petLabelVolume.Copy(petScalarVolume)
-          petLabelVolume = volLogic.CreateLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
+          petLabelVolume = volLogic.CreateAndAddLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
 
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
