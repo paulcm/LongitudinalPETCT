@@ -419,7 +419,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.studySelectionWidget.setReportNode(reportNode)
     self.studySelectionWidget.setReportNode(reportNode)
     self.analysisSettingsWidget.setReportNode(reportNode)
-    #self.findingSelectionWidget.setReportNode(reportNode)
+    self.findingSelectionWidget.setReportNode(reportNode)
     self.reportTableWidget.setReportNode(reportNode)
     
     if reportNode:
