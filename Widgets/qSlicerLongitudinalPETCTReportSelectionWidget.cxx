@@ -169,7 +169,6 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
   Q_ASSERT(d->LabelNameInfo);
   Q_ASSERT(d->LabelDoBInfo);
   Q_ASSERT(d->LabelSexInfo);
-  Q_ASSERT(d->LabelInformation);
   Q_ASSERT(d->LabelSizeInfo);
 
   std::cout << "UPDATING REPORT SELECTION" << std::endl;
