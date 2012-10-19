@@ -596,6 +596,12 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         if model.IsA('vtkMRMLModelNode'):
           slicer.mrmlScene.RemoveNode(model)
           
-      slicer.mrmlScene.RemoveNode(modelHierarchyNode)                   
+      slicer.mrmlScene.RemoveNode(modelHierarchyNode)       
+      
+      
+  @staticmethod
+  def insertStr(original, new, pos):
+    '''Inserts new inside original at pos.'''
+    return original[:pos] + new + original[pos:]                  
     
     #return '#%02X%02X%02X' % (r,g,b)
