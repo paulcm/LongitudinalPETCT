@@ -56,8 +56,18 @@ public:
 
   vtkSmartPointer<vtkMRMLLongitudinalPETCTReportNode> ReportNode;
 
-  ctkCheckBox* createCellWidgetCheckBox();
+  ctkCheckBox* createConnectedCellWidgetCheckBox();
   void setCellWidgetToolTip(int row, int col, const QString& toolTip);
+
+  int optimalColumnWidth();
+
+  QIcon IconModelVisibility;
+  QIcon IconPlaceholder;
+
+  QBrush TableHeaderDefaultBackgroundRole;
+  QBrush TableHeaderDefaultForegroundRole;
+  QBrush TableHeaderSelectedBackgroundRole;
+  QBrush TableHeaderSelectedForegroundRole;
 
 };
 
@@ -67,6 +77,21 @@ qSlicerLongitudinalPETCTReportTableWidgetPrivate
   qSlicerLongitudinalPETCTReportTableWidget& object)
   : q_ptr(&object), ReportNode(NULL)
 {
+  this->IconModelVisibility.addFile(":/Icons/VisibleOnSmall.png", QSize(16, 16), QIcon::Normal,
+        QIcon::Off);
+  this->IconModelVisibility.addFile(":/Icons/VisibleOffSmall.png", QSize(16, 16), QIcon::Normal,
+        QIcon::On);
+
+  this->IconPlaceholder.addFile(":/Icons/placeholder.png", QSize(16, 16), QIcon::Normal,
+          QIcon::Off);
+  this->IconPlaceholder.addFile(":/Icons/placeholder.png", QSize(16, 16), QIcon::Normal,
+          QIcon::On);
+
+  this->TableHeaderDefaultBackgroundRole.setColor(QColor(255,255,255));
+  this->TableHeaderDefaultForegroundRole.setColor(QColor(0,0,0));
+
+  this->TableHeaderSelectedBackgroundRole.setColor(QColor(98,140,178));
+  this->TableHeaderSelectedForegroundRole.setColor(QColor(255,255,255));
 }
 
 // --------------------------------------------------------------------------
@@ -95,19 +120,46 @@ void qSlicerLongitudinalPETCTReportTableWidgetPrivate
 }
 
 // --------------------------------------------------------------------------
-ctkCheckBox*
-qSlicerLongitudinalPETCTReportTableWidgetPrivate::createCellWidgetCheckBox()
+int
+qSlicerLongitudinalPETCTReportTableWidgetPrivate::optimalColumnWidth()
 {
+  Q_Q(qSlicerLongitudinalPETCTReportTableWidget);
+  Q_ASSERT(this->TableReport);
+  Q_ASSERT(this->LabelFindings);
+
+  int vhwidth = 0;
+  if(this->TableReport->verticalHeader() != NULL)
+    vhwidth = this->TableReport->verticalHeader()->sizeHint().width();
+
+  int w = q->width() - vhwidth - this->LabelFindings->width() - 5;
+
+  int columns = this->TableReport->columnCount();
+
+  if(this->ReportNode)
+    {
+      int nrOfSelStudies = this->ReportNode->GetNumberOfSelectedStudies();
+      if(nrOfSelStudies > columns) // in case table is not updated yet, otherwise nr should be the same
+        columns = nrOfSelStudies;
+    }
+
+  int colwidth = columns > 0 ? std::max(30,static_cast<int>(w / columns)) : w;
+
+  return colwidth;
+}
+
+// --------------------------------------------------------------------------
+ctkCheckBox*
+qSlicerLongitudinalPETCTReportTableWidgetPrivate::createConnectedCellWidgetCheckBox()
+{
+  Q_Q(qSlicerLongitudinalPETCTReportTableWidget);
 
   ctkCheckBox* cellWidgetCheckBox = new ctkCheckBox(this->TableReport);
-  QIcon icon;
-  icon.addFile(":/Icons/VisibleOnSmall.png", QSize(32, 16), QIcon::Normal,
-      QIcon::Off);
-  icon.addFile(":/Icons/VisibleOffSmall.png", QSize(32, 16), QIcon::Normal,
-      QIcon::On);
-  cellWidgetCheckBox->setIconSize(QSize(32,16));
-  cellWidgetCheckBox->setIndicatorIcon(icon);
+  cellWidgetCheckBox->setIconSize(QSize(16,16));
+  cellWidgetCheckBox->setIndicatorIcon(this->IconPlaceholder);
   cellWidgetCheckBox->setChecked(true);
+
+  QObject::connect(cellWidgetCheckBox, SIGNAL(toggled(bool)), q, SLOT(segmentationModelVisibilityChecked(bool)) );
+
 
   return cellWidgetCheckBox;
 }
@@ -185,7 +237,13 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareHorizontalHeaders()
       int newColumnID = d->TableReport->columnCount();
 
       if (diff > 0)
-        d->TableReport->insertColumn(newColumnID);
+        {
+          d->TableReport->insertColumn(newColumnID);
+          for(int j=0; j < d->TableReport->rowCount(); ++j)
+            {
+              d->TableReport->setCellWidget(j,newColumnID,d->createConnectedCellWidgetCheckBox());
+            }
+        }
       else if (diff < 0)
         d->TableReport->removeColumn(newColumnID - 1);
     }
@@ -219,7 +277,14 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareVerticalHeaders()
       int newRowID = d->TableReport->rowCount();
 
       if (diff > 0)
+        {
           d->TableReport->insertRow(newRowID);
+
+          for(int j=0; j < d->TableReport->columnCount(); ++j)
+            {
+              d->TableReport->setCellWidget(newRowID,j,d->createConnectedCellWidgetCheckBox());
+            }
+        }
 
       else if (diff < 0)
         d->TableReport->removeRow(newRowID - 1);
@@ -246,16 +311,6 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
   if (d->ReportNode == NULL || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
     return;
 
-  int vhwidth = 0;
-  if(d->TableReport->verticalHeader() != NULL)
-    vhwidth = d->TableReport->verticalHeader()->width();
-
-  int w = this->width() - vhwidth - d->LabelFindings->width() - 5;
-
-  int colwidth = 0;
-
-  if(d->ReportNode->GetNumberOfSelectedStudies() > 0)
-    colwidth = std::max(30,static_cast<int>(w / d->ReportNode->GetNumberOfSelectedStudies()));
 
   for (int i = 0; i < d->ReportNode->GetNumberOfSelectedStudies(); ++i)
     {
@@ -269,16 +324,25 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
           QString(study->GetAttribute("DICOM.StudyDate")).trimmed(),
           "yyyyMMdd");
       QString itemText = date.toString(Qt::DefaultLocaleShortDate);
-      QTableWidgetItem* item = new QTableWidgetItem(itemText);
 
-      QFont font = item->font();
+
+      QTableWidgetItem* hhItem = d->TableReport->horizontalHeaderItem(i);
+
+      if (!hhItem)
+        {
+          hhItem = new QTableWidgetItem(itemText);
+          d->TableReport->setHorizontalHeaderItem(i, hhItem);
+        }
+      else
+        hhItem->setText(itemText);
+
+      QFont font = hhItem->font();
       font.setBold(true);
-      item->setFont(font);
+      hhItem->setFont(font);
+      hhItem->setToolTip(itemText);
 
-      item->setToolTip(itemText);
 
-      d->TableReport->setHorizontalHeaderItem(i, item);
-      d->TableReport->setColumnWidth(i, colwidth);
+      d->TableReport->setColumnWidth(i, d->optimalColumnWidth());
     }
 
 }
@@ -290,7 +354,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
 
-  std::cout << "UPDATING REPORT TABLE WIDGET" << std::endl;
+
 
   if (d->ReportNode == NULL
       || d->TableReport->rowCount() != d->ReportNode->GetNumberOfFindingNodeIDs()
@@ -312,14 +376,14 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
           ctkCheckBox* cellWidget = qobject_cast<ctkCheckBox*>(d->TableReport->cellWidget(i,j));
 
           if (finding->GetSegmentationMappedByStudyNodeID(
-              d->ReportNode->GetSelectedStudy(j)->GetID()) != NULL)
+              d->ReportNode->GetSelectedStudy(j)->GetID()))
             {
-              if (!cellWidget)
-                {
-                  cellWidget = d->createCellWidgetCheckBox();
-                  QObject::connect(cellWidget, SIGNAL(clicked(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
-                  d->TableReport->setCellWidget(i, j, cellWidget);
-                }
+//              if (!cellWidget)
+//                {
+//                  cellWidget = d->createConnectedCellWidgetCheckBox();
+//                  QObject::connect(cellWidget, SIGNAL(clicked(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
+//                  d->TableReport->setCellWidget(i, j, cellWidget);
+//                }
 
               int colorID = finding->GetColorID();
               vtkSmartPointer<vtkMRMLColorTableNode> colorTable =
@@ -334,35 +398,47 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
                   QString cssFontColor = "color: #000";
 
-                  if(findingColor.lightness() < 100)
+                  if(findingColor.lightness() < 125)
                     cssFontColor = "color: #FEFEFE";
 
-                  cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
+                  if(cellWidget)
+                    {
+                      cellWidget->setIndicatorIcon(d->IconModelVisibility);
+                      cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
+                    }
                 }
             }
           else
             {
               if(cellWidget)
                 {
-                  d->TableReport->removeCellWidget(i,j);
-                  cellWidget->deleteLater();
+                  cellWidget->setIndicatorIcon(d->IconPlaceholder);
+                  cellWidget->setToolTip(NULL);
+                  cellWidget->setStyleSheet(NULL);
+
+                  //d->TableReport->removeCellWidget(i,j);
+                  //cellWidget->deleteLater();
                 }
             }
         }
 
       QString itemText = finding->GetName();
-      QTableWidgetItem* item = new QTableWidgetItem(itemText);
 
-      QFont font = item->font();
+      QTableWidgetItem* vhItem = d->TableReport->verticalHeaderItem(i);
+
+      if ( ! vhItem)
+        {
+          vhItem = new QTableWidgetItem(itemText);
+          d->TableReport->setVerticalHeaderItem(i, vhItem);
+        }
+      else
+        vhItem->setText(itemText);
+
+      QFont font = vhItem->font();
       font.setBold(true);
-      item->setFont(font);
-
-      item->setToolTip(itemText);
-      d->TableReport->setVerticalHeaderItem(i, item);
-
+      vhItem->setFont(font);
+      vhItem->setToolTip(itemText);
     }
-
-  std::cout << "END UPDATING REPORT TABLE WIDGET" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -372,6 +448,8 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
   Q_ASSERT(d->LabelSelectedValue);
+
+  std::cout << "UPDATING REPORT TABLE WIDGET" << std::endl;
 
   if ( ! d->ReportNode)
     {
@@ -459,7 +537,13 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
                 {
                   QString styleSheet = cellWidget->styleSheet();
-                  styleSheet.insert(styleSheet.length() - 1,
+
+                  int insertPos = 0;
+
+                  if( ! styleSheet.isEmpty())
+                    insertPos = styleSheet.length() - 1;
+
+                  styleSheet.insert(insertPos,
                       "border: 3px solid #DD0000;");
                   cellWidget->setStyleSheet(styleSheet);
                 }
@@ -488,22 +572,35 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   else
     d->LabelSelectedValue->setText(NULL);
 
+  this->arrangeColumns();
+
+  std::cout << "END UPDATING REPORT TABLE WIDGET" << std::endl;
 }
 
 
 //-----------------------------------------------------------------------------
-void qSlicerLongitudinalPETCTReportTableWidget
-::selectStudyColumn(int index)
+void
+qSlicerLongitudinalPETCTReportTableWidget::selectStudyColumn(int index)
 {
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
 
-  if(index >= 0 && index < d->TableReport->columnCount())
+  for (int i = 0; i < d->TableReport->columnCount(); ++i)
     {
-      QBrush background(QColor(98,140,178));
-      QBrush foreground(QColor(255,255,255));
-      d->TableReport->horizontalHeaderItem(index)->setBackground(background);
-      d->TableReport->horizontalHeaderItem(index)->setForeground(foreground);
+      if (i != index)
+        {
+          d->TableReport->horizontalHeaderItem(i)->setBackground(
+              d->TableHeaderDefaultBackgroundRole);
+          d->TableReport->horizontalHeaderItem(i)->setForeground(
+              d->TableHeaderDefaultForegroundRole);
+        }
+      else
+        {
+          d->TableReport->horizontalHeaderItem(i)->setForeground(
+              d->TableHeaderSelectedForegroundRole);
+          d->TableReport->horizontalHeaderItem(i)->setBackground(
+              d->TableHeaderSelectedBackgroundRole);
+        }
     }
 }
 
@@ -514,12 +611,22 @@ void qSlicerLongitudinalPETCTReportTableWidget
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
 
-  if(index >= 0 && index < d->TableReport->rowCount())
+  for (int i = 0; i < d->TableReport->rowCount(); ++i)
     {
-      QBrush background(QColor(98,140,178));
-      QBrush foreground(QColor(255,255,255));
-      d->TableReport->verticalHeaderItem(index)->setBackground(background);
-      d->TableReport->verticalHeaderItem(index)->setForeground(foreground);
+      if (i != index)
+        {
+          d->TableReport->verticalHeaderItem(i)->setBackground(
+              d->TableHeaderDefaultBackgroundRole);
+          d->TableReport->verticalHeaderItem(i)->setForeground(
+              d->TableHeaderDefaultForegroundRole);
+        }
+      else
+        {
+          d->TableReport->verticalHeaderItem(i)->setForeground(
+              d->TableHeaderSelectedForegroundRole);
+          d->TableReport->verticalHeaderItem(i)->setBackground(
+              d->TableHeaderSelectedBackgroundRole);
+        }
     }
 }
 
@@ -529,18 +636,10 @@ qSlicerLongitudinalPETCTReportTableWidget::arrangeColumns()
 {
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
-  Q_ASSERT(d->LabelFindings);
 
-  int width = this->width() - d->TableReport->verticalHeader()->width() - d->LabelFindings->width() - 5;
-  int columns = d->TableReport->columnCount();
-
-  for (int i = 0; i < columns; ++i)
+  for (int i = 0; i < d->TableReport->columnCount(); ++i)
     {
-      int colWidth = static_cast<int>(width / columns);
-      if (colWidth < 30)
-        colWidth = 30;
-
-      d->TableReport->setColumnWidth(i, colWidth);
+      d->TableReport->setColumnWidth(i, d->optimalColumnWidth());
     }
 }
 
@@ -578,6 +677,8 @@ void qSlicerLongitudinalPETCTReportTableWidget
             {
               if(d->TableReport->cellWidget(i,j) == sender)
                 {
+                  bool changed = false;
+
                   if(d->ReportNode)
                     {
                       vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding = d->ReportNode->GetFinding(i);
@@ -590,11 +691,16 @@ void qSlicerLongitudinalPETCTReportTableWidget
                             seg = finding->GetSegmentationMappedByStudyNodeID(study->GetID());
 
                           if(seg)
-                            seg->SetModelVisible(toggled);
+                            {
+                              seg->SetModelVisible(toggled);
+                              changed = true;
+                            }
+
                         }
                     }
+                  if(changed)
+                    emit segmentationModelVisiblityChecked(i,j,toggled);
 
-                  emit segmentationModelVisiblityChecked(i,j,toggled);
                   return;
                 }
             }
