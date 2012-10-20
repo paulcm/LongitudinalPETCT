@@ -502,7 +502,7 @@ vtkMRMLLongitudinalPETCTReportNode::AddFindingNodeID(const char* findingNodeID)
         finding->GetModelHierarchyNode()->SetParentNodeID(
             this->ModelHierarchyNodeID);
 
-      this->InvokeEvent(vtkCommand::ModifiedEvent);
+      this->Modified();
     }
 
   return added;
