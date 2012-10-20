@@ -413,12 +413,15 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
                   QString cssFontColor = "color: #000";
 
-                  if(findingColor.lightness() < 125)
+
+                  if(findingColor.lightness() < 110)
                     cssFontColor = "color: #FEFEFE";
+
+
 
                   if(cellWidget)
                     {
-                      cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
+                      cellWidget->setStyleSheet("QCheckBox QToolTip {"+cssFontColor +"; background-color:" + findingColor.name()+";} QCheckBox {background-color:" + findingColor.name()+";}");
                     }
                 }
             }
