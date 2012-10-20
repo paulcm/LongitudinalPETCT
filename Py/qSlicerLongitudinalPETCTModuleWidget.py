@@ -744,7 +744,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.findingSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSettingsDialog(self.parent)
         self.findingSettingsDialog.setReportNode(currentReport)      
         result = self.findingSettingsDialog.exec_()
-        self.findingSettingsDialog.setReportNode(None)  
+        #self.findingSettingsDialog.setReportNode(None)  
         accepted = result == qt.QDialog.Accepted
 
     return accepted    
@@ -760,7 +760,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if findingNode:
         idx = currentReport.GetIndexOfFindingNodeID(findingNode.GetID())
       
-      print "IDX:" +str(idx) 
       if idx == -1:
         applied = self.onShowFindingSettingsDialog(findingNode)
 
@@ -769,7 +768,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           findingNode.SetAndObserveModelHierarchyNodeID(mh.GetID())
           currentReport.AddFindingNodeID(findingNode.GetID())
           currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
-          findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)     
+          findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)
           
         else: 
           self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
@@ -781,8 +780,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
             currentReport.SetUserSelectedFindingNodeID(None)
    
           self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
-          
+    
           return
+                 
           
       else:
         if findingNode:
