@@ -54,7 +54,11 @@
       </widget>
      </item>
      <item row="0" column="1" colspan="3">
-      <widget class="QLineEdit" name="LineEditName"/>
+      <widget class="QLineEdit" name="LineEditName">
+       <property name="maxLength">
+        <number>35</number>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="LabelType">
@@ -94,7 +98,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="../qSliceritudinalPETCTModule.qrc">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
          <normaloff>:/Icons/delete.png</normaloff>:/Icons/delete.png</iconset>
        </property>
       </widget>
@@ -143,6 +147,9 @@
       <widget class="QLineEdit" name="LineEditTypeName">
        <property name="text">
         <string/>
+       </property>
+       <property name="maxLength">
+        <number>35</number>
        </property>
        <property name="placeholderText">
         <string>New type's name</string>
@@ -194,7 +201,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../qSliceritudinalPETCTModule.qrc"/>
+  <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
  </resources>
  <connections>
   <connection>
