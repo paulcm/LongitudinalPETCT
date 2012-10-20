@@ -66,13 +66,15 @@ public:
 
   QBrush TableHeaderSelectedBackgroundRole;
 
+  int MaxHeaderTextLength;
+
 };
 
 // --------------------------------------------------------------------------
 qSlicerLongitudinalPETCTReportTableWidgetPrivate
 ::qSlicerLongitudinalPETCTReportTableWidgetPrivate(
   qSlicerLongitudinalPETCTReportTableWidget& object)
-  : q_ptr(&object), ReportNode(NULL)
+  : q_ptr(&object), ReportNode(NULL), MaxHeaderTextLength(15)
 {
   this->IconModelVisibility.addFile(":/Icons/VisibleOnSmall.png", QSize(16, 16), QIcon::Normal,
         QIcon::Off);
@@ -340,6 +342,13 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
           "yyyyMMdd");
       QString itemText = date.toString(Qt::DefaultLocaleShortDate);
 
+      if (itemText.length() > d->MaxHeaderTextLength)
+        {
+          int presize = (d->MaxHeaderTextLength / 2);
+          int postsize = presize - 3;
+          itemText = itemText.left(presize) + "..." + itemText.right(postsize);
+        }
+
 
       QTableWidgetItem* hhItem = d->TableReport->horizontalHeaderItem(i);
 
@@ -354,7 +363,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateHorizontalHeaders()
       QFont font = hhItem->font();
       font.setBold(true);
       hhItem->setFont(font);
-      hhItem->setToolTip(itemText);
+      hhItem->setToolTip(date.toString(Qt::DefaultLocaleLongDate));
 
 
       d->TableReport->setColumnWidth(i, d->optimalColumnWidth());
@@ -393,12 +402,6 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
           if (finding->GetSegmentationMappedByStudyNodeID(
               d->ReportNode->GetSelectedStudy(j)->GetID()))
             {
-//              if (!cellWidget)
-//                {
-//                  cellWidget = d->createConnectedCellWidgetCheckBox();
-//                  QObject::connect(cellWidget, SIGNAL(clicked(bool)), this, SLOT(segmentationModelVisibilityChecked(bool)) );
-//                  d->TableReport->setCellWidget(i, j, cellWidget);
-//                }
 
               int colorID = finding->GetColorID();
               vtkSmartPointer<vtkMRMLColorTableNode> colorTable =
@@ -417,8 +420,6 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
                   if(findingColor.lightness() < 110)
                     cssFontColor = "color: #FEFEFE";
 
-
-
                   if(cellWidget)
                     {
                       cellWidget->setStyleSheet("QCheckBox QToolTip {"+cssFontColor +"; background-color:" + findingColor.name()+";} QCheckBox {background-color:" + findingColor.name()+";}");
@@ -432,14 +433,17 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
                   cellWidget->setIndicatorIcon(d->IconPlaceholder);
                   cellWidget->setToolTip(NULL);
                   cellWidget->setStyleSheet(NULL);
-
-                  //d->TableReport->removeCellWidget(i,j);
-                  //cellWidget->deleteLater();
                 }
             }
         }
 
       QString itemText = finding->GetName();
+      if (itemText.length() > d->MaxHeaderTextLength)
+        {
+          int presize = (d->MaxHeaderTextLength / 2);
+          int postsize = presize - 3;
+          itemText = itemText.left(presize) + "..." + itemText.right(postsize);
+        }
 
       QTableWidgetItem* vhItem = d->TableReport->verticalHeaderItem(i);
 
@@ -454,7 +458,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
       QFont font = vhItem->font();
       font.setBold(true);
       vhItem->setFont(font);
-      vhItem->setToolTip(itemText);
+      vhItem->setToolTip(finding->GetName());
     }
 }
 
