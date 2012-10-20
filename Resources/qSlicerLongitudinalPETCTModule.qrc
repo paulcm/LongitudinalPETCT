@@ -18,5 +18,6 @@
     <file>Icons/delete.png</file>
     <file>Icons/help.png</file>
     <file>Icons/SlicerLoadDICOM.png</file>
+    <file>Icons/placeholder.png</file>
   </qresource>
 </RCC>
