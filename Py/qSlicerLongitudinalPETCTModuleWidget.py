@@ -51,6 +51,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.chartNode = None
     
     self.fileDialog = None
+    
+    self.unopenedAnalysis = True
 
     self.logic  = slicer.modules.longitudinalpetct.logic()
     self.vrLogic = slicer.modules.volumerendering.logic()
@@ -183,8 +185,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongitudinalPETCTAnalysisSettingsWidget()    
     self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
     
-    self.analysisSettingsWidget.connect('qualitativeAnalysisChecked(bool)', self.showQualitativeView)
-    self.analysisSettingsWidget.connect('quantitativeAnalysisChecked(bool)', self.showQuantitativeView)
+    self.analysisSettingsWidget.connect('qualitativeAnalysisClicked(bool)', self.showQualitativeView)
+    self.analysisSettingsWidget.connect('quantitativeAnalysisClicked(bool)', self.showQuantitativeView)
     self.analysisSettingsWidget.connect('studySelectedForAnalysis(int, bool)', self.onStudyForAnalysisChanged)
     self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
     self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
@@ -1273,6 +1275,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
                            
   
   def onSwitchToAnalysis(self, analysisCollapsed):
+    
+    # if analysis panel is opened first time volumerendering and spinning settings are adopted from study selection panel
+    if self.unopenedAnalysis:
+      self.analysisSettingsWidget.setProperty('volumeRendering',self.studySelectionWidget.property('volumeRendering'))
+      self.analysisSettingsWidget.setProperty('spinView',self.studySelectionWidget.property('spinView'))
+      self.unopenedAnalysis = False   
       
     if analysisCollapsed:
       self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
@@ -1320,12 +1328,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
       self.manageModelsVisibility()
 
-      #lm = slicer.app.layoutManager()
-    
-      #if lm:
-        #ViewHelper.getStandardChartViewNode().Modified()
-        #lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutConventionalQuantitativeView)
-        
+
       currentReport = self.getCurrentReport()
         
       if self.chartNode == None:
@@ -1354,7 +1357,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       slicer.mrmlScene.RemoveNode(can)
     
     if self.chartArrayNodes:
-      del self.chartArrayNodes[:]  
+      del self.chartArrayNodes[:]
     
       
     if currentReport:
@@ -1371,7 +1374,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           if fnd:
             findings.append(fnd)
       else:
-        findings.append(finding)        
+        findings.append(finding)
           
       for finding in findings:
         
@@ -1386,7 +1389,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
           array = arrayNode.GetArray()
           samples = currentReport.GetNumberOfSelectedStudiesSelectedForAnalysis()
-          tuples = samples  
+          tuples = samples
           array.SetNumberOfTuples(tuples)
           tuple = 0
        
@@ -1404,7 +1407,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
               suvs[1] = seg.GetSUVMean()
               suvs[2] = seg.GetSUVMin()
 
-            array.SetComponent(tuple, 0, float(study.GetAttribute('DICOM.StudyDate')))       
+            array.SetComponent(tuple, 0, float(study.GetAttribute('DICOM.StudyDate')))
             array.SetComponent(tuple, 1, suvs[i])
             array.SetComponent(tuple, 2, 0.)
               
@@ -1416,18 +1419,17 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
         
         if len(findings) == 1:
-          self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')         
+          self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')
       
       if len(findings) > 1:
-        self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')  
+        self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')
       
-      self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')  
+      self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')
     
     ViewHelper.getStandardChartViewNode().Modified()
                 
-        
-  
-  
+      
+      
   def showQualitativeView(self, show = True):
     
     if show:
@@ -1449,7 +1451,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if study:
           ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfSelectedStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
         
-
 
   def onActivateROIPlacement(self, activate):
     appLogic = slicer.app.applicationLogic()
@@ -1473,8 +1474,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           self.reportTableWidget.setProperty('enabled',False)
 
-  def assignNewROIToFinding(self, caller, event):
 
+  def assignNewROIToFinding(self, caller, event):
     
     if caller == slicer.mrmlScene:
       nrOfNodes = slicer.mrmlScene.GetNumberOfNodes()
@@ -1482,7 +1483,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if lastAddedNode.IsA('vtkMRMLAnnotationROINode') == False:
         return
       
-    print "ENTERED ASSIGN"
       
     if self.roiPlacementNodeAddedEventObserverID != None:
       roiNodes = ViewHelper.getROINodesCollection()
@@ -1501,7 +1501,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           roiXYZ = [roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3)] 
           
         if currentFinding.GetSegmentationROINode() == None:
-          print "NO FINDING ROI"
+
           #adjust roi position if volumes in study are centered so that it's position doesn't get changed when set under transform
           roiNode.SetXYZ(roiXYZ)  
           
@@ -1511,10 +1511,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           self.lastAddedROINode = roiNode
           self.editorWidget.editLabelMapsFrame.setEnabled(True)
-              
          
         else:
-          print "HAS FINDING ROI"
+
           roiRadius = [0.,0.,0.]
           roiNode.GetRadiusXYZ(roiRadius)
           
@@ -1535,6 +1534,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
             slicer.mrmlScene.RemoveObserver(self.roiPlacementNodeAddedEventObserverID)
             self.roiPlacementNodeAddedEventObserverID = None           
    
+   
   def endROIPlacement(self, caller, event): 
     appLogic = slicer.app.applicationLogic()
     if appLogic:
@@ -1545,6 +1545,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
         self.findingSelectionWidget.setProperty('placeROIChecked',False)
         self.reportTableWidget.setProperty('enabled',True)    
+  
   
   def onEditorColorWarning(self):
     currentFinding = self.getCurrentFinding()
@@ -1573,11 +1574,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.fileDialog.connect("fileSelected(QString)", self.onFileSelected)
     self.fileDialog.show()
     
-
+    
   def onFileSelected(self,fileName):
     fp = open(fileName, "w")
     fp.write(self.resultsAsCSV())
     fp.close()
+        
         
   def resultsAsCSV(self):
     """
