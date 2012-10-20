@@ -126,6 +126,7 @@ qSlicerLongitudinalPETCTFindingSettingsDialogPrivate::setupUi(
       SLOT(selectionChanged(int)));
 }
 
+// --------------------------------------------------------------------------
 void
 qSlicerLongitudinalPETCTFindingSettingsDialogPrivate::selectFindingType(int index)
 {
@@ -449,15 +450,23 @@ qSlicerLongitudinalPETCTFindingSettingsDialog::accept()
 
   if(d->ReportNode)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding =
+      vtkMRMLLongitudinalPETCTFindingNode* finding =
             d->ReportNode->GetUserSelectedFindingNode();
 
       if(finding)
         {
+          finding->DisableModifiedEventOn();
+
           if( ! d->LineEditName->text().isEmpty() )
             finding->SetName(d->LineEditName->text().toStdString().c_str());
           finding->SetTypeName(d->ReportNode->GetFindingTypeName(d->ComboBoxType->currentIndex()+1));
           finding->SetColorID(d->ComboBoxType->currentIndex()+1);
+
+          finding->DisableModifiedEventOff();
+
+          finding->Modified();
+
+          std::cout << "MODIFIED FINDING" << std::endl;
         }
       }
 
