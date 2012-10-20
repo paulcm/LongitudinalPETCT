@@ -85,8 +85,8 @@ void qSlicerLongitudinalPETCTAnalysisSettingsWidgetPrivate
 
   this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Switch between qualitative and quantiative display of Analysis results.</td></tr><tr><td>-</td><td>Remove/add Studies for comparison</td></tr><tr><td><img src=\":/Icons/help/expdbtn.png\" /></td><td>Open expandable advanced settings panel to modify/disable volume rendering</td></tr><tr><td>-</td><td>Export results to a csv file</td></tr></tbody></table></body></html>");
 
-  QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(toggled(bool)), q, SIGNAL(qualitativeAnalysisChecked(bool)) );
-  QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(toggled(bool)), q, SIGNAL(quantitativeAnalysisChecked(bool)) );
+  QObject::connect(this->ButtonQualitativeAnalysis, SIGNAL(clicked(bool)), q, SIGNAL(qualitativeAnalysisClicked(bool)) );
+  QObject::connect(this->ButtonQuantitativeAnalysis, SIGNAL(clicked(bool)), q, SIGNAL(quantitativeAnalysisClicked(bool)) );
   QObject::connect(this->ButtonVolumeRendering, SIGNAL(toggled(bool)), q, SIGNAL(volumeRenderingToggled(bool)) );
   QObject::connect(this->ButtonSpinView, SIGNAL(toggled(bool)), q, SIGNAL(spinViewToggled(bool)) );
 

@@ -70,8 +70,8 @@ public:
 
 
 signals:
-  void qualitativeAnalysisChecked(bool checked);
-  void quantitativeAnalysisChecked(bool checked);
+  void qualitativeAnalysisClicked(bool checked);
+  void quantitativeAnalysisClicked(bool checked);
   void studySelectedForAnalysis(int index, bool selected);
   void volumeRenderingToggled(bool toggled);
   void spinViewToggled(bool toggled);
