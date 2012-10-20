@@ -64,10 +64,7 @@ public:
   QIcon IconModelVisibility;
   QIcon IconPlaceholder;
 
-  QBrush TableHeaderDefaultBackgroundRole;
-  QBrush TableHeaderDefaultForegroundRole;
   QBrush TableHeaderSelectedBackgroundRole;
-  QBrush TableHeaderSelectedForegroundRole;
 
 };
 
@@ -82,16 +79,9 @@ qSlicerLongitudinalPETCTReportTableWidgetPrivate
   this->IconModelVisibility.addFile(":/Icons/VisibleOffSmall.png", QSize(16, 16), QIcon::Normal,
         QIcon::On);
 
-  this->IconPlaceholder.addFile(":/Icons/placeholder.png", QSize(16, 16), QIcon::Normal,
-          QIcon::Off);
-  this->IconPlaceholder.addFile(":/Icons/placeholder.png", QSize(16, 16), QIcon::Normal,
-          QIcon::On);
-
-  this->TableHeaderDefaultBackgroundRole.setColor(QColor(255,255,255));
-  this->TableHeaderDefaultForegroundRole.setColor(QColor(0,0,0));
+  this->IconPlaceholder.addFile(":/Icons/placeholder.png");
 
   this->TableHeaderSelectedBackgroundRole.setColor(QColor(98,140,178));
-  this->TableHeaderSelectedForegroundRole.setColor(QColor(255,255,255));
 }
 
 // --------------------------------------------------------------------------
@@ -158,8 +148,7 @@ qSlicerLongitudinalPETCTReportTableWidgetPrivate::createConnectedCellWidgetCheck
   cellWidgetCheckBox->setIndicatorIcon(this->IconPlaceholder);
   cellWidgetCheckBox->setChecked(true);
 
-  QObject::connect(cellWidgetCheckBox, SIGNAL(toggled(bool)), q, SLOT(segmentationModelVisibilityChecked(bool)) );
-
+  QObject::connect(cellWidgetCheckBox, SIGNAL(clicked(bool)), q, SLOT(segmentationModelVisibilityChecked(bool)) );
 
   return cellWidgetCheckBox;
 }
@@ -245,7 +234,20 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareHorizontalHeaders()
             }
         }
       else if (diff < 0)
-        d->TableReport->removeColumn(newColumnID - 1);
+        {
+          // first remove all cell widgets from column which is about to be removed
+          for(int j=0; j < d->TableReport->rowCount(); ++j)
+            {
+              ctkCheckBox* cellWidget = NULL;
+              cellWidget = qobject_cast<ctkCheckBox*>(d->TableReport->cellWidget(j,newColumnID - 1));
+              d->TableReport->removeCellWidget(j,newColumnID - 1);
+              if(cellWidget)
+                cellWidget->deleteLater();
+            }
+
+          d->TableReport->removeColumn(newColumnID - 1);
+        }
+
     }
 
   if(empty && (d->TableReport->columnCount() > 0))
@@ -253,7 +255,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareHorizontalHeaders()
       QHeaderView* horizontalHeaderView = d->TableReport->horizontalHeader();
       if(horizontalHeaderView != NULL)
         {
-          QObject::connect(horizontalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(studyClicked(int)));
+          QObject::connect(horizontalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(studyClicked(int)), Qt::UniqueConnection);
         }
       }
 }
@@ -287,7 +289,20 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareVerticalHeaders()
         }
 
       else if (diff < 0)
-        d->TableReport->removeRow(newRowID - 1);
+        {
+          // first remove all cell widgets from column which is about to be removed
+          for (int j = 0; j < d->TableReport->rowCount(); ++j)
+            {
+              ctkCheckBox* cellWidget = NULL;
+              cellWidget = qobject_cast<ctkCheckBox*>(d->TableReport->cellWidget(newRowID-1,j));
+              d->TableReport->removeCellWidget(newRowID - 1, j);
+              if (cellWidget)
+                cellWidget->deleteLater();
+            }
+
+          d->TableReport->removeRow(newRowID - 1);
+        }
+
     }
 
   if(empty && (d->TableReport->rowCount() > 0))
@@ -295,7 +310,7 @@ qSlicerLongitudinalPETCTReportTableWidget::prepareVerticalHeaders()
        QHeaderView* verticalHeaderView = d->TableReport->verticalHeader();
        if(verticalHeaderView != NULL)
          {
-           QObject::connect(verticalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(findingClicked(int)));
+           QObject::connect(verticalHeaderView, SIGNAL(sectionClicked(int)), this, SIGNAL(findingClicked(int)),Qt::UniqueConnection);
          }
      }
 }
@@ -403,7 +418,6 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
 
                   if(cellWidget)
                     {
-                      cellWidget->setIndicatorIcon(d->IconModelVisibility);
                       cellWidget->setStyleSheet("QCheckBox QToolTip {background-color:" + findingColor.name()+";} QCheckBox {"+cssFontColor +"; background-color:" + findingColor.name()+";}");
                     }
                 }
@@ -501,15 +515,19 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
               switch (this->SelMode)
                 {
               case qSlicerLongitudinalPETCTReportTableWidget::AllSelectable:
-                cellWidget->setCheckable(true);
+                cellWidget->setIndicatorIcon(d->IconModelVisibility);
                 break;
               case qSlicerLongitudinalPETCTReportTableWidget::RowSelectable:
-                cellWidget->setCheckable(
-                    finding == d->ReportNode->GetUserSelectedFindingNode());
+                if(finding == d->ReportNode->GetUserSelectedFindingNode())
+                  cellWidget->setIndicatorIcon(d->IconModelVisibility);
+                else
+                  cellWidget->setIndicatorIcon(d->IconPlaceholder);
                 break;
               case qSlicerLongitudinalPETCTReportTableWidget::ColumnSelectable:
-                cellWidget->setCheckable(
-                    study == d->ReportNode->GetUserSelectedStudyNode());
+                if(study == d->ReportNode->GetUserSelectedStudyNode())
+                  cellWidget->setIndicatorIcon(d->IconModelVisibility);
+                else
+                  cellWidget->setIndicatorIcon(d->IconPlaceholder);
                 break;
               default:
                 break;
@@ -525,13 +543,11 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
                           QString().setNum(segmentation->GetSUVMean()),
                           QString().setNum(segmentation->GetSUVMin()));
                   cellWidget->setToolTip(tooltip);
-                  cellWidget->setVisible(true);
                 }
               else
                 {
                   cellWidget->setToolTip(NULL);
-                  cellWidget->setVisible(false);
-                  //cellWidget->setModelVisibilityVisible(false);
+                  cellWidget->setIndicatorIcon(d->IconPlaceholder);
                 }
 
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
@@ -589,15 +605,12 @@ qSlicerLongitudinalPETCTReportTableWidget::selectStudyColumn(int index)
     {
       if (i != index)
         {
-          d->TableReport->horizontalHeaderItem(i)->setBackground(
-              d->TableHeaderDefaultBackgroundRole);
-          d->TableReport->horizontalHeaderItem(i)->setForeground(
-              d->TableHeaderDefaultForegroundRole);
+          d->TableReport->horizontalHeaderItem(i)->setForeground(Qt::black);
+          d->TableReport->horizontalHeaderItem(i)->setBackground(Qt::white);
         }
       else
         {
-          d->TableReport->horizontalHeaderItem(i)->setForeground(
-              d->TableHeaderSelectedForegroundRole);
+          d->TableReport->horizontalHeaderItem(i)->setForeground(Qt::white);
           d->TableReport->horizontalHeaderItem(i)->setBackground(
               d->TableHeaderSelectedBackgroundRole);
         }
@@ -615,15 +628,12 @@ void qSlicerLongitudinalPETCTReportTableWidget
     {
       if (i != index)
         {
-          d->TableReport->verticalHeaderItem(i)->setBackground(
-              d->TableHeaderDefaultBackgroundRole);
-          d->TableReport->verticalHeaderItem(i)->setForeground(
-              d->TableHeaderDefaultForegroundRole);
+          d->TableReport->verticalHeaderItem(i)->setForeground(Qt::black);
+          d->TableReport->verticalHeaderItem(i)->setBackground(Qt::white);
         }
       else
         {
-          d->TableReport->verticalHeaderItem(i)->setForeground(
-              d->TableHeaderSelectedForegroundRole);
+          d->TableReport->verticalHeaderItem(i)->setForeground(Qt::white);
           d->TableReport->verticalHeaderItem(i)->setBackground(
               d->TableHeaderSelectedBackgroundRole);
         }
@@ -656,6 +666,7 @@ void qSlicerLongitudinalPETCTReportTableWidget
 void qSlicerLongitudinalPETCTReportTableWidget
 ::segmentationCellClicked(int row, int column)
 {
+
   emit studyClicked(column);
   emit findingClicked(row);
 }
@@ -681,14 +692,24 @@ void qSlicerLongitudinalPETCTReportTableWidget
 
                   if(d->ReportNode)
                     {
-                      vtkSmartPointer<vtkMRMLLongitudinalPETCTFindingNode> finding = d->ReportNode->GetFinding(i);
+                      vtkMRMLLongitudinalPETCTFindingNode* finding = d->ReportNode->GetFinding(i);
                       if(finding)
                         {
-                          vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = d->ReportNode->GetSelectedStudy(j);
-                          vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> seg = NULL;
+                          vtkMRMLLongitudinalPETCTStudyNode* study = d->ReportNode->GetSelectedStudy(j);
+                          vtkMRMLLongitudinalPETCTSegmentationNode* seg = NULL;
+
+                          bool changeNecessary = false;
+
+                          if(this->SelMode == RowSelectable && finding != d->ReportNode->GetUserSelectedFindingNode())
+                            changeNecessary = true;
+                          else if(this->SelMode == ColumnSelectable && study != d->ReportNode->GetUserSelectedStudyNode())
+                            changeNecessary = true;
+
+                          if(changeNecessary)
+                            this->segmentationCellClicked(i,j);
 
                           if(study)
-                            seg = finding->GetSegmentationMappedByStudyNodeID(study->GetID());
+                              seg = finding->GetSegmentationMappedByStudyNodeID(study->GetID());
 
                           if(seg)
                             {
@@ -701,7 +722,7 @@ void qSlicerLongitudinalPETCTReportTableWidget
                   if(changed)
                     emit segmentationModelVisiblityChecked(i,j,toggled);
 
-                  return;
+                  break;
                 }
             }
         }
