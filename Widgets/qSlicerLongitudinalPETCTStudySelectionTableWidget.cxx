@@ -303,7 +303,8 @@ void qSlicerLongitudinalPETCTStudySelectionTableWidget::tableCellClicked(int row
   Q_D(qSlicerLongitudinalPETCTStudySelectionTableWidget);
   Q_ASSERT(d->Table);
 
-  if(row >= 0 && row < d->Table->rowCount())
+
+  if(row >= 0 && row < d->Table->rowCount() && d->Mode == WorkflowSelection)
     {
       if(d->Table->item(row,0)->checkState() == Qt::Checked)
         {
