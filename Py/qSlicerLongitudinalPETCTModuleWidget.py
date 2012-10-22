@@ -795,7 +795,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       currentStudy = self.getCurrentStudy()
       if (segROI != None) & (currentStudy != None):
         self.editorWidget.editLabelMapsFrame.setEnabled(True)
-        if currentStudy.GetSegmentationROINodeID() != segRoi.GetID():
+        if currentStudy.GetSegmentationROINodeID() != segROI.GetID():
           currentStudy.SetAndObserveSegmentationROINodeID(segROI.GetID())
         self.updateSegmentationROIPosition()
       else:
@@ -1579,29 +1579,46 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
     if currentReport:
 
-      csv = "\"Finding\",\"Date\",\"SUVbw MAX\",\"SUVbw MEAN\",\"SUVbw MIN\"" # empty because of findings column
+      csv = "\"Finding_SUV\""  
       
-      for i in xrange(currentReport.GetNumberOfFindingNodeIDs()):
-        finding = currentReport.GetFinding(i)
+      for i in xrange(currentReport.GetNumberOfSelectedStudies()):
+        study = currentReport.GetSelectedStudy(i)
+        if study:
+          studyDate = study.GetAttribute('DICOM.StudyDate')
+          # inserting dashes for date format
+          studyDate = ViewHelper.insertStr(studyDate,'-',6)
+          studyDate = ViewHelper.insertStr(studyDate,'-',4)  
+        
+          csv += ",\""+studyDate+"\""
+          
+          
+      for j in xrange(currentReport.GetNumberOfFindingNodeIDs()):
+        finding = currentReport.GetFinding(j)
+        
+        
         if not finding:
           continue
         
-        for j in xrange(currentReport.GetNumberOfSelectedStudies()):
-          study = currentReport.GetStudy(j)
-          if not study:
-            continue
+        maxrow = "\n\""+finding.GetName()+"_SUVmax\""
+        meanrow = "\n\""+finding.GetName()+"_SUVmean\""
+        minrow = "\n\""+finding.GetName()+"_SUVmin\""
+        
+        for k in xrange(currentReport.GetNumberOfSelectedStudies()):
+          study = currentReport.GetSelectedStudy(k)
+          if study:
+            seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+            if not seg:
+              empty = ","
+              maxrow += empty
+              meanrow += empty
+              minrow += empty
+            else:
+              maxrow += ","+str(seg.GetSUVMax())
+              meanrow += ","+str(seg.GetSUVMean())
+              minrow += ","+str(seg.GetSUVMin())
           
-          seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
-          if not seg:
-            continue
+        csv += maxrow+meanrow+minrow    
 
-          else:
-            studyDate = study.GetAttribute('DICOM.StudyDate')
-            # inserting dashes for date format
-            studyDate = ViewHelper.insertStr(studyDate,'-',6)
-            studyDate = ViewHelper.insertStr(studyDate,'-',4)  
-            csv += "\n\""+finding.GetName()+"\"," +studyDate+","+str(seg.GetSUVMax())+","+str(seg.GetSUVMean())+","+str(seg.GetSUVMin())    
-          
     return csv
        
    
