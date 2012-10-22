@@ -141,7 +141,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.findingSelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSelectionWidget()    
     self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
     self.findingSelectionWidget.setReportNode(self.getCurrentReport())
-    self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onFindingROIVisibilityChanged)
+    self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onManageFindingROIsVisibility)
     self.findingSelectionWidget.connect('placeROIChecked(bool)', self.onActivateROIPlacement)
     self.findingSelectionWidget.connect('addSegmentationToFinding()', self.onCollapseEditor)
     
@@ -243,11 +243,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
         currentSegROI = currentFinding.GetSegmentationROINode()
       
         if (currentStudy != None) & ( currentSegROI != None):
-          currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
+          if currentStudy.GetSegmentationROINodeID() != currentSegROI.GetID():
+            currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
           self.updateSegmentationROIPosition()
           
         elif study:
-          currentStudy.SetAndObserveSegmentationROINodeID("") #TODO see why None doesn't work
+          currentStudy.SetAndObserveSegmentationROINodeID(None) #TODO see why None doesn't work
     
     # update view
     self.updateBgFgToUserSelectedStudy(study)
@@ -572,8 +573,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
             
       currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(None)
       
-
-      
       propagate = caller == self
       ViewHelper.SetRYGBgFgLblVolumes(self.getTempCroppedVolume().GetID(),None,self.getTempLabelVolume().GetID(),propagate)  
     
@@ -586,7 +585,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
     self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
     
-
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
       
@@ -615,16 +613,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     elif enter == False:
 
-      print "Threshold MIN on exit: " + self.editorWidget.editUtil.getParameterNode().GetParameter("ThresholdEffect,min")
-      print "Threshold MAX on exit: " + self.editorWidget.editUtil.getParameterNode().GetParameter("ThresholdEffect,max")
-      
       self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(True)
       self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(True)
       self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(True)
       self.editorWidget.exit()   
 
            
-      pasted = self.pasteFromCroppedToMainLblVolume(self, vtk.vtkCommand.ModifiedEvent)
+      pasted = self.pasteFromCroppedToMainLblVolume()
 
       studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
 
@@ -636,22 +631,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
           qt.QTimer.singleShot(0,self.makeModels)
 
         else:
-          if self.unsupportedVolRendMessageBox == None:
-            self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
-            self.unsupportedVolRendMessageBox.setModal(True)
-            self.unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
-            self.unsupportedVolRendMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
-            self.unsupportedVolRendMessageBox.setText('NCIRayCastVolumeRendering is selected as default volume renderer. The Longitudinal PET/CT Analysis module does not support displaying of models from Finding segmentations with this volume renderer!')
-            self.unsupportedVolRendMessageBox.setProperty('dontShowAgainVisible',True)
-            self.unsupportedVolRendMessageBox.setDontShowAgain(False)  
-          self.unsupportedVolRendMessageBox.show()  
+          self.getUnsupportedVolumeRenderingMessageBox.show()  
       
         qt.QTimer.singleShot(0,self.calculateSUVs)
-      #else:
-        #if self.reportTableWidget:
-          #self.reportTableWidget.clearSegmentationSUVs(currentStudy,currentFinding)           
-      
-        
+
 
       if self.studySelectionWidget.property('centeredSelected'):
         currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransformNodeID())
@@ -664,8 +647,22 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.studiesCollapsibleButton.setProperty('enabled',True)
       self.reportTableWidget.setProperty('enabled',True)
 
+  
+  def getUnsupportedVolumeRenderingMessageBox(self):
+    if self.unsupportedVolRendMessageBox == None:
+      self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
+      self.unsupportedVolRendMessageBox.setModal(True)
+      self.unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
+      self.unsupportedVolRendMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+      self.unsupportedVolRendMessageBox.setText('NCIRayCastVolumeRendering is selected as default volume renderer. The Longitudinal PET/CT Analysis module does not support displaying of models from Finding segmentations with this volume renderer!')
+      self.unsupportedVolRendMessageBox.setProperty('dontShowAgainVisible', True)
+      self.unsupportedVolRendMessageBox.setDontShowAgain(False)
+      
+    return self.unsupportedVolRendMessageBox     
+  
+     
                  
-  def pasteFromCroppedToMainLblVolume(self, caller, event):
+  def pasteFromCroppedToMainLblVolume(self):
     
 
     currentStudy = self.getCurrentStudy()
@@ -795,9 +792,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if currentReport.GetUserSelectedFindingNode():   
       segROI = currentReport.GetUserSelectedFindingNode().GetSegmentationROINode()
       
-      if (segROI != None) & (self.getCurrentStudy() != None):
+      currentStudy = self.getCurrentStudy()
+      if (segROI != None) & (currentStudy != None):
         self.editorWidget.editLabelMapsFrame.setEnabled(True)
-        self.getCurrentStudy().SetAndObserveSegmentationROINodeID(segROI.GetID())
+        if currentStudy.GetSegmentationROINodeID() != segRoi.GetID():
+          currentStudy.SetAndObserveSegmentationROINodeID(segROI.GetID())
         self.updateSegmentationROIPosition()
       else:
         self.editorWidget.editLabelMapsFrame.setEnabled(False)
@@ -816,22 +815,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.isQualitativeViewActive() | self.isQuantitativeViewActive():
       self.manageModelsVisibility(self.isQuantitativeViewActive())
 
-
-  
-  def onFindingROIVisibilityChanged(self, visible): 
-    currentFinding = self.getCurrentFinding()
-    if currentFinding:
-      currentROI = currentFinding.GetSegmentationROINode()
-      if currentROI:
-        if self.tempObserverEditorTag:
-          currentROI.RemoveObserver(self.tempObserverEditorTag)
-        
-        currentROI.SetDisplayVisibility(visible)
-        
-        if self.tempObserverEditorTag:
-          self.tempObserverEditorTag = currentROI.AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
-        
-     
      
   def onFindingNodeToBeRemoved(self, findingNode):
     currentReport = self.reportSelector.currentNode()
@@ -861,19 +844,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
       nrOfFindings = self.getCurrentReport().GetNumberOfFindingNodeIDs()
       
-      for x in range(0,nrOfFindings,1):
+      for x in range(nrOfFindings):
         finding = self.getCurrentReport().GetFinding(x)
         if finding: 
           roi = finding.GetSegmentationROINode()
           if roi:
-            if (currentFinding != None) & (self.getCurrentReport().GetIndexOfFindingNodeID(currentFinding.GetID()) == x) & (self.analysisCollapsibleButton.property('collapsed') == True):
+            if (finding == currentFinding) & (self.isStandardViewActive()):
+              # if editor mode active, observer hast to be removed from roi in order to not delete not yet added segmentation 
+              if self.isEditorModeActive() & (self.tempObserverEditorTag != None):
+                roi.RemoveObserver(self.tempObserverEditorTag)
+        
               roi.SetDisplayVisibility(self.findingSelectionWidget.property('roiVisibility'))
+        
+              # reset observer after visibility change
+              if self.isEditorModeActive() & (self.tempObserverEditorTag != None):
+                self.tempObserverEditorTag = roi.AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
+   
             else:
               roi.SetDisplayVisibility(0)                   
-
-      
-      
-                             
+             
              
   def getCurrentReport(self):
     return self.reportSelector.currentNode()  
@@ -1233,12 +1222,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
     return (self.isQualitativeViewActive() == False) & (self.isQuantitativeViewActive() == False)                
   
   def isQualitativeViewActive(self):
-    return (self.analysisCollapsibleButton.property('collapsed') != True) & self.analysisSettingsWidget.property('qualitativeChecked')
+    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.analysisSettingsWidget.property('qualitativeChecked')
          
   def isQuantitativeViewActive(self):
-    return (self.analysisCollapsibleButton.property('collapsed') != True) & self.analysisSettingsWidget.property('quantitativeChecked')
+    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.analysisSettingsWidget.property('quantitativeChecked')
          
-                    
+  def isEditorModeActive(self):
+    return self.editorWidget.editLabelMapsFrame.property('collapsed') == False
+  
+                      
   def manageModelDisplayCompareViewNodeIDs(self):
     
     currentReport = self.getCurrentReport()
@@ -1522,8 +1514,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           roiInFinding.SetRadiusXYZ(roiRadius)
           
           if(self.anLogic):
-            hn = slicer.vtkMRMLDisplayableHierarchyNode.GetDisplayableHierarchyNode(slicer.mrmlScene,roiNode.GetID())
-            print "HIERARCHY NODE: " + hn.GetID()
+            hn = slicer.vtkMRMLDisplayableHierarchyNode.GetDisplayableHierarchyNode(slicer.mrmlScene,roiNode.GetID())  
             self.anLogic.RemoveAnnotationNode(roiNode)
 
         
