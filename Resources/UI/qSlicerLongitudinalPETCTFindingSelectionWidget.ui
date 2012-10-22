@@ -101,8 +101,7 @@
        <item row="1" column="1">
         <widget class="QPushButton" name="ButtonPlaceROI">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A Region of Interest can be placed around a lesion with two clicks on one of the slice views:&lt;br/&gt;&lt;table cellspacing=&quot;5&quot;&gt;&lt;tbody&gt;&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click1.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;First click on the center of the lesion&lt;/td&gt;&lt;/tr&gt;
-&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click2.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;Then click on the most remote corner &lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A Region of Interest can be placed around a lesion with two clicks on one of the slice views:&lt;table cellspacing=&quot;5&quot;&gt;&lt;tbody&gt;&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click1.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;First click on the center of the lesion&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click2.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;Then click on the most remote corner &lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="text">
           <string/>
