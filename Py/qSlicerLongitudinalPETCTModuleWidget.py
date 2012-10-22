@@ -248,7 +248,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.updateSegmentationROIPosition()
           
         elif study:
-          currentStudy.SetAndObserveSegmentationROINodeID(None) #TODO see why None doesn't work
+          currentStudy.SetAndObserveSegmentationROINodeID('') #TODO see why None doesn't work
     
     # update view
     self.updateBgFgToUserSelectedStudy(study)
