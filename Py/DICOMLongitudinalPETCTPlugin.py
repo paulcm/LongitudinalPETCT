@@ -6,8 +6,6 @@ from DICOMLib import DICOMLoadable
 
 from datetime import datetime
 
-from decimal import *
-
 
 import DICOMLib
 
@@ -315,21 +313,16 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
   
   def dimensions(self,file):
         
-    rows = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['rows']))
-    cols = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['columns']))
-    spacingRows = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).partition('\\')[0])
-    spacingCols = Decimal(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).partition('\\')[2])
-      
+    rows = float(slicer.dicomDatabase.fileValue(file,self.tags['rows']))
+    cols = float(slicer.dicomDatabase.fileValue(file,self.tags['columns']))
+    spacingRows = float(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).split('\\')[0])
+    spacingCols = float(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).split('\\')[1])
+
     width = cols * spacingCols
     height = rows * spacingRows
-    
-    result = []
-    
-    result.append(width)
-    result.append(height)
-    
-    return result
-            
+
+    return [width, height]
+
 
   def examineFiles(self,files,type):
     """ Returns a list of DICOMLoadable instances
