@@ -42,7 +42,11 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="LineEditSearch"/>
+      <widget class="QLineEdit" name="LineEditSearch">
+       <property name="toolTip">
+        <string>Filter the available colors by searching for a specific color name</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -58,6 +62,9 @@
    </item>
    <item>
     <widget class="QPushButton" name="ButtonSelect">
+     <property name="toolTip">
+      <string>Apply the color selection from the list</string>
+     </property>
      <property name="text">
       <string>Select</string>
      </property>

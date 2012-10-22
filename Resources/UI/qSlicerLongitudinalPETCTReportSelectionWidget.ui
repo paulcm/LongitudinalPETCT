@@ -35,7 +35,11 @@
         <number>12</number>
        </property>
        <item>
-        <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxReport" native="true"/>
+        <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxReport" native="true">
+         <property name="toolTip">
+          <string>Select a Report in order to perform PET/CT analysis</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="LabelInfo">
@@ -175,6 +179,9 @@
        <height>16</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string>Show/hide expandable patient information panel</string>
+     </property>
      <property name="checkable">
       <bool>true</bool>
      </property>
@@ -190,15 +197,15 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>ctkExpandButton</class>
+   <extends>QToolButton</extends>
+   <header>ctkExpandButton.h</header>
+  </customwidget>
+  <customwidget>
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qMRMLNodeComboBox.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ctkExpandButton</class>
-   <extends>QToolButton</extends>
-   <header>ctkExpandButton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -53,7 +53,11 @@
        <item row="0" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxFinding" native="true"/>
+          <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxFinding" native="true">
+           <property name="toolTip">
+            <string>Select a Finding in order to perfom lesion segmentation</string>
+           </property>
+          </widget>
          </item>
          <item>
           <spacer name="horizontalSpacer_2">
@@ -70,6 +74,9 @@
          </item>
          <item>
           <widget class="ctkCheckBox" name="CheckBoxROIVisiblity">
+           <property name="toolTip">
+            <string>Enable/disable the visibility of the selected Finding's ROI (region of interest)</string>
+           </property>
            <property name="text">
             <string>ROI visibility</string>
            </property>
@@ -93,6 +100,10 @@
        </item>
        <item row="1" column="1">
         <widget class="QPushButton" name="ButtonPlaceROI">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A Region of Interest can be placed around a lesion with two clicks on one of the slice views:&lt;br/&gt;&lt;table cellspacing=&quot;5&quot;&gt;&lt;tbody&gt;&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click1.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;First click on the center of the lesion&lt;/td&gt;&lt;/tr&gt;
+&lt;tr style=&quot;vertical-align: middle;&quot;&gt;&lt;td&gt;&lt;img src=&quot;:/Icons/help/roi_click2.png&quot;/&gt;&lt;/td&gt;&lt;td&gt;Then click on the most remote corner &lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -128,6 +139,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="ButtonAddSegmentationToFinding">
+       <property name="toolTip">
+        <string>Add the segmentation to the selected Finding</string>
+       </property>
        <property name="text">
         <string>Add Segmentation to Finding</string>
        </property>
