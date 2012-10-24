@@ -13,7 +13,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
   # TODO: add a capability to control the level of messages
   @staticmethod
   def Info( message ):
-    print("[LongitudinalPETCTAnalysis " + time.strftime( "%m/%d/%Y %H:%M:%S" ) + "]: INFO: " + str( message ))
+    print("[LongitudinalPETCT " + time.strftime( "%m/%d/%Y %H:%M:%S" ) + "]: INFO: " + str( message ))
     sys.stdout.flush()
 
 
@@ -338,7 +338,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     layoutNode.AddLayoutDescription(id,quantView)
     layoutNode.SetViewArrangement(id)
         
-      
      
   @staticmethod
   def updateQualitativeViewLayout(studies):
@@ -598,6 +597,18 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
           
       slicer.mrmlScene.RemoveNode(modelHierarchyNode)       
       
+  
+  @staticmethod
+  def setReportROIsVisible(reportNode, visible):
+    
+    if reportNode:
+      for i in xrange(reportNode.GetNumberOfFindingNodeIDs()):
+        finding = reportNode.GetFinding(i)
+        if finding:
+          roi = finding.GetSegmentationROINode()
+          if roi:
+            roi.SetDisplayVisibility(visible)
+        
       
   @staticmethod
   def insertStr(original, new, pos):

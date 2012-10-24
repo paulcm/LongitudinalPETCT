@@ -1306,35 +1306,40 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.showQuantitativeView()           
       #self.manageVRDisplayNodesVisibility(None) 
   
-  def showQuantitativeView(self, show = True):
+  def showQuantitativeView(self):
     
-    if show:
-      
-      self.reportTableWidget.setAllSelectableOn()
-      
-      currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetNumberOfSelectedStudiesSelectedForAnalysis())
+    self.reportTableWidget.setAllSelectableOn()
     
-      self.manageVolumeRenderingCompareViewNodeIDs()
-      self.manageVolumeRenderingVisibility()
-      self.manageModelDisplayCompareViewNodeIDs()
+    ViewHelper.Info('Initializing Layout for Quantitative View')  
+    currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetNumberOfSelectedStudiesSelectedForAnalysis())
+    ViewHelper.Info('Quantitative View Layout created') 
+    
+    self.manageVolumeRenderingCompareViewNodeIDs()
+    self.manageVolumeRenderingVisibility()
+    self.manageModelDisplayCompareViewNodeIDs()
 
-      self.manageModelsVisibility()
+    self.manageModelsVisibility()
 
-
-      currentReport = self.getCurrentReport()
+    currentReport = self.getCurrentReport()
         
-      if self.chartNode == None:
-        self.chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
-        self.chartNode.SetSaveWithScene(False)
-        self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
-        self.chartNode.SetProperty('default', 'type', 'Scatter');
-        self.chartNode.SetProperty('default', 'showLegend', 'on') 
-        self.chartNode.SetProperty('default', 'xAxisType', 'categorical')
-         
-      chartViewNode = ViewHelper.getStandardChartViewNode()
-      chartViewNode.SetChartNodeID(self.chartNode.GetID())
-        
-      self.updateQuantitativeView()
+    if self.chartNode == None:
+      ViewHelper.Info('Creating ChartNode') 
+      self.chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
+      self.chartNode.SetSaveWithScene(False)
+      self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
+      self.chartNode.SetProperty('default', 'type', 'Scatter');
+      self.chartNode.SetProperty('default', 'showLegend', 'on') 
+      self.chartNode.SetProperty('default', 'xAxisType', 'categorical')
+      ViewHelper.Info('ChartNode created') 
+      
+    chartViewNode = ViewHelper.getStandardChartViewNode()
+    ViewHelper.Info('Setting ChartNode to ChartViewNode')   
+    chartViewNode.SetChartNodeID(self.chartNode.GetID())
+    ViewHelper.Info('ChartNode set to ChartViewNode')  
+     
+    ViewHelper.Info('Updating the Quantitative View')       
+    self.updateQuantitativeView()
+    ViewHelper.Info('Quantitative View updated')   
             
           
   def updateQuantitativeView(self, finding = None):
@@ -1344,13 +1349,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if finding:
       self.reportTableWidget.setRowSelectableOn()
     
+    ViewHelper.Info('Trying to remove former chart arrays') 
     for can in self.chartArrayNodes:
       self.chartNode.RemoveArray(can.GetName())
+      ViewHelper.Info('Removing array: '+can.GetName()) 
       slicer.mrmlScene.RemoveNode(can)
     
     if self.chartArrayNodes:
       del self.chartArrayNodes[:]
-    
       
     if currentReport:
       arrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
@@ -1367,7 +1373,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
             findings.append(fnd)
       else:
         findings.append(finding)
-          
+      
+      ViewHelper.Info('Creating updated arrays')     
       for finding in findings:
         
         rgba = lut.GetTableValue(finding.GetColorID())
@@ -1413,11 +1420,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if len(findings) == 1:
           self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')
       
+      ViewHelper.Info('Chart arrays updated')   
+      
       if len(findings) > 1:
         self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')
       
       self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')
     
+      
     ViewHelper.getStandardChartViewNode().Modified()
                 
       
