@@ -201,7 +201,7 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
 void qSlicerLongitudinalPETCTReportSelectionWidget
 ::selectionChanged(vtkMRMLNode* node)
 {
-    vtkSmartPointer<vtkMRMLLongitudinalPETCTReportNode> reportNode = vtkMRMLLongitudinalPETCTReportNode::SafeDownCast(node);
+    vtkMRMLLongitudinalPETCTReportNode* reportNode = vtkMRMLLongitudinalPETCTReportNode::SafeDownCast(node);
     this->setReportNode(reportNode);
 }
 
