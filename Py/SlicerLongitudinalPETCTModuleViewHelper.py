@@ -597,18 +597,55 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
           
       slicer.mrmlScene.RemoveNode(modelHierarchyNode)       
       
+        
   
   @staticmethod
-  def setReportROIsVisible(reportNode, visible):
+  def hideReport(reportNode):
+    if not reportNode:
+      return
     
-    if reportNode:
-      for i in xrange(reportNode.GetNumberOfFindingNodeIDs()):
-        finding = reportNode.GetFinding(i)
-        if finding:
-          roi = finding.GetSegmentationROINode()
-          if roi:
-            roi.SetDisplayVisibility(visible)
+    for i in xrange(reportNode.GetNumberOfStudyNodeIDs()):
+      study = reportNode.GetStudy(i)
+      
+      if not study:
+        continue
+      
+      vrdn = study.GetVolumeRenderingDisplayNode()
+      
+      if vrdn:
+        vrdn.SetVisibility(0)
         
+    for i in xrange(reportNode.GetNumberOfFindingNodeIDs()):
+      finding = reportNode.GetFinding(i)
+      
+      if not finding:
+        continue
+      
+      finding.SetHideFromEditors(True)
+      
+      roi = finding.GetSegmentationROINode()  
+      if roi:
+        roi.SetDisplayVisibility(0)      
+      
+      for j in xrange(reportNode.GetNumberOfStudyNodeIDs()):
+        study = reportNode.GetStudy(j)
+      
+        if not study:
+          continue    
+
+        seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+
+        if not seg:
+          continue
+        
+        mhNode = seg.GetModelHierarchyNode()
+        if mhNode:
+          mNode = mhNode.GetModelNode()
+          if mNode:
+            mNode.SetDisplayVisibility(0)
+        
+    
+    
       
   @staticmethod
   def insertStr(original, new, pos):
