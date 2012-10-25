@@ -82,6 +82,7 @@ void qSlicerLongitudinalPETCTFindingSelectionWidgetPrivate
   this->Ui_qSlicerLongitudinalPETCTFindingSelectionWidget::setupUi(widget);
 
   this->MRMLNodeComboBoxFinding->setNodeTypes(QStringList("vtkMRMLLongitudinalPETCTFindingNode"));
+  this->MRMLNodeComboBoxFinding->setShowHidden(false);
 
   this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Select/create a Finding</td></tr><tr><td>-</td><td>Place ROI in the slice views around a lesion</td></tr><tr><td>-</td><td>Open built in Editor module with <strong>Edit Segmentation</strong> to perform the segmentation of the lesion</td></tr><tr><td>-</td><td>Add segmentation to selected Finding in order to perform SUV computation</td></tr></tbody></table></body></html>");
 
