@@ -4,8 +4,6 @@ from __main__ import vtk, qt, ctk, slicer
 from DICOMLib import DICOMPlugin
 from DICOMLib import DICOMLoadable
 
-from datetime import datetime
-
 
 import DICOMLib
 
@@ -35,10 +33,10 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.tags['decayFactor'] = "0054,1321"
     self.tags['frameRefTime'] = "0054,1300"
     self.tags['radionuclideHalfLife'] = "0018,1075"
+    self.tags['contentTime'] = "0008,0033"
     self.tags['seriesTime'] = "0008,0031" 
-    #self.tags['studyInstanceUID'] = "0020,000D"    
-    
-    #self.tags['seriesInstanceUID'] = "0020,000E"
+
+
     self.tags['seriesDescription'] = "0008,103e"
     self.tags['seriesModality'] = "0008,0060"
     self.tags['instanceUID'] = "0008,0018"
@@ -51,10 +49,10 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.tags['rows'] = "0028,0010"
     self.tags['columns'] = "0028,0011"
     self.tags['spacing'] = "0028,0030"
+    self.tags['position'] = "0020,0032"
     self.tags['orientation'] = "0020,0037"
     self.tags['pixelData'] = "7fe0,0010"
   
-    #self.tags['seriesTime'] = "0008,0031"
     
     self.fileLists = []
     self.patientName = ""
@@ -80,14 +78,11 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.ctFileLoadables = []
     
     validStudyCounter = 0
-  
-    time = datetime.now()  
+
     petFileLists = self.findPetSeriesImageFiles()
-    # "TIME TO FIND ALL PET FILES: " + str(datetime.now() - time)
-    time = datetime.now()
+
     ctFileLists = map(self.findCtSeriesFilesForPetSeries, petFileLists)
-    #print "TIME TO FIND ALL CT FILES: " + str(datetime.now() - time)
-    time = datetime.now()
+
     
     counter = 0
     
@@ -119,8 +114,6 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
                 counter += 1
         i += 1           
               
-    #print "TIME TO GENERATE ALL LOADABLES: " + str(datetime.now() - time)
-    time = datetime.now()
     
     if counter > 0:
       loadable = DICOMLib.DICOMLoadable()
@@ -138,9 +131,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       loadable.confidence = 1.0
     
       loadables = [loadable]
-    
-    #print "TIME TO CREATE MAIN LOADABLE: " + str(datetime.now() - time)
-    time = datetime.now()      
+          
     
     return loadables
 
@@ -184,11 +175,13 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     studyDate = self.studyDateImageFile(files[0])
     
-    for file in files:
-      tempStudyDate = self.studyDateImageFile(file)
+    #comment for performance
+    
+    #for file in files:
+      #tempStudyDate = self.studyDateImageFile(file)
       
-      if tempStudyDate != studyDate:
-        studyDate = ""
+      #if tempStudyDate != studyDate:
+        #studyDate = ""
     
     return studyDate
   
@@ -204,49 +197,85 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
 
     return petSeriesFiles
   
+
+       
   
   def findMostSimilarCtSeriesFiles(self, ctFilesList, petFiles):
     """___"""
     ctSeriesFiles = []
     
     if petFiles:
-      petSurface = self.surface(petFiles)
+      petVolume = self.volume(petFiles)
       i = 0
       similarity = -1
+      slices = -1
       mostSimilarIdx = -1
     
-      for ctFiles in ctFilesList:
-        ctSurface = self.surface(ctFiles)       
-        ratio = min(petSurface,ctSurface) / max(petSurface,ctSurface)
+      for i in xrange(len(ctFilesList)):
+        ctVolume = self.volume(ctFilesList[i])       
+        ratio = min(petVolume,ctVolume) / max(petVolume,ctVolume)
         if ratio > similarity:
           similarity = ratio
           mostSimilarIdx = i
+          slices = len(ctFilesList[i])
+        elif ratio == similarity:
+          if len(ctFilesList[i]) > slices:
+            similarity = ratio
+            mostSimilarIdx = i
     
-        i += 1
       
-      if mostSimilarIdx >= 0 & mostSimilarIdx < len(ctFilesList):
-        ctSeriesFiles = ctFilesList[mostSimilarIdx]
+      #if mostSimilarIdx >= 0 & mostSimilarIdx < len(ctFilesList):
+        #ctSeriesFiles = ctFilesList[mostSimilarIdx]
     
-    return ctSeriesFiles      
+    return mostSimilarIdx #ctSeriesFiles      
     
   
   def findCtSeriesFilesForPetSeries(self, petFiles):
     """___"""
     
-    if petFiles:
-      studyUID = self.studyInstanceUID(petFiles)
-      ctSeriesFilesList = []
+    if not petFiles:
+      return
     
-      for files in self.fileLists:
-        if self.isSpecificModalityImage(files[0],self.ctTerm): # for performance: check only first file
-          if self.isSpecificSeries(files, self.ctTerm):
-            if self.studyInstanceUIDForImage(files[0]) == studyUID: # for performace: check only first file
-              if self.studyInstanceUID(files) == studyUID:
-                ctSeriesFilesList.append(files)
+    label = "The Longitudinal PET/CT Analysis Reader has detected multiple CT series in a study with the following PET series:\n\n"
+    
+    petDescription = slicer.dicomDatabase.fileValue(petFiles[0],self.tags['seriesDescription']) 
+    
+    dims = self.dimensions(petFiles)
+    petDescription += "  |  Slices: "+str(len(petFiles)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+slicer.dicomDatabase.fileValue(petFiles[0], self.tags['contentTime'])
+    
+    label += petDescription + "\n\n\nA CT series has been selected automatically. Please change the selection if you want to use another CT series.\n"
+      
+    studyUID = self.studyInstanceUID(petFiles)
+    ctSeriesFilesList = []
+    
+    ctDescriptions = []
+    
+    for files in self.fileLists:
+      if self.isSpecificModalityImage(files[0],self.ctTerm): # for performance: check only first file
+        if self.isSpecificSeries(files, self.ctTerm):
+          if self.studyInstanceUIDForImage(files[0]) == studyUID: # for performace: check only first file
+            if self.studyInstanceUID(files) == studyUID:
+              ctSeriesFilesList.append(files)
+              dims = self.dimensions(files)
+              ctDescriptions.append(slicer.dicomDatabase.fileValue(files[0],self.tags['seriesDescription']) + "  |  Slices: "+str(len(files)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+slicer.dicomDatabase.fileValue(files[0], self.tags['contentTime'])) 
               
+    index = 0
     
-    return self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
+    if len(ctSeriesFilesList) > 1:
+      msidx = self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
+      selected = qt.QInputDialog.getItem(None, 'Select matching CT Series for PET',label,ctDescriptions,msidx)
     
+    
+      try:
+        index = ctDescriptions.index(str(selected))
+      except IndexError:
+        index = msidx 
+    
+    if ctSeriesFilesList:
+      return ctSeriesFilesList[index] #self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
+    
+    else:
+      return None
     
   def studyInstanceUIDForImage(self, file):
     """___"""
@@ -257,11 +286,13 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     """___"""
     studyInstanceUID = self.studyInstanceUIDForImage(files[0])
     
-    for file in files:
-      tempStudyInstanceUID = self.studyInstanceUIDForImage(file)
+    # commented for performance
+    
+    #for file in files:
+      #tempStudyInstanceUID = self.studyInstanceUIDForImage(file)
       
-      if tempStudyInstanceUID != studyInstanceUID:
-        studyInstanceUID = ""
+      #if tempStudyInstanceUID != studyInstanceUID:
+       #studyInstanceUID = ""
     
     return studyInstanceUID 
   
@@ -282,36 +313,28 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     return isSpecificSeries
   
   
-  def surface(self,files):
+  def volume(self,files):
     """___"""
-    maxDim = self.maxDimensions(files)
+    dims = self.dimensions(files)
     
-    return maxDim[0]*maxDim[1]  
+    return dims[0]*dims[1]*dims[2]  
   
-  def maxDimensions(self,files):
+
+  
+  def dimensions(self,files):
     """ ___ """
-    global SYS
-    maxW = SYS.float_info.min
-    maxH = SYS.float_info.min
-      
-    for file in files:
-      
-      width = self.dimensions(file)[0]
-      height = self.dimensions(file)[1]
+    w = self.sliceSurface(files[0])[0]
+    h = self.sliceSurface(files[0])[1]
+    d = 0  
+    if files:
+      firstZ = float(slicer.dicomDatabase.fileValue(files[0],self.tags['position']).split('\\')[2])
+      lastZ = float(slicer.dicomDatabase.fileValue(files[len(files)-1],self.tags['position']).split('\\')[2])
+      d = math.fabs(lastZ - firstZ)
         
-      if width > maxW:
-        maxW = width
-      if height > maxH:
-        maxH = height
-        
-    result = []
-    result.append(maxW)
-    result.append(maxH)
-      
-    return result
+    return [w,h,d]
     
   
-  def dimensions(self,file):
+  def sliceSurface(self,file):
         
     rows = float(slicer.dicomDatabase.fileValue(file,self.tags['rows']))
     cols = float(slicer.dicomDatabase.fileValue(file,self.tags['columns']))
