@@ -241,7 +241,9 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     petDescription = slicer.dicomDatabase.fileValue(petFiles[0],self.tags['seriesDescription']) 
     
     dims = self.dimensions(petFiles)
-    petDescription += "  |  Slices: "+str(len(petFiles)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+slicer.dicomDatabase.fileValue(petFiles[0], self.tags['contentTime'])
+    info = self.acquireImageSeriesComparisonInformation(petFiles)
+    
+    petDescription += "  |  Slices: "+str(len(petFiles)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+str(info['ContentTime'])
     
     label += petDescription + "\n\n\nA CT series has been selected automatically. Please change the selection if you want to use another CT series.\n"
       
@@ -257,7 +259,8 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
             if self.studyInstanceUID(files) == studyUID:
               ctSeriesFilesList.append(files)
               dims = self.dimensions(files)
-              ctDescriptions.append(slicer.dicomDatabase.fileValue(files[0],self.tags['seriesDescription']) + "  |  Slices: "+str(len(files)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+slicer.dicomDatabase.fileValue(files[0], self.tags['contentTime'])) 
+              info = self.acquireImageSeriesComparisonInformation(files)
+              ctDescriptions.append(slicer.dicomDatabase.fileValue(files[0],self.tags['seriesDescription']) + "  |  Slices: "+str(len(files)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+str(info['ContentTime'])) 
               
     index = 0
     
@@ -319,19 +322,58 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     return dims[0]*dims[1]*dims[2]  
   
-
-  
+ 
   def dimensions(self,files):
     """ ___ """
     w = self.sliceSurface(files[0])[0]
     h = self.sliceSurface(files[0])[1]
     d = 0  
-    if files:
-      firstZ = float(slicer.dicomDatabase.fileValue(files[0],self.tags['position']).split('\\')[2])
-      lastZ = float(slicer.dicomDatabase.fileValue(files[len(files)-1],self.tags['position']).split('\\')[2])
-      d = math.fabs(lastZ - firstZ)
+    
+    info = self.acquireImageSeriesComparisonInformation(files)
+    if info:
+      d = info['ZDimension']
         
     return [w,h,d]
+  
+
+
+  def acquireImageSeriesComparisonInformation(self, files):
+    """ ___ """
+    if not files:
+      return None
+    
+    informations = {}
+    
+    minZ = 0
+    maxZ = 0
+    minContentTime = 0
+            
+    for i in xrange(len(files)):
+      
+      z = float(slicer.dicomDatabase.fileValue(files[i],self.tags['position']).split('\\')[2])
+      t = float(slicer.dicomDatabase.fileValue(files[i], self.tags['contentTime']))
+      
+      # initialize with values of first image file
+      if i==0:
+        minZ = z
+        maxZ = z
+        minContentTime = t
+      
+      else:
+        
+        if z < minZ:
+          minZ = z
+        
+        if z > maxZ:
+          maxZ = z
+        
+        if t < minContentTime:
+          minContentTime = t
+    
+    informations['ContentTime'] = minContentTime
+    informations['ZDimension'] = math.fabs(maxZ-minZ)
+    
+    return informations
     
   
   def sliceSurface(self,file):
@@ -442,6 +484,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
 
       mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
+      mh.SetName(reportNode.GetName()+"_ModelHierarchy")
       reportNode.SetReportsModelHierarchyNodeID(mh.GetID())
 
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
