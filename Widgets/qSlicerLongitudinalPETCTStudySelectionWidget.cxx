@@ -146,11 +146,19 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
 
   for(int i=0; i < d->ReportNode->GetNumberOfStudyNodeIDs(); ++i)
     {
-      vtkSmartPointer<vtkMRMLLongitudinalPETCTStudyNode> study = d->ReportNode->GetStudy(i);
-      bool disabled = d->ReportNode->IsStudyInUse(study);
+      vtkMRMLLongitudinalPETCTStudyNode* study = d->ReportNode->GetStudy(i);
 
+      if(!study)
+        continue;
+
+      bool disabled = d->ReportNode->IsStudyInUse(study);
       d->TableStudySelection->addStudyToTable(study, disabled);
+
+      if(i==0) // since all get centered all uncentered simultaneously no need to do it every iteration step
+        d->CheckBoxStudiesCentered->setChecked(study->GetCenteredVolumes());
     }
+
+
 
   std::cout << "END UPDATING STUDY SELECTION WIDGET" << std::endl;
 }
