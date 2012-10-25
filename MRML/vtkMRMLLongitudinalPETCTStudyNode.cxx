@@ -518,9 +518,6 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
       if (this->Scene)
         this->Scene->AddReferencedNodeID(this->SegmentationROINodeID, this);
 
-      if(this->SegmentationROINode && this->CenteringTransformNode && this->CenteredVolumes)
-        this->SegmentationROINode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
-
     }
 }
 
