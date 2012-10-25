@@ -25,7 +25,155 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.setup()
       self.parent.show()
       
+  
+  def getReportSelectionWidget(self):
+    if not self.reportSelectionWidget:
+      self.reportSelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTReportSelectionWidget()    
+      self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
+      if self.reportSelectionWidget.mrmlNodeComboBoxReport():
+        self.getReportSelectionWidget().mrmlNodeComboBoxReport().connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
       
+    return self.reportSelectionWidget  
+  
+  def getReportSelector(self):
+    return self.getReportSelectionWidget().mrmlNodeComboBoxReport()  
+  
+  
+  def getStudySelectionWidget(self):
+    
+    if not self.studySelectionWidget:
+      
+      self.studySelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTStudySelectionWidget()    
+      self.studySelectionWidget.setProperty('volumeRendering',True)
+      self.studySelectionWidget.setProperty('gpuRendering',False)
+      self.studySelectionWidget.setProperty('linearOpacity',False)
+      self.studySelectionWidget.setProperty('spinView',True)
+    
+      self.studySelectionWidget.setReportNode(self.getCurrentReport())
+    
+      self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
+      self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
+      self.studySelectionWidget.connect('spinViewToggled(bool)',ViewHelper.spinStandardViewNode)
+      self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
+      self.studySelectionWidget.connect('opacityPowChanged(double)',self.onSetOpacityPowForCurrentStudy)
+      self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
+  
+    return self.studySelectionWidget  
+  
+  
+  def getFindingSelectionWidget(self):
+    
+    if not self.findingSelectionWidget:
+      self.findingSelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSelectionWidget()    
+      self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
+      self.findingSelectionWidget.setReportNode(self.getCurrentReport())
+      self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onManageFindingROIsVisibility)
+      self.findingSelectionWidget.connect('placeROIChecked(bool)', self.onActivateROIPlacement)
+      self.findingSelectionWidget.connect('addSegmentationToFinding()', self.onCollapseEditor)
+    
+      findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
+      if findingSelector:
+        findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+        findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
+        findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
+      
+    self.findingSelectionWidget.setEditorWidget(self.getEditorWidget().parent)
+    
+    return self.findingSelectionWidget
+ 
+ 
+  def getFindingSelector(self):
+    return self.getFindingSelectionWidget().mrmlNodeComboBoxFinding()    
+ 
+ 
+  def getEditorWidget(self):
+    
+    if not self.editorWidget:
+      
+      editorWidgetParent = slicer.qMRMLWidget()
+      editorWidgetParent.setLayout(qt.QVBoxLayout())
+      editorWidgetParent.setMRMLScene(slicer.mrmlScene)
+      editorWidgetParent.hide()
+      self.editorWidget = EditorWidget(editorWidgetParent, False)
+      self.editorWidget.setup()
+  
+      self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
+      self.editorWidget.editLabelMapsFrame.setEnabled(False)
+      self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
+    
+      self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
+      self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
+      self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
+    
+      editorWidgetParent.show()
+      
+    return self.editorWidget
+  
+  
+  def getAnalysisSettingsWidget(self):
+    
+    if not self.analysisSettingsWidget:
+      
+      self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongitudinalPETCTAnalysisSettingsWidget()    
+      self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
+    
+      self.analysisSettingsWidget.connect('qualitativeAnalysisClicked(bool)', self.showQualitativeView)
+      self.analysisSettingsWidget.connect('quantitativeAnalysisClicked(bool)', self.showQuantitativeView)
+      self.analysisSettingsWidget.connect('studySelectedForAnalysis(int, bool)', self.onStudyForAnalysisChanged)
+      self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
+      self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
+      self.analysisSettingsWidget.connect('exportCSV()',self.onSaveResultsCSV)
+           
+    return self.analysisSettingsWidget  
+  
+  def getReportTableWidget(self):
+    
+    if not self.reportTableWidget:
+      
+      self.reportTableWidget = slicer.modulewidget.qSlicerLongitudinalPETCTReportTableWidget()
+      self.reportTableWidget.setColumnSelectableOn()
+      self.reportTableWidget.setReportNode(self.getCurrentReport())
+      self.reportTableWidget.connect('studyClicked(int)',self.changeSelectedStudy)
+      self.reportTableWidget.connect('findingClicked(int)',self.getFindingSelector().setCurrentNodeIndex)                 
+          
+    return self.reportTableWidget  
+  
+  def getFindingSettingsDialog(self):
+    
+    if not self.findingSettingsDialog:
+        self.findingSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSettingsDialog(self.parent)
+           
+    return self.findingSettingsDialog
+  
+  
+  def getUnsupportedVolumeRenderingMessageBox(self):
+    if self.unsupportedVolRendMessageBox == None:
+      self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
+      self.unsupportedVolRendMessageBox.setModal(True)
+      self.unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
+      self.unsupportedVolRendMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+      self.unsupportedVolRendMessageBox.setText('NCIRayCastVolumeRendering is selected as default volume renderer. The Longitudinal PET/CT Analysis module does not support displaying of models from Finding segmentations with this volume renderer!')
+      self.unsupportedVolRendMessageBox.setProperty('dontShowAgainVisible', True)
+      self.unsupportedVolRendMessageBox.setDontShowAgain(False)
+      
+    return self.unsupportedVolRendMessageBox 
+  
+  
+  def getSegmentationColorChangeMessageBox(self):
+    
+    if not self.segmentationColorChangeMessageBox:
+     
+      self.segmentationColorChangeMessageBox = ctk.ctkMessageBox()
+      self.segmentationColorChangeMessageBox.setModal(True)
+      self.segmentationColorChangeMessageBox.setIcon(qt.QMessageBox.Information)
+      self.segmentationColorChangeMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
+      self.segmentationColorChangeMessageBox.setText("Please notice that only segmentations with the same color label as the current Finding's Type will be used!")
+      self.segmentationColorChangeMessageBox.setProperty('dontShowAgainVisible',True)
+      self.segmentationColorChangeMessageBox.setDontShowAgain(False)
+      
+    return self.segmentationColorChangeMessageBox
+  
+   
   def setup(self): 
     # Instantiate and connect widgets ...
 
@@ -34,18 +182,27 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if lm:
       lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
     
+    
+    self.reportSelectionWidget = None
+    self.reportSelector = None
+    self.studySelectionWidget = None
+    self.findingSelectionWidget = None
+    self.findingSelector = None
+    self.editorWidget = None
+    self.analysisSettingsWidget = None
+    self.reportTableWidget = None
+    self.findingSettingsDialog = None
+    self.unsupportedVolRendMessageBox = None
+    self.segmentationColorChangeMessageBox = None
+    
     self.roiEndPlacementEventObserverID = None
     self.roiPlacementNodeAddedEventObserverID = None
     self.lastAddedROINode = None
     self.qualitativeViewLastID = -1
-    self.reportObserverIDs = []
+    self.reportObserverIDs = {}
     self.tempObserverEditorTag = None
     self.viewNodeObserverID = -1
-    self.segmentationROIOldPosition = [0.,0.,0.]
-    
-    self.tempThresholdMin = None
-    self.tempThresholdMax = None
-    #self.tempCroppedLblVolObserverTag = -1
+    #self.segmentationROIOldPosition = [0.,0.,0.]
     
     self.chartArrayNodes = []
     self.chartNode = None
@@ -58,23 +215,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.vrLogic = slicer.modules.volumerendering.logic()
     self.anLogic = logic = slicer.modules.annotations.logic()
 
-    self.findingSettingsDialog = None
-
     self.tempCroppedVol = None
     self.tempLabelVol = None
     
-    self.selectedPETWindow = 0.0
-    self.selectedPETLevel = 0.0
     
-    self.cliNode = None
+    self.cliSUV = None
     self.cliModelMaker = None
-    
-    self.showCompareAll = False
-    
-    self.unsupportedVolRendMessageBox = None
-    self.segmentationColorChangeMessageBox = None
 
     self.findingROIVisiblityBackup = True
+    self.reportNodesList = []
        
     #self.opacityFunction = vtk.vtkPiecewiseFunction()
     # instanciate all collapsible buttons
@@ -90,91 +239,37 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.collapsibleButtonsGroup.addButton(self.findingsCollapsibleButton)
     self.collapsibleButtonsGroup.addButton(self.analysisCollapsibleButton)
        
-    # show Report selection widget
+    # Report Selection Panel
     self.reportsCollapsibleButton.setProperty('collapsed',False)
-    # Reports Collapsible button
     self.reportsCollapsibleButton.text = "Report Selection"
     
     self.layout.addWidget(self.reportsCollapsibleButton)
     
     reportsLayout = qt.QVBoxLayout(self.reportsCollapsibleButton)
+    reportsLayout.addWidget(self.getReportSelectionWidget())
     
-    self.reportSelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTReportSelectionWidget()    
-    self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
-    self.reportSelector = self.reportSelectionWidget.mrmlNodeComboBoxReport()
-      
-    reportsLayout.addWidget(self.reportSelectionWidget)
-    # Studies Collapsible button    
+    
+    # Studies Selection Panel   
     self.studiesCollapsibleButton.text = "Study Selection"
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     
     self.layout.addWidget(self.studiesCollapsibleButton)
 
-    studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)
+    studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)   
+    studiesLayout.addWidget(self.getStudySelectionWidget())
 
-    self.studySelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTStudySelectionWidget()    
-    self.studySelectionWidget.setProperty('volumeRendering',True)
-    self.studySelectionWidget.setProperty('gpuRendering',False)
-    self.studySelectionWidget.setProperty('linearOpacity',False)
-    self.studySelectionWidget.setProperty('spinView',True)
-    
-    self.studySelectionWidget.setReportNode(self.getCurrentReport())
-    self.reportSelector.connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
-    
-    studiesLayout.addWidget(self.studySelectionWidget)
 
-    self.studySelectionWidget.connect('studySelected(int)',self.onStudySelected)
-    self.studySelectionWidget.connect('studyDeselected(int)',self.onStudyDeselected)    
-    self.studySelectionWidget.connect('spinViewToggled(bool)',ViewHelper.spinStandardViewNode)
-    self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
-    self.studySelectionWidget.connect('opacityPowChanged(double)',self.onSetOpacityPowForCurrentStudy)
-    self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
-
-    # Findings Collapsible button
+    # Findings Selection Panel
     self.findingsCollapsibleButton.text = "Findings"
     self.findingsCollapsibleButton.setProperty('collapsed',True)    
      
     self.layout.addWidget(self.findingsCollapsibleButton)
     
     findingsLayout = qt.QVBoxLayout(self.findingsCollapsibleButton)
-      
-    self.findingSelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSelectionWidget()    
-    self.findingSelectionWidget.setMRMLScene(slicer.mrmlScene)
-    self.findingSelectionWidget.setReportNode(self.getCurrentReport())
-    self.findingSelectionWidget.connect('roiVisibilityChanged(bool)', self.onManageFindingROIsVisibility)
-    self.findingSelectionWidget.connect('placeROIChecked(bool)', self.onActivateROIPlacement)
-    self.findingSelectionWidget.connect('addSegmentationToFinding()', self.onCollapseEditor)
-    
-    self.findingSelector = self.findingSelectionWidget.mrmlNodeComboBoxFinding()
-    #self.findingSelector.connect('nodeAddedByUser(vtkMRMLNode*)', self.onFindingNodeCreated)
-    self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
-    self.findingSelector.connect('nodeAboutToBeEdited(vtkMRMLNode*)', self.onShowFindingSettingsDialog)
-    self.findingSelector.connect('nodeAboutToBeRemoved(vtkMRMLNode*)', self.onFindingNodeToBeRemoved)
-    
-    # Editor widget in Findings
-    editorWidgetParent = slicer.qMRMLWidget()
-    editorWidgetParent.setLayout(qt.QVBoxLayout())
-    editorWidgetParent.setMRMLScene(slicer.mrmlScene)
-    self.editorWidget = EditorWidget(editorWidgetParent, False)
-    self.editorWidget.setup()
-    #self.editorWidget.toolsColor.frame.setVisible(False)
-    
-    
-    self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
-    self.editorWidget.editLabelMapsFrame.setEnabled(False)
-    
-    findingsLayout.addWidget(self.findingSelectionWidget)
-    
-    if self.reportSelector.currentNode():
-      if self.reportSelector.currentNode().GetUserSelectedFindingNode():
-        if self.reportSelector.currentNode().GetUserSelectedFindingNode().GetSegmentationROINode():
-          self.editorWidget.editLabelMapsFrame.setEnabled(True)
+    findingsLayout.addWidget(self.getFindingSelectionWidget())
         
-    self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
     
-    self.findingSelectionWidget.setEditorWidget(editorWidgetParent)
-    
-    #Analysis Collapsible Button
+    #Analysis Settings Panel
     self.analysisCollapsibleButton.text = "Analysis"
     self.analysisCollapsibleButton.setProperty('collapsed',True)
     self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onSwitchToAnalysis)      
@@ -182,17 +277,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.layout.addWidget(self.analysisCollapsibleButton)
 
     analysisLayout = qt.QVBoxLayout(self.analysisCollapsibleButton)
-    self.analysisSettingsWidget = slicer.modulewidget.qSlicerLongitudinalPETCTAnalysisSettingsWidget()    
-    self.analysisSettingsWidget.setReportNode(self.getCurrentReport())
-    
-    self.analysisSettingsWidget.connect('qualitativeAnalysisClicked(bool)', self.showQualitativeView)
-    self.analysisSettingsWidget.connect('quantitativeAnalysisClicked(bool)', self.showQuantitativeView)
-    self.analysisSettingsWidget.connect('studySelectedForAnalysis(int, bool)', self.onStudyForAnalysisChanged)
-    self.analysisSettingsWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
-    self.analysisSettingsWidget.connect('spinViewToggled(bool)',ViewHelper.spinCompareViewNodes)
-    self.analysisSettingsWidget.connect('exportCSV()',self.onSaveResultsCSV)
-    
-    analysisLayout.addWidget(self.analysisSettingsWidget)  
+    analysisLayout.addWidget(self.getAnalysisSettingsWidget())  
+
 
     # Add vertical spacer
     self.layout.addStretch()
@@ -201,27 +287,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.separator.setFrameStyle(qt.QFrame.HLine | qt.QFrame.Sunken)
     self.layout.addWidget(self.separator)
 
-    # Add Report Table
-    self.reportTableWidget = slicer.modulewidget.qSlicerLongitudinalPETCTReportTableWidget()
-    self.reportTableWidget.setColumnSelectableOn()
-    self.reportTableWidget.setReportNode(self.getCurrentReport())
-    self.reportTableWidget.connect('studyClicked(int)',self.changeSelectedStudy)
-    self.reportTableWidget.connect('findingClicked(int)',self.findingSelector.setCurrentNodeIndex)                 
-    self.layout.addWidget(self.reportTableWidget)  
-    ViewHelper.SetForegroundOpacity(0.6)       
-    self.observeReportNode(self.reportSelector.currentNode())
+    # Report Overview Table Panel
+    self.layout.addWidget(self.getReportTableWidget())  
     
+    
+    ViewHelper.SetForegroundOpacity(0.6)       
+    
+    #self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
+    self.onCurrentReportChanged(self.getReportSelector().currentNode())
     
   def onEditorCollapsed(self,collapsed):
-    self.findingSelectionWidget.setProperty('selectionEnabled',collapsed)    
+    self.getFindingSelectionWidget().setProperty('selectionEnabled',collapsed)    
     self.onEnterEditMode( collapsed != True )
-    self.findingSelectionWidget.hideAddButton(collapsed)
+    self.getFindingSelectionWidget().hideAddButton(collapsed)
     
     self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
     
  
   def onCollapseEditor(self):
-    self.editorWidget.editLabelMapsFrame.setProperty('collapsed', True)
+    self.getEditorWidget().editLabelMapsFrame.setProperty('collapsed', True)
  
        
   def changeSelectedStudy(self, newIndex):
@@ -231,20 +315,22 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if currentReport:
       study = currentReport.GetSelectedStudy(newIndex)
       if study:
-        currentReport.SetUserSelectedStudyNodeID(study.GetID())      
-    
+        currentReport.SetUserSelectedStudyNodeID(study.GetID())
+      else:
+        currentReport.SetUserSelectedStudyNodeID(None)
+              
       currentFinding = self.getCurrentFinding()
       currentStudy = self.getCurrentStudy()
     
       if study:
-        self.studySelectionWidget.selectStudyInRow(currentReport.GetIndexOfStudyNodeID(study.GetID()))
+        self.getStudySelectionWidget().selectStudyInRow(currentReport.GetIndexOfStudyNodeID(study.GetID()))
         
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROINode()
       
         if (currentStudy != None) & ( currentSegROI != None):
-          if currentStudy.GetSegmentationROINodeID() != currentSegROI.GetID():
-            currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
+          currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
+
           self.updateSegmentationROIPosition()
           
         elif study:
@@ -259,7 +345,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.isQuantitativeViewActive():
       self.updateQuantitativeView(currentReport.GetUserSelectedFindingNode())    
                 
-          
        
   def updateSegmentationROIPosition(self):
     currentStudy = self.getCurrentStudy()
@@ -275,7 +360,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         currentSegmentation.GetROIxyz(xyz)
         currentSegmentation.GetROIRadius(radius)
         
-        if currentStudy.GetSegmentationROINode() != None:
+        if currentStudy.GetSegmentationROINode():
           currentStudy.GetSegmentationROINode().SetXYZ(xyz)
           currentStudy.GetSegmentationROINode().SetRadiusXYZ(radius)
             
@@ -288,7 +373,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
 
   def onStudySelected(self, idx):
-    currentReport = self.reportSelector.currentNode()
+    currentReport = self.getReportSelector().currentNode()
     if currentReport:
       selectedStudy = currentReport.GetStudy(idx)
       if selectedStudy:
@@ -315,7 +400,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           petDisplayNode = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode()
           if petDisplayNode:
             petDisplayNode.SetAutoWindowLevel(0)
-            petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
+            #petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
             petDisplayNode.SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat");
 
       
@@ -329,7 +414,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           slicer.mrmlScene.AddNode(vrDisplayNode)
           if (vrDisplayNode != None) & (viewNode != None):
             vrDisplayNode.SetCroppingEnabled(0)
-            pow = self.studySelectionWidget.property('opacityPow')
+            pow = self.getStudySelectionWidget().property('opacityPow')
             vrDisplayNode.SetAttribute("OpacityPow",str(pow))
           
             petVolume = selectedStudy.GetPETVolumeNode()
@@ -352,7 +437,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           viewNode.InvokeEvent(slicer.vtkMRMLViewNode.ResetFocalPointRequestedEvent)
           viewNode.Modified()
         #self.onUpdateVolumeRendering(selectedStudy.GetPETVolumeNode())
-        self.studySelectionWidget.selectStudyInRow(idx)       
+        self.getStudySelectionWidget().selectStudyInRow(idx)       
         self.changeSelectedStudy(currentReport.GetIndexOfSelectedStudy(selectedStudy))
       
       if self.viewNodeObserverID == -1:
@@ -384,14 +469,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           self.onSetOpacityPowForCurrentStudy(float(selVrDisplayNode.GetAttribute('OpacityPow')))
               
-          if self.studySelectionWidget.property('volumeRendering'):
+          if self.getStudySelectionWidget().property('volumeRendering'):
             selVrDisplayNode.VisibilityOn()
             viewNode.SetAxisLabelsVisible(True)
           else:
             selVrDisplayNode.VisibilityOff()
             viewNode.SetAxisLabelsVisible(False)
           
-          if self.studySelectionWidget.property('spinView') & self.studySelectionWidget.property('volumeRendering'):
+          if self.getStudySelectionWidget().property('spinView') & self.getStudySelectionWidget().property('volumeRendering'):
             viewNode.SetAnimationMode(viewNode.Spin)
           else:
             viewNode.SetAnimationMode(viewNode.Off)
@@ -401,7 +486,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
         
   def onStudyDeselected(self, idx):
-    currentReport = self.reportSelector.currentNode()
+    currentReport = self.getReportSelector().currentNode()
     if currentReport:
       study = currentReport.GetStudy(idx)
       if study:
@@ -416,23 +501,51 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
   def onCurrentReportChanged(self, reportNode):
     
-    self.observeReportNode(reportNode)
+    for report in self.reportNodesList:
+      ViewHelper.hideReport(report)
     
-    self.logic.SetSelectedReportNode = reportNode
-    self.studySelectionWidget.setReportNode(reportNode)
-    self.studySelectionWidget.setReportNode(reportNode)
-    self.analysisSettingsWidget.setReportNode(reportNode)
-    self.findingSelectionWidget.setReportNode(reportNode)
-    self.reportTableWidget.setReportNode(reportNode)
+
+    if reportNode:
+      try:
+        self.reportNodesList.index(reportNode)
+      except:
+        self.onReportNodeAdded(reportNode)  
+        self.reportNodesList.append(reportNode)
+    
+    self.getStudySelectionWidget().setReportNode(reportNode)
+    self.getFindingSelectionWidget().setReportNode(reportNode)
+    self.getAnalysisSettingsWidget().setReportNode(reportNode)
+    self.getReportTableWidget().setReportNode(reportNode)
     
     if reportNode:
       self.updateBgFgToUserSelectedStudy(reportNode.GetUserSelectedStudyNode())
+      
+      self.getFindingSelector().disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+            
+      self.getFindingSelector().setMRMLScene(None)  
+       
+      for i in xrange(reportNode.GetNumberOfFindingNodeIDs()):
+        finding = reportNode.GetFinding(i)
+        if finding:
+          finding.SetHideFromEditors(False)
+
+      self.getFindingSelector().setMRMLScene(slicer.mrmlScene)
+      
+      self.getFindingSelector().connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+      
+      self.getFindingSelector().setCurrentNode(reportNode.GetUserSelectedFindingNode())
+          
+      
     
     else:
-     # self.manageVRDisplayNodesVisibility(None)
       self.updateBgFgToUserSelectedStudy(None)  
       
     self.manageVolumeRenderingVisibility()
+    self.manageModelsVisibility()
+    self.onManageFindingROIsVisibility()
+    self.manageCollapsibleButtonsAbility(reportNode,vtk.vtkCommand.ModifiedEvent)
+    
+    
     
   def updateBgFgToUserSelectedStudy(self, userSelectedStudy, fitVolumes = False):    
     
@@ -455,8 +568,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     ViewHelper.SetRYGBgFgLblVolumes(ctID,petID,petLblID, fitVolumes)
     #ViewHelper.SetBgFgLblVolumes(ctID,petID,petLblID,False) 
       
-
-  
   def onSetOpacityPowForCurrentStudy(self, pow):
     
     currentStudy = self.getCurrentStudy()
@@ -535,17 +646,17 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def onSegmentationROIModified(self, caller, event):
     
-    if caller != self:
-      minFloat = SYS.float_info.min
-      xyz = [minFloat,minFloat,minFloat]
+    #if caller != self:
+      #minFloat = SYS.float_info.min
+      #xyz = [minFloat,minFloat,minFloat]
       
-      caller.GetXYZ(xyz)
+      #caller.GetXYZ(xyz)
  
-      if (xyz[0] == self.segmentationROIOldPosition[0]) & (xyz[1] == self.segmentationROIOldPosition[1]) & (xyz[2] == self.segmentationROIOldPosition[2]):
-        return
+      #if (xyz[0] == self.segmentationROIOldPosition[0]) & (xyz[1] == self.segmentationROIOldPosition[1]) & (xyz[2] == self.segmentationROIOldPosition[2]):
+        #return
     
-      else:
-        self.segmentationROIOldPosition = xyz
+      #else:
+        #self.segmentationROIOldPosition = xyz
     
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
@@ -581,10 +692,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def onEnterEditMode(self,enter):
     
-    self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
-    self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
-    self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
-    
+    self.getEditorWidget().toolsColor.colorSpin.connect('valueChanged(int)',self.onEditorColorWarning)
+      
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
       
@@ -592,7 +701,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
      
       self.reportsCollapsibleButton.setProperty('enabled',False)
       self.studiesCollapsibleButton.setProperty('enabled',False)
-      self.reportTableWidget.setProperty('enabled',False)
+      self.getReportTableWidget().setProperty('enabled',False)
      
       self.onSegmentationROIModified(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
       
@@ -601,30 +710,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if studySeg != None:
         SegmentationHelper.pasteFromMainToCroppedLabelVolume(studySeg.GetLabelVolumeNode(), self.getTempLabelVolume(), currentFinding.GetColorID())  
     
-      self.editorWidget.setMasterNode(self.getTempCroppedVolume()) 
-      self.editorWidget.setMergeNode(self.getTempLabelVolume())      
+      self.getEditorWidget().setMasterNode(self.getTempCroppedVolume()) 
+      self.getEditorWidget().setMergeNode(self.getTempLabelVolume())      
       
-      self.editorWidget.editUtil.getParameterNode().SetParameter('storedLabel',"")
-      self.editorWidget.editUtil.getParameterNode().SetParameter('label',str(currentFinding.GetColorID()))
+      self.getEditorWidget().editUtil.getParameterNode().SetParameter('storedLabel',"")
+      self.getEditorWidget().editUtil.getParameterNode().SetParameter('label',str(currentFinding.GetColorID()))
     
-      self.editorWidget.enter()  
+      self.getEditorWidget().enter()  
     
       self.tempObserverEditorTag = currentFinding.GetSegmentationROINode().AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
 
     elif enter == False:
+      self.getEditorWidget().toolsColor.colorSpin.disconnect('valueChanged(int)',self.onEditorColorWarning)
+      self.getEditorWidget().exit()   
 
-      self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(True)
-      self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(True)
-      self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(True)
-      self.editorWidget.exit()   
-
-           
       pasted = self.pasteFromCroppedToMainLblVolume()
 
       studySeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
 
       if studySeg:
-        #self.calculateSUVs()
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
 
         if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
@@ -636,7 +740,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         qt.QTimer.singleShot(0,self.calculateSUVs)
 
 
-      if self.studySelectionWidget.property('centeredSelected'):
+      if self.getStudySelectionWidget().property('centeredSelected'):
         currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransformNodeID())
         
       self.updateBgFgToUserSelectedStudy(currentStudy,True)
@@ -645,20 +749,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
       ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
       self.reportsCollapsibleButton.setProperty('enabled',True)
       self.studiesCollapsibleButton.setProperty('enabled',True)
-      self.reportTableWidget.setProperty('enabled',True)
-
-  
-  def getUnsupportedVolumeRenderingMessageBox(self):
-    if self.unsupportedVolRendMessageBox == None:
-      self.unsupportedVolRendMessageBox = ctk.ctkMessageBox()
-      self.unsupportedVolRendMessageBox.setModal(True)
-      self.unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
-      self.unsupportedVolRendMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
-      self.unsupportedVolRendMessageBox.setText('NCIRayCastVolumeRendering is selected as default volume renderer. The Longitudinal PET/CT Analysis module does not support displaying of models from Finding segmentations with this volume renderer!')
-      self.unsupportedVolRendMessageBox.setProperty('dontShowAgainVisible', True)
-      self.unsupportedVolRendMessageBox.setDontShowAgain(False)
-      
-    return self.unsupportedVolRendMessageBox     
+      self.getReportTableWidget().setProperty('enabled',True)
+    
   
      
                  
@@ -686,8 +778,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         slicer.mrmlScene.AddNode(studySeg)
 
-        mh = slicer.vtkMRMLModelHierarchyNode()
-        slicer.mrmlScene.AddNode(mh)
+        mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
 
         studySeg.SetAndObserveModelHierarchyNodeID(mh.GetID())
         studySeg.SetAndObserveLabelVolumeNodeID(currentStudy.GetPETLabelVolumeNode().GetID())
@@ -739,11 +830,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if (segROI != None) & (self.getCurrentStudy() != None):
           self.getCurrentStudy().SetAndObserveSegmentationROINodeID(segROI.GetID())
           
-        if self.findingSettingsDialog == None:
-          self.findingSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTFindingSettingsDialog(self.parent)
-        self.findingSettingsDialog.setReportNode(currentReport)      
-        result = self.findingSettingsDialog.exec_()
-        #self.findingSettingsDialog.setReportNode(None)  
+        
+        self.getFindingSettingsDialog().setReportNode(currentReport)      
+        result = self.getFindingSettingsDialog().exec_()
+
         accepted = result == qt.QDialog.Accepted
 
     return accepted    
@@ -764,21 +854,23 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
         if applied:
           mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
+          mh.SetParentNodeID(currentReport.GetModelHierarchyNodeID())
+          mh.SetName(findingNode.GetName()+"_ModelHierarchy")
           findingNode.SetAndObserveModelHierarchyNodeID(mh.GetID())
           currentReport.AddFindingNodeID(findingNode.GetID())
           currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)
           
         else: 
-          self.findingSelector.disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          self.getFindingSelector().disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           slicer.mrmlScene.RemoveNode(findingNode)
 
-          if self.findingSelector.currentNode():
-            currentReport.SetUserSelectedFindingNodeID(self.findingSelector.currentNode().GetID())
+          if self.getFindingSelector().currentNode():
+            currentReport.SetUserSelectedFindingNodeID(self.getFindingSelector().currentNode().GetID())
           else:
             currentReport.SetUserSelectedFindingNodeID(None)
    
-          self.findingSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
+          self.getFindingSelector().connect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
     
           return
                  
@@ -794,21 +886,20 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
       currentStudy = self.getCurrentStudy()
       if (segROI != None) & (currentStudy != None):
-        self.editorWidget.editLabelMapsFrame.setEnabled(True)
-        if currentStudy.GetSegmentationROINodeID() != segROI.GetID():
-          currentStudy.SetAndObserveSegmentationROINodeID(segROI.GetID())
+        self.getEditorWidget().editLabelMapsFrame.setEnabled(True)
+        currentStudy.SetAndObserveSegmentationROINodeID(segROI.GetID())
         self.updateSegmentationROIPosition()
       else:
-        self.editorWidget.editLabelMapsFrame.setEnabled(False)
+        self.getEditorWidget().editLabelMapsFrame.setEnabled(False)
         
       
       if self.isQuantitativeViewActive():
         self.updateQuantitativeView(currentReport.GetUserSelectedFindingNode())    
         
     else:
-      self.editorWidget.editLabelMapsFrame.setEnabled(False)
+      self.getEditorWidget().editLabelMapsFrame.setEnabled(False)
       if self.getCurrentStudy():
-        self.getCurrentStudy().SetAndObserveSegmentationROINodeID(None)    
+        self.getCurrentStudy().SetAndObserveSegmentationROINodeID("") # TODO: check why None not possible    
 
     self.onManageFindingROIsVisibility()
 
@@ -817,7 +908,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
      
   def onFindingNodeToBeRemoved(self, findingNode):
-    currentReport = self.reportSelector.currentNode()
+    currentReport = self.getReportSelector().currentNode()
     if currentReport:
             
       for i in range(currentReport.GetNumberOfSelectedStudies()):
@@ -854,7 +945,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
               if self.isEditorModeActive() & (self.tempObserverEditorTag != None):
                 roi.RemoveObserver(self.tempObserverEditorTag)
         
-              roi.SetDisplayVisibility(self.findingSelectionWidget.property('roiVisibility'))
+              roi.SetDisplayVisibility(self.getFindingSelectionWidget().property('roiVisibility'))
         
               # reset observer after visibility change
               if self.isEditorModeActive() & (self.tempObserverEditorTag != None):
@@ -865,7 +956,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
              
              
   def getCurrentReport(self):
-    return self.reportSelector.currentNode()  
+    return self.getReportSelector().currentNode()  
   
   def getCurrentStudy(self):
     currentReport = self.getCurrentReport()
@@ -880,13 +971,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       return currentReport.GetUserSelectedFindingNode()
     
     return None    
-                 
-    
-  def petDisplayNodeModified(self, caller, event):
-    petDisplayNode = caller
-    if petDisplayNode:
-      self.selectedPETWindow = petDisplayNode.GetWindow()
-      self.selectedPETLevel = petDisplayNode.GetLevel()
 
 
   def viewNodeModified(self, caller, event):
@@ -896,9 +980,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if caller == stdViewNode:
       if stdViewNode.GetAnimationMode() == slicer.vtkMRMLViewNode.Spin:
-        self.studySelectionWidget.setProperty('spinView',True)
+        self.getStudySelectionWidget().setProperty('spinView',True)
       else:
-        self.studySelectionWidget.setProperty('spinView',False)
+        self.getStudySelectionWidget().setProperty('spinView',False)
     
     elif caller in compareViewNodes:
       allOn = True
@@ -914,9 +998,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
           break
       
       if allOn:
-        self.analysisSettingsWidget.setProperty('spinView',True)    
+        self.getAnalysisSettingsWidget().setProperty('spinView',True)    
       elif allOff:
-        self.analysisSettingsWidget.setProperty('spinView',False)  
+        self.getAnalysisSettingsWidget().setProperty('spinView',False)  
       
           
   
@@ -988,13 +1072,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
                   if currentSeg.GetModelHierarchyNode():
                     ViewHelper.removeModelHierarchyAndChildModelNodesFromScene(currentSeg.GetModelHierarchyNode())
                   
+                  hnode.SetName(currentSeg.GetName()+"_Model")
                   currentSeg.SetAndObserveModelHierarchyNodeID(hnode.GetID())
                   modelNode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_M")
                   if modelNode.GetDisplayNode():
                     modelNode.GetDisplayNode().SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_D")
                     modelNode.GetDisplayNode().AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
                   hnode.SetName(labelVolume.GetName() + "_" + currentFinding.GetName()+"_H")
-                  modelNode.SetHideFromEditors(False)
                   modelNode.SetHideFromEditors(False)
                 else:
                   currentSeg.SetAndObserveModelHierarchyNodeID(None)
@@ -1027,14 +1111,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
         parameters['VOIVolume'] = currentStudy.GetPETLabelVolumeNode().GetID()
         parameters['ColorTable'] = self.getCurrentReport().GetFindingTypesColorTableNodeID()
       
-        self.cliNode = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliNode, parameters, wait_for_completion = True)
+        self.cliSUV = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliSUV, parameters, wait_for_completion = True)
         
-        if self.cliNode.GetStatusString() == 'Completed':
-          labelValues = self.cliNode.GetParameterAsString('OutputLabelValue')
+        if self.cliSUV.GetStatusString() == 'Completed':
+          labelValues = self.cliSUV.GetParameterAsString('OutputLabelValue')
           # values as comma separated string
-          max = self.cliNode.GetParameterAsString('SUVMax')
-          mean = self.cliNode.GetParameterAsString('SUVMean')
-          min = self.cliNode.GetParameterAsString('SUVMin')
+          max = self.cliSUV.GetParameterAsString('SUVMax')
+          mean = self.cliSUV.GetParameterAsString('SUVMean')
+          min = self.cliSUV.GetParameterAsString('SUVMin')
       
           splitter = ', '
           labelValues = labelValues.split(splitter)
@@ -1049,16 +1133,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
           max = float(max[idx])
           mean = float(mean[idx])
           min = float(min[idx])
-      
-        #if self.reportTableWidget:
-          #self.reportTableWidget.updateSegmentationSUVs(currentStudy,currentFinding,max,mean,min)   
+
       
           currentSeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
         
           if currentSeg:
             currentSeg.SetSUVs(max,mean,min)
                      
-        elif self.cliNode.GetStatusString() == 'CompletedWithErrors':    
+        elif self.cliSUV.GetStatusString() == 'CompletedWithErrors':    
           qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
 
     b = time.time()
@@ -1073,7 +1155,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     currentReport = self.getCurrentReport()
     
-    notInEditorMode = self.editorWidget.editLabelMapsFrame.property('collapsed')
+    notInEditorMode = self.getEditorWidget().editLabelMapsFrame.property('collapsed')
     
     if notInEditorMode:
       reports = True      
@@ -1095,32 +1177,24 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.studiesCollapsibleButton.setProperty('enabled',studies)
     self.findingsCollapsibleButton.setProperty('enabled',findings | (notInEditorMode == False))  
     self.analysisCollapsibleButton.setProperty('enabled',analysis) 
-     
-  def observeReportNode(self, reportNode):
-    if reportNode:
-      notObserved = True
-      for id in self.reportObserverIDs:
-        if reportNode.HasObserver(id, vtk.vtkCommand.ModifiedEvent) == 1:
-          notObserved = False
-          break
     
-      if notObserved:
-        observerID = reportNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.manageCollapsibleButtonsAbility)
-        self.reportObserverIDs.append(observerID)
-    
-    self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
-
-      
   
+       
+  
+  def onReportNodeAdded(self, reportNode):
+    id = reportNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.manageCollapsibleButtonsAbility)
+    self.reportObserverIDs[reportNode] = id
+    #self.manageCollapsibleButtonsAbility(self, vtk.vtkCommand.ModifiedEvent)
+          
   def manageVolumeRenderingVisibility(self):
     currentReport = self.getCurrentReport()
     currentStudy = self.getCurrentStudy()
         
-    stdVolRen = self.studySelectionWidget.property('volumeRendering')
-    stdSpin = self.studySelectionWidget.property('spinView')
+    stdVolRen = self.getStudySelectionWidget().property('volumeRendering')
+    stdSpin = self.getStudySelectionWidget().property('spinView')
     
-    anaVolRen = self.analysisSettingsWidget.property('volumeRendering') 
-    anaSpin = self.analysisSettingsWidget.property('spinView')
+    anaVolRen = self.getAnalysisSettingsWidget().property('volumeRendering') 
+    anaSpin = self.getAnalysisSettingsWidget().property('spinView')
     
     viewNode = ViewHelper.getStandardViewNode()
     
@@ -1145,22 +1219,22 @@ class qSlicerLongitudinalPETCTModuleWidget:
             pow = None
             pow = float(vrdn.GetAttribute("OpacityPow"))
             if pow:
-              self.studySelectionWidget.setProperty('opacityPow',pow)
+              self.getStudySelectionWidget().setProperty('opacityPow',pow)
               viewNode.Modified()
           
           if (self.isStandardViewActive() & stdVolRen & (study == currentStudy)) | ( (self.isStandardViewActive() == False) & anaVolRen):
             vrdn.SetVisibility(True)
                       
       if currentReport.GetNumberOfSelectedStudies() > 0:
-        viewNode.SetAxisLabelsVisible(True & stdVolRen)   
-        ViewHelper.spinStandardViewNode(stdSpin & stdVolRen)
+        viewNode.SetAxisLabelsVisible(stdVolRen)   
+        ViewHelper.spinStandardViewNode(stdSpin)
 
       else:
         viewNode.SetAxisLabelsVisible(False)
-        ViewHelper.spinStandardViewNode(False)
+        #ViewHelper.spinStandardViewNode(False)
     
       if self.isQualitativeViewActive() | self.isQuantitativeViewActive():
-        ViewHelper.spinCompareViewNodes(anaSpin & anaVolRen)
+        ViewHelper.spinCompareViewNodes(anaSpin)
       
         compareViewNodes = ViewHelper.getCompareViewNodes()
         for j in range(len(compareViewNodes)):
@@ -1186,15 +1260,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
             if mh:
               mn = mh.GetModelNode()
               if mn:
-                mdn = mn.GetModelDisplayNode()
-                if mdn:
-                  stdViewShow = self.isStandardViewActive() & (study == currentStudy)
-                  qualViewShow = self.isQualitativeViewActive()
-                  quantViewShow = self.isQuantitativeViewActive() & ( (findingRestricted == False) | ( (findingRestricted == True) &  (finding == self.getCurrentFinding()))) 
-                  if (seg.GetModelVisible() == True) & (stdViewShow | qualViewShow | quantViewShow):
-                    mdn.SetVisibility(True)
-                  else:
-                    mdn.SetVisibility(False)
+                stdViewShow = self.isStandardViewActive() & (study == currentStudy)
+                qualViewShow = self.isQualitativeViewActive()
+                quantViewShow = self.isQuantitativeViewActive() & ( (findingRestricted == False) | ( (findingRestricted == True) &  (finding == self.getCurrentFinding()))) 
+                if (seg.GetModelVisible() == True) & (stdViewShow | qualViewShow | quantViewShow):
+                  mn.SetDisplayVisibility(True)
+                else:
+                  mn.SetDisplayVisibility(False)
    
    
   
@@ -1222,13 +1294,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
     return (self.isQualitativeViewActive() == False) & (self.isQuantitativeViewActive() == False)                
   
   def isQualitativeViewActive(self):
-    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.analysisSettingsWidget.property('qualitativeChecked')
+    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.getAnalysisSettingsWidget().property('qualitativeChecked')
          
   def isQuantitativeViewActive(self):
-    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.analysisSettingsWidget.property('quantitativeChecked')
+    return (self.analysisCollapsibleButton.property('collapsed') == False) & self.getAnalysisSettingsWidget().property('quantitativeChecked')
          
   def isEditorModeActive(self):
-    return self.editorWidget.editLabelMapsFrame.property('collapsed') == False
+    return self.getEditorWidget().editLabelMapsFrame.property('collapsed') == False
   
                       
   def manageModelDisplayCompareViewNodeIDs(self):
@@ -1270,12 +1342,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     # if analysis panel is opened first time volumerendering and spinning settings are adopted from study selection panel
     if self.unopenedAnalysis:
-      self.analysisSettingsWidget.setProperty('volumeRendering',self.studySelectionWidget.property('volumeRendering'))
-      self.analysisSettingsWidget.setProperty('spinView',self.studySelectionWidget.property('spinView'))
+      self.getAnalysisSettingsWidget().setProperty('volumeRendering',self.getStudySelectionWidget().property('volumeRendering'))
+      self.getAnalysisSettingsWidget().setProperty('spinView',self.getStudySelectionWidget().property('spinView'))
       self.unopenedAnalysis = False   
       
     if analysisCollapsed:
-      self.findingSelectionWidget.setProperty('roiVisibility',self.findingROIVisiblityBackup)
+      self.getFindingSelectionWidget().setProperty('roiVisibility',self.findingROIVisiblityBackup)
       
       lm = slicer.app.layoutManager()
       if lm:
@@ -1288,7 +1360,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.manageModelDisplayCompareViewNodeIDs()
       self.manageModelsVisibility()
       
-      self.reportTableWidget.setColumnSelectableOn() 
+      self.getReportTableWidget().setColumnSelectableOn() 
 
     else:
     
@@ -1299,16 +1371,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if roi: 
           roi.SetDisplayVisibility(0)
     
-      if self.analysisSettingsWidget.property('qualitativeChecked'):
+      if self.getAnalysisSettingsWidget().property('qualitativeChecked'):
         self.showQualitativeView()      
       
-      elif self.analysisSettingsWidget.property('quantitativeChecked'):  
+      elif self.getAnalysisSettingsWidget().property('quantitativeChecked'):  
         self.showQuantitativeView()           
       #self.manageVRDisplayNodesVisibility(None) 
   
   def showQuantitativeView(self):
     
-    self.reportTableWidget.setAllSelectableOn()
+    self.getReportTableWidget().setAllSelectableOn()
     
     ViewHelper.Info('Initializing Layout for Quantitative View')  
     currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetNumberOfSelectedStudiesSelectedForAnalysis())
@@ -1347,7 +1419,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
     
     if finding:
-      self.reportTableWidget.setRowSelectableOn()
+      self.getReportTableWidget().setRowSelectableOn()
     
     ViewHelper.Info('Trying to remove former chart arrays') 
     for can in self.chartArrayNodes:
@@ -1436,7 +1508,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if show:
       
-      self.reportTableWidget.setAllSelectableOn()
+      self.getReportTableWidget().setAllSelectableOn()
       currentLayoutID = ViewHelper.updateQualitativeViewLayout(self.getCurrentReport().GetNumberOfSelectedStudiesSelectedForAnalysis())
    
       self.manageVolumeRenderingCompareViewNodeIDs()
@@ -1474,7 +1546,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           self.roiPlacementNodeAddedEventObserverID = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeAddedEvent, self.assignNewROIToFinding)
           self.roiEndPlacementEventObserverID = intnode.AddObserver(slicer.vtkMRMLInteractionNode.EndPlacementEvent, self.endROIPlacement)
           
-          self.reportTableWidget.setProperty('enabled',False)
+          self.getReportTableWidget().setProperty('enabled',False)
 
 
   def assignNewROIToFinding(self, caller, event):
@@ -1507,12 +1579,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
           #adjust roi position if volumes in study are centered so that it's position doesn't get changed when set under transform
           roiNode.SetXYZ(roiXYZ)  
           
-          roiNode.SetDisplayVisibility(self.findingSelectionWidget.property('roiVisibility'))  
+          roiNode.SetDisplayVisibility(self.getFindingSelectionWidget().property('roiVisibility'))  
           currentFinding.SetAndObserveSegmentationROINodeID(roiNode.GetID())
           currentStudy.SetAndObserveSegmentationROINodeID(roiNode.GetID())
           
           self.lastAddedROINode = roiNode
-          self.editorWidget.editLabelMapsFrame.setEnabled(True)
+          self.getEditorWidget().editLabelMapsFrame.setEnabled(True)
          
         else:
 
@@ -1544,25 +1616,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
         intnode.RemoveObserver(self.roiEndPlacementEventObserverID)
         self.roiEndPlacementEventObserverID = None
           
-        self.findingSelectionWidget.setProperty('placeROIChecked',False)
-        self.reportTableWidget.setProperty('enabled',True)    
+        self.getFindingSelectionWidget().setProperty('placeROIChecked',False)
+        self.getReportTableWidget().setProperty('enabled',True)    
   
   
   def onEditorColorWarning(self):
     currentFinding = self.getCurrentFinding()
     if currentFinding:
-      if self.segmentationColorChangeMessageBox == None:
-        self.segmentationColorChangeMessageBox = ctk.ctkMessageBox()
-        self.segmentationColorChangeMessageBox.setModal(True)
-        self.segmentationColorChangeMessageBox.setIcon(qt.QMessageBox.Information)
-        self.segmentationColorChangeMessageBox.setWindowTitle(ViewHelper.moduleDialogTitle())
-        self.segmentationColorChangeMessageBox.setText("Please notice that only segmentations with the same color label as the current Finding Type ("+currentFinding.GetTypeName()+") will be used!")
-        self.segmentationColorChangeMessageBox.setProperty('dontShowAgainVisible',True)
-        self.segmentationColorChangeMessageBox.setDontShowAgain(False)  
-    
-      selectedLabelValue = self.editorWidget.toolsColor.colorSpin.property('value')
+      selectedLabelValue = self.getEditorWidget().toolsColor.colorSpin.property('value')
       if (selectedLabelValue > 0) & ( selectedLabelValue != currentFinding.GetColorID() ):     
-        self.segmentationColorChangeMessageBox.show()
+        self.getSegmentationColorChangeMessageBox().show()
     
 
   def onSaveResultsCSV(self):
