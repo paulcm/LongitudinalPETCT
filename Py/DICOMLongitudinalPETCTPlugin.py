@@ -266,7 +266,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     if len(ctSeriesFilesList) > 1:
       msidx = self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
-      selected = qt.QInputDialog.getItem(None, 'Select matching CT Series for PET',label,ctDescriptions,msidx)
+      selected = qt.QInputDialog.getItem(None, 'Select matching CT Series for PET',label,ctDescriptions,msidx,False)
     
     
       try:
