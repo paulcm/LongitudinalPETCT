@@ -362,9 +362,6 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(
   vtkSetAndObserveMRMLObjectMacro(this->ModelHierarchyNode, mhnode);
   this->SetModelHierarchyNodeID(modelHierarchyNodeID);
 
-  this->InvokeEvent(
-      vtkMRMLLongitudinalPETCTSegmentationNode::ModelHierarchyChangedEvent);
-
   this->AdjustModelTransformToLabelVolume();
 
   if (this->Scene)

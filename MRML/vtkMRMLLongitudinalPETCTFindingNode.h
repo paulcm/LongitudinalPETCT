@@ -40,7 +40,6 @@
 #include <vtkSmartPointer.h>
 
 #include <vtkMRMLAnnotationROINode.h>
-#include <vtkMRMLModelHierarchyNode.h>
 
 #include <vtkSlicerLongitudinalPETCTModuleMRMLExport.h>
 
@@ -102,11 +101,6 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
 
   const StudyIDSegIDMap& GetStudyNodeIDToSegmentationNodeIDMap() const;
 
-  void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
-  void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
-  vtkGetStringMacro(ModelHierarchyNodeID);
-
-  vtkGetMacro(ModelHierarchyNode, vtkMRMLModelHierarchyNode*);
 
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void UpdateReferences();
@@ -119,7 +113,6 @@ protected:
   vtkMRMLLongitudinalPETCTFindingNode(const vtkMRMLLongitudinalPETCTFindingNode&);
   void operator=(const vtkMRMLLongitudinalPETCTFindingNode&);
 
-  vtkSetStringMacro(ModelHierarchyNodeID);
   vtkSetStringMacro(SegmentationROINodeID);
 
   bool IsSegmentationNodeInMap(const char* segmentationNodeID);
@@ -132,15 +125,11 @@ protected:
   //std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
 
   vtkMRMLAnnotationROINode* SegmentationROINode;
-  vtkMRMLModelHierarchyNode* ModelHierarchyNode;
 
   char* TypeName;
   int ColorID;
 
-  char* ModelHierarchyNodeID;
   char* SegmentationROINodeID;
-
-  vtkSmartPointer<vtkIntArray> ObservedEvents;
 
 
 

@@ -41,7 +41,6 @@
 #include "vtkMRMLLongitudinalPETCTStudyNode.h"
 #include "vtkMRMLLongitudinalPETCTFindingNode.h"
 #include <vtkSmartPointer.h>
-#include <vtkMRMLModelHierarchyNode.h>
 #include <vtkMRMLColorTableNode.h>
 
 class vector;
@@ -111,9 +110,6 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   int GetIndexOfSelectedStudySelectedForAnalysis(const vtkMRMLLongitudinalPETCTStudyNode* study);
   int GetIndexOfFindingNodeID(const char* findingNodeID);
 
-  void SetReportsModelHierarchyNodeID(const char* modelHierarchyNodeID);
-  vtkGetStringMacro(ModelHierarchyNodeID);
-
   void SetAndObserveFindingTypesColorTableNodeID(const char* findingTypesColorTableNodeID);
   vtkGetStringMacro(FindingTypesColorTableNodeID);
 
@@ -167,10 +163,9 @@ protected:
   bool IsStudyNodeIDPresent(const char* studyNodeID);
   bool IsFindingNodeIDPresent(const char* findingNodeID);
 
-  vtkSetStringMacro(ModelHierarchyNodeID);
   vtkSetStringMacro(FindingTypesColorTableNodeID);
 
-  char* ModelHierarchyNodeID;
+
   char* UserSelectedStudyNodeID;
   char* UserSelectedFindingNodeID;
   char* FindingTypesColorTableNodeID;

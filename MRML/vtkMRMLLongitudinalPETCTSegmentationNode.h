@@ -68,10 +68,6 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "PETCT_Segmentation";};
 
-  enum
-      {
-        ModelHierarchyChangedEvent
-      };
 
   void SetROIxyz(double roiXYZ[3]);
   void GetROIxyz(double xyz[3]);

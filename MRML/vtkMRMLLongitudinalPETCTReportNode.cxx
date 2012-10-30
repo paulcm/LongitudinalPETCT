@@ -49,8 +49,6 @@ vtkMRMLLongitudinalPETCTReportNode::vtkMRMLLongitudinalPETCTReportNode()
   this->FindingTypesColorTableNodeID = NULL;
 
   this->ColorNodeID = NULL;
-  this->ModelHierarchyNodeID = NULL;
-
 
   this->ObservedEvents = vtkSmartPointer<vtkIntArray>::New();
   this->ObservedEvents->InsertNextValue(vtkCommand::ModifiedEvent);
@@ -74,9 +72,6 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 
   if(this->ObservedEvents)
     this->ObservedEvents = NULL;
-
-  if(this->ModelHierarchyNodeID)
-    delete [] this->ModelHierarchyNodeID;
 
   if(this->UserSelectedStudyNodeID)
     delete [] this->UserSelectedStudyNodeID;
@@ -108,11 +103,7 @@ vtkMRMLLongitudinalPETCTReportNode::ReadXMLAttributes(const char** atts)
       attName = *(atts++);
       attValue = *(atts++);
 
-      if (!strcmp(attName, "ModelHierarchyNodeID"))
-      {
-        this->SetReportsModelHierarchyNodeID(attValue);
-      }
-      else if (!strcmp(attName, "UserSelectedStudyNodeID"))
+      if (!strcmp(attName, "UserSelectedStudyNodeID"))
       {
         this->SetUserSelectedStudyNodeID(attValue);
       }
@@ -165,9 +156,6 @@ vtkMRMLLongitudinalPETCTReportNode::WriteXML(ostream& of, int nIndent)
 
   vtkIndent indent(nIndent);
 
-  if (this->ModelHierarchyNodeID)
-    of << indent << " ModelHierarchyNodeID=\"" << this->ModelHierarchyNodeID
-        << "\"";
   if (this->UserSelectedStudyNodeID)
     of << indent << " UserSelectedStudyNodeID=\""
         << this->UserSelectedStudyNodeID << "\"";
@@ -218,7 +206,6 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
 
   if (node)
     {
-      this->SetReportsModelHierarchyNodeID(node->GetModelHierarchyNodeID());
       this->SetUserSelectedStudyNodeID(node->GetUserSelectedStudyNodeID());
       this->SetUserSelectedFindingNodeID(node->GetUserSelectedFindingNodeID());
       this->SetAndObserveFindingTypesColorTableNodeID(
@@ -276,7 +263,6 @@ void vtkMRMLLongitudinalPETCTReportNode::PrintSelf(ostream& os, vtkIndent indent
 {
   Superclass::PrintSelf(os,indent);
 
-  os << indent << "ModelHierarchyNodeID: " << (this->ModelHierarchyNodeID ? this->ModelHierarchyNodeID : "(none)") << "\n";
   os << indent << "UserSelectedStudyNodeID: " << (this->UserSelectedStudyNodeID ? this->UserSelectedStudyNodeID : "(none)") << "\n";
   os << indent << "UserSelectedFindingNodeID: " << (this->UserSelectedFindingNodeID ? this->UserSelectedFindingNodeID : "(none)") << "\n";
   os << indent << "FindingTypesColorTableNodeID: " << (this->FindingTypesColorTableNodeID ? this->FindingTypesColorTableNodeID : "(none)") << "\n";
@@ -496,11 +482,6 @@ vtkMRMLLongitudinalPETCTReportNode::AddFindingNodeID(const char* findingNodeID)
 
       if (this->Scene)
         this->Scene->AddReferencedNodeID(findingNodeID, this);
-
-      if (finding->GetModelHierarchyNode()
-          && this->Scene->GetNodeByID(this->ModelHierarchyNodeID))
-        finding->GetModelHierarchyNode()->SetParentNodeID(
-            this->ModelHierarchyNodeID);
 
       this->Modified();
     }
@@ -881,37 +862,7 @@ bool vtkMRMLLongitudinalPETCTReportNode::IsStudyInUse(const vtkMRMLLongitudinalP
   return false;
 }
 
-//----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTReportNode::SetReportsModelHierarchyNodeID(
-    const char* modelHierarchyNodeID)
-{
 
-  if (this->Scene  && this->ModelHierarchyNodeID && this->Scene->IsNodeReferencingNodeID(this, this->ModelHierarchyNodeID))
-    this->Scene->RemoveReferencedNodeID(this->ModelHierarchyNodeID, this);
-
-  this->SetModelHierarchyNodeID(modelHierarchyNodeID);
-
-  if (this->Scene)
-    {
-      // update all findings model hierarchy node's parent node to the set node
-      for (int i = 0; i < this->GetNumberOfFindingNodeIDs(); ++i)
-        {
-          vtkMRMLModelHierarchyNode* tempMH = this->GetFinding(
-              i)->GetModelHierarchyNode();
-
-          if (tempMH)
-            {
-              if (this->ModelHierarchyNodeID
-                  && this->Scene->GetNodeByID(this->ModelHierarchyNodeID))
-                tempMH->SetParentNodeID(this->ModelHierarchyNodeID);
-              else
-                tempMH->SetParentNodeID(NULL);
-            }
-        }
-      this->Scene->AddReferencedNodeID(this->ModelHierarchyNodeID, this);
-    }
-}
 
 //----------------------------------------------------------------------------
 void

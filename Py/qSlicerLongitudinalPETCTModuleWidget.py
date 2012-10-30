@@ -853,10 +853,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
         applied = self.onShowFindingSettingsDialog(findingNode)
 
         if applied:
-          mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
-          mh.SetParentNodeID(currentReport.GetModelHierarchyNodeID())
-          mh.SetName(findingNode.GetName()+"_ModelHierarchy")
-          findingNode.SetAndObserveModelHierarchyNodeID(mh.GetID())
           currentReport.AddFindingNodeID(findingNode.GetID())
           currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
           findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)
@@ -1214,7 +1210,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         study = currentReport.GetSelectedStudy(i)  
         if study:
           vrdn = study.GetVolumeRenderingDisplayNode()
-          if self.isStandardViewActive() & (study == currentStudy):
+          if (vrdn != None) & self.isStandardViewActive() & (study == currentStudy):
             vrdn.AddViewNodeID(viewNode.GetID())
             pow = None
             pow = float(vrdn.GetAttribute("OpacityPow"))
@@ -1222,7 +1218,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
               self.getStudySelectionWidget().setProperty('opacityPow',pow)
               viewNode.Modified()
           
-          if (self.isStandardViewActive() & stdVolRen & (study == currentStudy)) | ( (self.isStandardViewActive() == False) & anaVolRen):
+          if (vrdn != None) & (self.isStandardViewActive() & stdVolRen & (study == currentStudy)) | ( (self.isStandardViewActive() == False) & anaVolRen):
             vrdn.SetVisibility(True)
                       
       if currentReport.GetNumberOfSelectedStudies() > 0:

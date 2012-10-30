@@ -483,9 +483,6 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       #colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
       reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
 
-      mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
-      mh.SetName(reportNode.GetName()+"_ModelHierarchy")
-      reportNode.SetReportsModelHierarchyNodeID(mh.GetID())
 
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
 
