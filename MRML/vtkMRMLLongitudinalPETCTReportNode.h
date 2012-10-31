@@ -77,7 +77,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   virtual const char* GetNodeTagName() {return "PETCT_Report";};
 
 
-  int AddStudyNodeID(const char* studyNodeID, bool fromXML = false);
+  int AddStudyNodeID(const char* studyNodeID);
   bool RemoveStudyNodeID(const char* studyNodeID);
 
   bool AddFindingNodeID(const char* findingNodeID);

@@ -84,7 +84,6 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
 
   if(this->ColorNodeID)
     delete [] this->ColorNodeID;
-
 }
 
 //----------------------------------------------------------------------------
@@ -130,7 +129,7 @@ vtkMRMLLongitudinalPETCTReportNode::ReadXMLAttributes(const char** atts)
             {
               std::string id;
               ss >> id;
-              this->AddStudyNodeID(id.c_str(), true);
+              this->AddStudyNodeID(id.c_str());
             }
         }
       else if (!strcmp(attName, "FindingNodeIDs"))
@@ -219,12 +218,17 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
           this->AddStudyNodeID(node->GetNthStudyNodeID(i));
         }
 
+      this->UpdateStudyNodesObservation();
+
+
       this->RemoveAllFindingNodeIDs();
 
       for (int i = 0; i < node->GetNumberOfFindingNodeIDs(); ++i)
         {
           this->AddFindingNodeID(node->GetNthFindingNodeID(i));
         }
+
+      this->UpdateFindingNodesObservation();
 
     }
 
@@ -489,20 +493,20 @@ vtkMRMLLongitudinalPETCTReportNode::AddFindingNodeID(const char* findingNodeID)
 
 //----------------------------------------------------------------------------
 int
-vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID,
-    bool fromXML)
+vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID)
 {
-  int pos = -1;
 
   if (!studyNodeID || this->IsStudyNodeIDPresent(studyNodeID))
-    return pos;
+    return -1;
 
+  int pos = this->GetNumberOfStudyNodeIDs();
+
+  std::cout << "D1" << std::endl;
   vtkMRMLLongitudinalPETCTStudyNode* study = NULL;
 
   if (this->Scene)
     study = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(
         this->Scene->GetNodeByID(studyNodeID));
-
 
   if (study)
     {
@@ -540,11 +544,12 @@ vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID,
           pos = i;
         }
     }
-  if (fromXML)
-    pos = this->GetNumberOfStudyNodeIDs();
 
-  IDsVectorType::iterator it = StudyNodeIDs.begin() + pos;
-  StudyNodeIDs.insert(it, studyNodeID);
+  if(pos >= 0 && pos <= this->GetNumberOfStudyNodeIDs())
+    {
+      IDsVectorType::iterator it = StudyNodeIDs.begin() + pos;
+      StudyNodeIDs.insert(it, studyNodeID);
+    }
 
   if(study)
     vtkObserveMRMLObjectEventsMacro(study, this->ObservedEvents.GetPointer());
