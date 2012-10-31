@@ -207,10 +207,6 @@ vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
     const char* segmentationROINodeID)
 {
 
-  if (segmentationROINodeID && this->SegmentationROINodeID
-      && !strcmp(segmentationROINodeID, this->SegmentationROINodeID))
-    return;
-
   // first remove references and observers from old node
   if (this->SegmentationROINode)
     {
@@ -353,11 +349,26 @@ vtkMRMLLongitudinalPETCTFindingNode::GetStudyNodeIDToSegmentationNodeIDMap() con
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTFindingNode::SetScene(vtkMRMLScene* scene)
 {
+  bool update = this->Scene != scene;
+
   Superclass::SetScene(scene);
 
-  if(this->Scene && this->Scene->GetNodeByID(this->SegmentationROINodeID))
-        this->SetAndObserveSegmentationROINodeID(this->SegmentationROINodeID);
+  if(update)
+    this->UpdateScene(this->Scene);
+}
 
+//-----------------------------------------------------------
+void vtkMRMLLongitudinalPETCTFindingNode::UpdateScene(vtkMRMLScene *scene)
+{
+   Superclass::UpdateScene(scene);
+
+   if(this->Scene && this->Scene == scene)
+     {
+       vtkMRMLNode* segmentationROINode = this->Scene->GetNodeByID(this->SegmentationROINodeID);
+
+       if(segmentationROINode && this->SegmentationROINode != segmentationROINode)
+         this->SetAndObserveSegmentationROINodeID(this->SegmentationROINodeID);
+     }
 }
 
 

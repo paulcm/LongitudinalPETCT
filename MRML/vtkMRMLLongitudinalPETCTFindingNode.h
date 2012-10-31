@@ -105,6 +105,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void UpdateReferences();
   void UpdateReferenceID(const char *oldID, const char *newID);
+  void UpdateScene(vtkMRMLScene *scene);
   void SetScene(vtkMRMLScene* scene);
 
 protected:
