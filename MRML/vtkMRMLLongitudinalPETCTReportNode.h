@@ -77,7 +77,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   virtual const char* GetNodeTagName() {return "PETCT_Report";};
 
 
-  int AddStudyNodeID(const char* studyNodeID);
+  int AddStudyNodeID(const char* studyNodeID, bool fromXML = false);
   bool RemoveStudyNodeID(const char* studyNodeID);
 
   bool AddFindingNodeID(const char* findingNodeID);
@@ -145,8 +145,11 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
 
   void UpdateScene(vtkMRMLScene *scene);
   void UpdateReferences();
+  void UpdateReferenceID(const char *oldID, const char *newID);
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void SetScene(vtkMRMLScene* scene);
+
+
 
 protected:
   vtkMRMLLongitudinalPETCTReportNode();
@@ -156,6 +159,9 @@ protected:
 
   bool RemoveAllStudyNodeIDs();
   bool RemoveAllFindingNodeIDs();
+
+  void UpdateStudyNodesObservation();
+  void UpdateFindingNodesObservation();
 
   IDsVectorType StudyNodeIDs;
   IDsVectorType FindingNodeIDs;
