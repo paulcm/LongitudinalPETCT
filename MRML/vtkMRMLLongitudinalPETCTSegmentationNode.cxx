@@ -128,7 +128,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
           ss >> this->ROIxyz[1];
           ss >> this->ROIxyz[2];
         }
-      else if (!strcmp(attName, "ROIxyz"))
+      else if (!strcmp(attName, "ROIRadius"))
         {
           std::stringstream ss;
           ss << attValue;
@@ -145,15 +145,23 @@ vtkMRMLLongitudinalPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
 void
 vtkMRMLLongitudinalPETCTSegmentationNode::WriteXML(ostream& of, int nIndent)
 {
+
   Superclass::WriteXML(of, nIndent);
 
   vtkIndent indent(nIndent);
 
-  if (this->LabelVolumeNodeID)
-    of << indent << " LabelVolumeNodeID=\"" << this->LabelVolumeNodeID << "\"";
+
   if (this->ModelHierarchyNodeID)
-    of << indent << " ModelHierarchyNodeID=\"" << this->ModelHierarchyNodeID
-        << "\"";
+    {
+      of << indent << " ModelHierarchyNodeID=\"" << this->ModelHierarchyNodeID
+          << "\"";
+    }
+
+  if (this->LabelVolumeNodeID)
+    {
+      of << indent << " LabelVolumeNodeID=\"" << this->LabelVolumeNodeID << "\"";
+    }
+
 
   of << indent << " ModelVisible=\"" << (this->ModelVisible ? "true" : "false") << "\"";
 
@@ -319,6 +327,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveLabelVolumeNodeID(
     }
 
   vtkSetAndObserveMRMLObjectMacro(this->LabelVolumeNode, lvnode);
+
   this->SetLabelVolumeNodeID(labelVolumeNodeID);
 
   this->AdjustModelTransformToLabelVolume();
@@ -360,6 +369,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(
     }
 
   vtkSetAndObserveMRMLObjectMacro(this->ModelHierarchyNode, mhnode);
+
   this->SetModelHierarchyNodeID(modelHierarchyNodeID);
 
   this->AdjustModelTransformToLabelVolume();
@@ -368,6 +378,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID(
     {
       this->Scene->AddReferencedNodeID(this->ModelHierarchyNodeID, this);
     }
+
 }
 
 //----------------------------------------------------------------------------
@@ -461,6 +472,7 @@ vtkMRMLLongitudinalPETCTSegmentationNode::UpdateReferenceID(const char *oldID, c
 {
   this->Superclass::UpdateReferenceID(oldID,newID);
 
+
   if(this->LabelVolumeNode && !strcmp(oldID,this->LabelVolumeNodeID))
     this->SetAndObserveLabelVolumeNodeID(newID);
 
@@ -472,14 +484,31 @@ vtkMRMLLongitudinalPETCTSegmentationNode::UpdateReferenceID(const char *oldID, c
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTSegmentationNode::SetScene(vtkMRMLScene* scene)
 {
+  bool update = this->Scene != scene;
+
   Superclass::SetScene(scene);
 
-  if(this->Scene && this->Scene->GetNodeByID(this->LabelVolumeNodeID))
-    this->SetAndObserveModelHierarchyNodeID(this->LabelVolumeNodeID);
+  if(update)
+    this->UpdateScene(this->Scene);
 
-  if(this->Scene && this->Scene->GetNodeByID(this->ModelHierarchyNodeID))
-      this->SetAndObserveModelHierarchyNodeID(this->ModelHierarchyNodeID);
+}
 
+//-----------------------------------------------------------
+void vtkMRMLLongitudinalPETCTSegmentationNode::UpdateScene(vtkMRMLScene *scene)
+{
+   Superclass::UpdateScene(scene);
+
+   if(this->Scene && this->Scene == scene)
+     {
+       vtkMRMLNode* labelVolumeNode = this->Scene->GetNodeByID(this->LabelVolumeNodeID);
+       vtkMRMLNode* modelHierarchyNode = this->Scene->GetNodeByID(this->ModelHierarchyNodeID);
+
+       if(labelVolumeNode && this->LabelVolumeNode != labelVolumeNode)
+         this->SetAndObserveLabelVolumeNodeID(this->LabelVolumeNodeID);
+
+       if(modelHierarchyNode && this->ModelHierarchyNode != modelHierarchyNode)
+         this->SetAndObserveModelHierarchyNodeID(this->ModelHierarchyNodeID);
+     }
 }
 
 

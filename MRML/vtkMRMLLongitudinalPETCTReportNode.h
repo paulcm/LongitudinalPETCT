@@ -142,6 +142,8 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
 
   int GetNumberOfDefaultFindingTypes();
 
+
+  void UpdateScene(vtkMRMLScene *scene);
   void UpdateReferences();
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void SetScene(vtkMRMLScene* scene);
@@ -164,7 +166,6 @@ protected:
   bool IsFindingNodeIDPresent(const char* findingNodeID);
 
   vtkSetStringMacro(FindingTypesColorTableNodeID);
-
 
   char* UserSelectedStudyNodeID;
   char* UserSelectedFindingNodeID;

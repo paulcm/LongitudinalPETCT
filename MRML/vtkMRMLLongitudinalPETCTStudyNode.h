@@ -127,6 +127,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   void SetCenteredVolumes(bool centered);
 
 
+  void UpdateScene(vtkMRMLScene* scene);
   void SetScene(vtkMRMLScene* scene);
   //void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void UpdateReferences();

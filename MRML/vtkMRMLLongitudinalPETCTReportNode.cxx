@@ -972,8 +972,33 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTReportNode::SetScene(vtkMRMLScene* scene)
 {
+  bool update = this->Scene != scene;
+
   Superclass::SetScene(scene);
 
+  if(update)
+    this->UpdateScene(this->Scene);
+
+}
+
+//-----------------------------------------------------------
+void
+vtkMRMLLongitudinalPETCTReportNode::UpdateScene(vtkMRMLScene *scene)
+{
+  Superclass::UpdateScene(scene);
+
+  if (this->Scene && this->Scene == scene)
+    {
+
+      vtkMRMLNode* findingsColorTableNode = this->Scene->GetNodeByID(
+          this->FindingTypesColorTableNodeID);
+
+      if (findingsColorTableNode
+          && this->FindingTypesColorTableNode != findingsColorTableNode)
+        this->SetAndObserveFindingTypesColorTableNodeID(
+            this->FindingTypesColorTableNodeID);
+
+    }
 
 }
 

@@ -101,6 +101,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   //void RemoveCurrentModelHierarchyFromScene();
 
   void SetScene(vtkMRMLScene* scene);
+  void UpdateScene(vtkMRMLScene *scene);
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void UpdateReferences();
   void UpdateReferenceID(const char *oldID, const char *newID);
@@ -113,7 +114,6 @@ protected:
   void operator=(const vtkMRMLLongitudinalPETCTSegmentationNode&);
 
   void AdjustModelTransformToLabelVolume();
-
 
   vtkSetStringMacro(LabelVolumeNodeID);
   vtkSetStringMacro(ModelHierarchyNodeID);

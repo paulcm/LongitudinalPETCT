@@ -476,7 +476,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
       colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
 
-      reportNode.SetColorNodeID(defaultColorNodeID)
+      reportNode.SetColorNodeID(colorNode.GetID())
       logic = slicer.modules.longitudinalpetct.logic()
 
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
@@ -529,12 +529,11 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           studyNode.SetAttribute('DICOM.SeriesTime',seriesTime)
           studyNode.SetAttribute('DICOM.PatientWeight',patientWeight)
 
-          
+
           studyNode.SetAndObservePETVolumeNodeID(petScalarVolume.GetID())
           studyNode.SetAndObserveCTVolumeNodeID(ctScalarVolume.GetID())
           studyNode.SetAndObservePETLabelVolumeNodeID(petLabelVolume.GetID())
           
-
           slicer.mrmlScene.AddNode(studyNode) 
                   
           reportNode.AddStudyNodeID(studyNode.GetID())
