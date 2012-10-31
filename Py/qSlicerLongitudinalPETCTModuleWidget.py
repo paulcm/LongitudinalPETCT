@@ -44,10 +44,36 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if not self.studySelectionWidget:
       
       self.studySelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTStudySelectionWidget()    
-      self.studySelectionWidget.setProperty('volumeRendering',True)
-      self.studySelectionWidget.setProperty('gpuRendering',False)
-      self.studySelectionWidget.setProperty('linearOpacity',False)
-      self.studySelectionWidget.setProperty('spinView',True)
+      
+      volRen = True
+      spinView = True
+      opctypow = self.studySelectionWidget.property('opacityPow')
+      centered = True
+      
+      currentStudy = self.getCurrentStudy()
+      
+      if currentStudy:
+        centered = currentStudy.GetCenteredVolumes()
+        vrdn = currentStudy.GetVolumeRenderingDisplayNode()
+        
+        viewNode = ViewHelper.getStandardViewNode()
+        if viewNode:
+          spinView = viewNode.GetAnimationMode() == slicer.vtkMRMLViewNode.Spin
+        
+        if vrdn:
+          volRen = vrdn.GetVisibility()
+          try:
+            opctypow = float(vrdn.GetAttribute('OpacityPow'))
+          except:
+            opctypow = self.studySelectionWidget.property('opacityPow')
+            
+            
+        
+      self.studySelectionWidget.setProperty('volumeRendering',volRen)
+      self.studySelectionWidget.setProperty('spinView',spinView)
+      self.studySelectionWidget.setProperty('opacityPow',opctypow)
+      self.studySelectionWidget.setProperty('centeredSelected',centered)
+      
     
       self.studySelectionWidget.setReportNode(self.getCurrentReport())
     
