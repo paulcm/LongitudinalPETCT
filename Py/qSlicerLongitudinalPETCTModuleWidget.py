@@ -267,7 +267,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
        
     # Report Selection Panel
     self.reportsCollapsibleButton.setProperty('collapsed',False)
-    self.reportsCollapsibleButton.text = "Report Selection"
+    self.reportsCollapsibleButton.text = "1. Report Selection"
     
     self.layout.addWidget(self.reportsCollapsibleButton)
     
@@ -276,7 +276,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     
     # Studies Selection Panel   
-    self.studiesCollapsibleButton.text = "Study Selection"
+    self.studiesCollapsibleButton.text = "2. Study Selection"
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     
     self.layout.addWidget(self.studiesCollapsibleButton)
@@ -286,7 +286,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
 
     # Findings Selection Panel
-    self.findingsCollapsibleButton.text = "Findings"
+    self.findingsCollapsibleButton.text = "3. Findings"
     self.findingsCollapsibleButton.setProperty('collapsed',True)    
      
     self.layout.addWidget(self.findingsCollapsibleButton)
@@ -296,7 +296,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         
     
     #Analysis Settings Panel
-    self.analysisCollapsibleButton.text = "Analysis"
+    self.analysisCollapsibleButton.text = "4. Analysis"
     self.analysisCollapsibleButton.setProperty('collapsed',True)
     self.analysisCollapsibleButton.connect('contentsCollapsed(bool)', self.onSwitchToAnalysis)      
     
@@ -881,8 +881,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if applied:
           currentReport.AddFindingNodeID(findingNode.GetID())
           currentReport.SetUserSelectedFindingNodeID(findingNode.GetID())
-          findingNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.findingNodeModified)
-          
+
         else: 
           self.getFindingSelector().disconnect('currentNodeChanged(vtkMRMLNode*)', self.onFindingNodeChanged)
           slicer.mrmlScene.RemoveNode(findingNode)
@@ -909,6 +908,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       currentStudy = self.getCurrentStudy()
       if (segROI != None) & (currentStudy != None):
         self.getEditorWidget().editLabelMapsFrame.setEnabled(True)
+        print "Setting SegmentationROI "+ segROI.GetName() + " to Study "+ currentStudy.GetName()
         currentStudy.SetAndObserveSegmentationROINodeID(segROI.GetID())
         self.updateSegmentationROIPosition()
       else:
@@ -968,13 +968,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
                 roi.RemoveObserver(self.tempObserverEditorTag)
         
               roi.SetDisplayVisibility(self.getFindingSelectionWidget().property('roiVisibility'))
+              roi.Modified()
         
               # reset observer after visibility change
               if self.isEditorModeActive() & (self.tempObserverEditorTag != None):
                 self.tempObserverEditorTag = roi.AddObserver(vtk.vtkCommand.ModifiedEvent, self.onSegmentationROIModified)      
    
             else:
-              roi.SetDisplayVisibility(0)                   
+              roi.SetDisplayVisibility(0)     
+              roi.Modified()              
              
              
   def getCurrentReport(self):
@@ -1024,34 +1026,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       elif allOff:
         self.getAnalysisSettingsWidget().setProperty('spinView',False)  
       
-          
-  
-  def findingNodeModified(self, caller, event):
-    findingNode = caller
-    
-    if findingNode:
-      # Update Finding's segmentation ROI name
-      findingROI = findingNode.GetSegmentationROINode()
-      
-      if findingROI:
-        findingROI.SetName(findingNode.GetName()+"_ROI")
-      
-      # Update Finding's Segmentation names
-      currentReport = self.getCurrentReport()
-      
-      if currentReport:
-        studiesCount = currentReport.GetNumberOfSelectedStudies()
         
-        for i in range(0,studiesCount,1):
-          study = currentReport.GetSelectedStudy(i)
-          
-          if study:
-            seg = findingNode.GetSegmentationMappedByStudyNodeID(study.GetID())
-            petVolume = study.GetPETVolumeNode()
-            
-            if (seg != None) & (petVolume != None):
-              seg.SetName(findingNode.GetName()+"_Segmentation_"+petVolume.GetName())        
-  
   
   def makeModels(self):
     a = time.time()
@@ -1392,6 +1367,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         roi = roiNodes.GetItemAsObject(i)  
         if roi: 
           roi.SetDisplayVisibility(0)
+          roi.Modified()
     
       if self.getAnalysisSettingsWidget().property('qualitativeChecked'):
         self.showQualitativeView()      
