@@ -69,7 +69,8 @@ qSlicerLongitudinalPETCTModule::~qSlicerLongitudinalPETCTModule()
 //-----------------------------------------------------------------------------
 QString qSlicerLongitudinalPETCTModule::helpText()const
 {
-  return "The purpose of the Longitudinal PET/CT Analysis module is to provide a user friendly Slicer interface for quantification of DICOM PET/CT image data by computing the standardized uptake value (SUV) based on bodyweight for different regions of interest and for different timepoints.";
+  QString help = "The purpose of the Longitudinal PET/CT Analysis module is to provide a user friendly Slicer interface for quantification of DICOM PET/CT image data by computing the standardized uptake value (SUV<span style=\"vertical-align:sub;\">bw</span>) based on bodyweight for different regions of interest at different timepoints.<br />For more detailed documentation see the <a href=\"%1/Documentation/Nightly/Extensions/LongitudinalPETCT\">online documentation</a>.";
+  return help.arg(this->slicerWikiUrl());
 }
 
 //-----------------------------------------------------------------------------
