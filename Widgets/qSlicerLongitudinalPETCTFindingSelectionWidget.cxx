@@ -163,7 +163,26 @@ qSlicerLongitudinalPETCTFindingSelectionWidget::updateView()
     d->ButtonPlaceROI->setDisabled(true);
 
   else
-    d->ButtonPlaceROI->setEnabled(true);
+    {
+      d->ButtonPlaceROI->setEnabled(true);
+
+
+      QLayoutItem* item = d->FormLayout->itemAt(2,QFormLayout::SpanningRole);
+
+      if(item)
+        {
+          QWidget* editorWidget = item->widget();
+
+          if(editorWidget && finding->GetSegmentationROINode())
+            editorWidget->setEnabled(true);
+          else
+            editorWidget->setEnabled(false);
+        }
+
+    }
+
+
+
 
   std::cout << "END UPDATING FINDING SELECTION" << std::endl;
 }
@@ -285,6 +304,6 @@ void qSlicerLongitudinalPETCTFindingSelectionWidget
   d->FormLayout->setWidget(2,QFormLayout::SpanningRole,editorWidget);
   d->FormLayout->setWidget(3,QFormLayout::SpanningRole,d->ButtonAddSegmentationToFinding);
 
-  int minWidth = editorWidget->minimumWidth();
-  this->setMinimumWidth(minWidth);
+  //int minWidth = editorWidget->minimumWidth();
+  //this->setMinimumWidth(minWidth);
 }
