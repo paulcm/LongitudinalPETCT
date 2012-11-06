@@ -379,7 +379,6 @@ qSlicerLongitudinalPETCTReportTableWidget::updateVerticalHeaders()
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
 
 
-
   if (d->ReportNode == NULL
       || d->TableReport->rowCount() != d->ReportNode->GetNumberOfFindingNodeIDs()
       || d->TableReport->columnCount() != d->ReportNode->GetNumberOfSelectedStudies())
@@ -474,7 +473,18 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
 
   if ( ! d->ReportNode)
     {
-      d->TableReport->clear();
+      while (d->TableReport->rowCount() > 0)
+        {
+          d->TableReport->removeRow(d->TableReport->rowCount() - 1);
+        }
+
+      while (d->TableReport->columnCount() > 0)
+        {
+          d->TableReport->removeColumn(d->TableReport->columnCount() - 1);
+        }
+
+      d->LabelSelectedValue->setText(NULL);
+
       return;
     }
 
