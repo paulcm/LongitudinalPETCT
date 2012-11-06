@@ -480,7 +480,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       logic = slicer.modules.longitudinalpetct.logic()
 
       colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
-      #colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
+      colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
       reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
 
 

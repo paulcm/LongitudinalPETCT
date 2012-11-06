@@ -448,9 +448,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
               vrDisplayNode.SetAndObserveVolumeNodeID(petVolume.GetID())
               vrDisplayNode.SetName(petVolume.GetName() +"_VR_Display")
               self.vrLogic.UpdateDisplayNodeFromVolumeNode(vrDisplayNode, petVolume)  
-              if vrDisplayNode.GetVolumePropertyNode():
+              
+              propNode = vrDisplayNode.GetVolumePropertyNode()
+              if propNode: 
+                propNode.SetReferenceCount(propNode.GetReferenceCount()-1)
+                print "PROPERTY COUNT " + str(vrDisplayNode.GetVolumePropertyNode().GetReferenceCount())
                 vrDisplayNode.GetVolumePropertyNode().SetName(petVolume.GetName() + "_VR_VolumeProperty")
-              if vrDisplayNode.GetROINode():
+                
+              roiNode = vrDisplayNode.GetROINode()
+              if roiNode:
+                roiNode.SetReferenceCount(roiNode.GetReferenceCount()-1)
                 vrDisplayNode.GetROINode().SetName(petVolume.GetName() + "_VR_ROI")
                 vrDisplayNode.GetROINode().SetDisplayVisibility(False)
 
