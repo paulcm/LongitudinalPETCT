@@ -32,6 +32,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
       if self.reportSelectionWidget.mrmlNodeComboBoxReport():
         self.getReportSelectionWidget().mrmlNodeComboBoxReport().connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
+      self.reportSelectionWidget.connect('showModuleSettingsDialog()',self.showModuleSettingsDialog)
+      
       
     return self.reportSelectionWidget  
   
@@ -45,10 +47,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
       self.studySelectionWidget = slicer.modulewidget.qSlicerLongitudinalPETCTStudySelectionWidget()    
       
-      volRen = True
-      spinView = True
+      volRen = ViewHelper.getSetting('VolumeRendering')
+      spinView = ViewHelper.getSetting('Spinning')
       opctypow = self.studySelectionWidget.property('opacityPow')
-      centered = True
+      centered = ViewHelper.getSetting('CenterVolumes')
       
       currentStudy = self.getCurrentStudy()
       
@@ -162,8 +164,61 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.reportTableWidget.connect('studyClicked(int)',self.changeSelectedStudy)
       self.reportTableWidget.connect('findingClicked(int)',self.getFindingSelector().setCurrentNodeIndex)                 
           
-    return self.reportTableWidget  
+    return self.reportTableWidget 
   
+  def getModuleSettingsDialog(self):
+    if not self.moduleSettingsDialog:  
+      self.moduleSettingsDialog = slicer.modulewidget.qSlicerLongitudinalPETCTModuleSettingsDialog()
+      self.moduleSettingsDialog.connect('accepted()',self.saveModuleSettings)
+    
+    return self.moduleSettingsDialog
+  
+  def showModuleSettingsDialog(self):
+      
+    self.getModuleSettingsDialog().setProperty('centerVolumes',ViewHelper.getSetting('CenterVolumes'))
+    self.getModuleSettingsDialog().setProperty('volumeRendering',ViewHelper.getSetting('VolumeRendering'))
+    self.getModuleSettingsDialog().setProperty('spinning',ViewHelper.getSetting('Spinning'))    
+    self.getModuleSettingsDialog().setProperty('makeModels',ViewHelper.getSetting('Models'))
+        
+    self.getModuleSettingsDialog().show()
+    
+  def saveModuleSettings(self):
+    
+    value = "LongitudinalPETCT/CenterVolumes"
+    if self.getModuleSettingsDialog().property('centerVolumes'):
+      qt.QSettings().setValue(value,'true')
+      self.getStudySelectionWidget().setProperty('centeredSelected',True)
+    else:
+      qt.QSettings().setValue(value,'false')
+      self.getStudySelectionWidget().setProperty('centeredSelected',False)
+      
+    value = "LongitudinalPETCT/VolumeRendering"
+    if self.getModuleSettingsDialog().property('volumeRendering'):
+      qt.QSettings().setValue(value,'true')
+      self.getStudySelectionWidget().setProperty('volumeRendering',True)
+      self.getAnalysisSettingsWidget().setProperty('volumeRendering',True)
+    else:
+      qt.QSettings().setValue(value,'false')
+      self.getStudySelectionWidget().setProperty('volumeRendering',False)
+      self.getAnalysisSettingsWidget().setProperty('volumeRendering',False)
+      
+    value = "LongitudinalPETCT/Spinning"
+    if self.getModuleSettingsDialog().property('spinning'):
+      qt.QSettings().setValue(value,'true')
+      self.getStudySelectionWidget().setProperty('spinView',True)
+      self.getAnalysisSettingsWidget().setProperty('spinView',True)
+    else:
+      qt.QSettings().setValue(value,'false')
+      self.getStudySelectionWidget().setProperty('spinView',False)
+      self.getAnalysisSettingsWidget().setProperty('spinView',False)
+      
+    value = "LongitudinalPETCT/Models"
+    if self.getModuleSettingsDialog().property('makeModels'):
+      qt.QSettings().setValue(value,'true')
+    else:
+      qt.QSettings().setValue(value,'false')      
+      
+      
   def getFindingSettingsDialog(self):
     
     if not self.findingSettingsDialog:
@@ -217,6 +272,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.editorWidget = None
     self.analysisSettingsWidget = None
     self.reportTableWidget = None
+    self.moduleSettingsDialog = None
     self.findingSettingsDialog = None
     self.unsupportedVolRendMessageBox = None
     self.segmentationColorChangeMessageBox = None
@@ -764,10 +820,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if studySeg:
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
 
-        if vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode':
+        if ViewHelper.getSetting('Models') & (vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode'):
           qt.QTimer.singleShot(0,self.makeModels)
 
-        else:
+        elif ViewHelper.getSetting('Models'):
           self.getUnsupportedVolumeRenderingMessageBox.show()  
       
         qt.QTimer.singleShot(0,self.calculateSUVs)
@@ -1273,7 +1329,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
                   mn.SetDisplayVisibility(False)
    
    
-  
   def manageVolumeRenderingCompareViewNodeIDs(self):
     currentReport = self.getCurrentReport()
     
@@ -1293,6 +1348,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
             id = currentReport.GetIndexOfSelectedStudySelectedForAnalysis(study)
             if (id >= 0) & (id < len(compareViewNodes)) & (self.isQualitativeViewActive() | self.isQuantitativeViewActive()):
               vrdn.AddViewNodeID(compareViewNodes[id].GetID())
+  
   
   def isStandardViewActive(self):
     return (self.isQualitativeViewActive() == False) & (self.isQuantitativeViewActive() == False)                
@@ -1386,10 +1442,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
   def showQuantitativeView(self):
     
     self.getReportTableWidget().setAllSelectableOn()
-    
-    ViewHelper.Info('Initializing Layout for Quantitative View')  
+     
     currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.getCurrentReport().GetNumberOfSelectedStudiesSelectedForAnalysis())
-    ViewHelper.Info('Quantitative View Layout created') 
     
     self.manageVolumeRenderingCompareViewNodeIDs()
     self.manageVolumeRenderingVisibility()
@@ -1400,23 +1454,17 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentReport = self.getCurrentReport()
         
     if self.chartNode == None:
-      ViewHelper.Info('Creating ChartNode') 
       self.chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
       self.chartNode.SetSaveWithScene(False)
       self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
       self.chartNode.SetProperty('default', 'type', 'Scatter');
       self.chartNode.SetProperty('default', 'showLegend', 'on') 
       self.chartNode.SetProperty('default', 'xAxisType', 'categorical')
-      ViewHelper.Info('ChartNode created') 
       
-    chartViewNode = ViewHelper.getStandardChartViewNode()
-    ViewHelper.Info('Setting ChartNode to ChartViewNode')   
+    chartViewNode = ViewHelper.getStandardChartViewNode() 
     chartViewNode.SetChartNodeID(self.chartNode.GetID())
-    ViewHelper.Info('ChartNode set to ChartViewNode')  
-     
-    ViewHelper.Info('Updating the Quantitative View')       
-    self.updateQuantitativeView()
-    ViewHelper.Info('Quantitative View updated')   
+          
+    self.updateQuantitativeView()  
             
           
   def updateQuantitativeView(self, finding = None):
@@ -1426,10 +1474,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if finding:
       self.getReportTableWidget().setRowSelectableOn()
     
-    ViewHelper.Info('Trying to remove former chart arrays') 
     for can in self.chartArrayNodes:
       self.chartNode.RemoveArray(can.GetName())
-      ViewHelper.Info('Removing array: '+can.GetName()) 
       slicer.mrmlScene.RemoveNode(can)
     
     if self.chartArrayNodes:
@@ -1450,8 +1496,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
             findings.append(fnd)
       else:
         findings.append(finding)
-      
-      ViewHelper.Info('Creating updated arrays')     
+         
       for finding in findings:
         
         rgba = lut.GetTableValue(finding.GetColorID())
@@ -1497,7 +1542,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if len(findings) == 1:
           self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')
       
-      ViewHelper.Info('Chart arrays updated')   
       
       if len(findings) > 1:
         self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')

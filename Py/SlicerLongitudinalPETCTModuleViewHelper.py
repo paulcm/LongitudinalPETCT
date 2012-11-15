@@ -645,6 +645,14 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
             mNode.SetDisplayVisibility(0)
         
     
+  @staticmethod
+  def getSetting(settingStr):
+    setting = qt.QSettings().value('LongitudinalPETCT/'+settingStr)
+    if (setting == None) | (setting == 'true'):
+      return True
+    elif setting == 'false':
+      return False
+
     
       
   @staticmethod
