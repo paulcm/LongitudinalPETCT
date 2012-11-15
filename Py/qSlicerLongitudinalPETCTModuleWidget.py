@@ -187,30 +187,30 @@ class qSlicerLongitudinalPETCTModuleWidget:
     value = "LongitudinalPETCT/CenterVolumes"
     if self.getModuleSettingsDialog().property('centerVolumes'):
       qt.QSettings().setValue(value,'true')
-      self.getStudySelectionWidget().setProperty('centeredSelected',True)
+      #self.getStudySelectionWidget().setProperty('centeredSelected',True)
     else:
       qt.QSettings().setValue(value,'false')
-      self.getStudySelectionWidget().setProperty('centeredSelected',False)
+      #self.getStudySelectionWidget().setProperty('centeredSelected',False)
       
     value = "LongitudinalPETCT/VolumeRendering"
     if self.getModuleSettingsDialog().property('volumeRendering'):
       qt.QSettings().setValue(value,'true')
-      self.getStudySelectionWidget().setProperty('volumeRendering',True)
-      self.getAnalysisSettingsWidget().setProperty('volumeRendering',True)
+      #self.getStudySelectionWidget().setProperty('volumeRendering',True)
+      #self.getAnalysisSettingsWidget().setProperty('volumeRendering',True)
     else:
       qt.QSettings().setValue(value,'false')
-      self.getStudySelectionWidget().setProperty('volumeRendering',False)
-      self.getAnalysisSettingsWidget().setProperty('volumeRendering',False)
+      #self.getStudySelectionWidget().setProperty('volumeRendering',False)
+      #self.getAnalysisSettingsWidget().setProperty('volumeRendering',False)
       
     value = "LongitudinalPETCT/Spinning"
     if self.getModuleSettingsDialog().property('spinning'):
       qt.QSettings().setValue(value,'true')
-      self.getStudySelectionWidget().setProperty('spinView',True)
-      self.getAnalysisSettingsWidget().setProperty('spinView',True)
+      #self.getStudySelectionWidget().setProperty('spinView',True)
+      #self.getAnalysisSettingsWidget().setProperty('spinView',True)
     else:
       qt.QSettings().setValue(value,'false')
-      self.getStudySelectionWidget().setProperty('spinView',False)
-      self.getAnalysisSettingsWidget().setProperty('spinView',False)
+      #self.getStudySelectionWidget().setProperty('spinView',False)
+      #self.getAnalysisSettingsWidget().setProperty('spinView',False)
       
     value = "LongitudinalPETCT/Models"
     if self.getModuleSettingsDialog().property('makeModels'):
