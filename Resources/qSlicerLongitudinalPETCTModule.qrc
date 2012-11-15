@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>Icons/center_volumes.png</file>
     <file>Icons/SlicerModels.png</file>
     <file>Icons/help/roi_click1.png</file>
     <file>Icons/help/roi_click2.png</file>
