@@ -59,6 +59,9 @@ public:
 
   Q_INVOKABLE qMRMLNodeComboBox* mrmlNodeComboBoxReport();
 
+signals:
+  void showModuleSettingsDialog();
+
 public slots:
   void updateView();
 

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>Icons/SlicerModels.png</file>
     <file>Icons/help/roi_click1.png</file>
     <file>Icons/help/roi_click2.png</file>
     <file>Icons/help/expdbtn.png</file>
@@ -20,5 +21,6 @@
     <file>Icons/help.png</file>
     <file>Icons/SlicerLoadDICOM.png</file>
     <file>Icons/placeholder.png</file>
+    <file>Icons/settings_small.png</file>
   </qresource>
 </RCC>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>190</height>
+    <height>204</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,14 +30,46 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
        <property name="spacing">
-        <number>12</number>
+        <number>8</number>
        </property>
        <item>
         <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBoxReport" native="true">
          <property name="toolTip">
           <string>Select a Report in order to perform PET/CT analysis</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="ButtonModuleSettings">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Default settings for this module.</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+           <normaloff>:/Icons/settings_small.png</normaloff>:/Icons/settings_small.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>10</width>
+           <height>10</height>
+          </size>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
