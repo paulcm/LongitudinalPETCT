@@ -106,7 +106,7 @@ void qSlicerLongitudinalPETCTStudySelectionWidgetPrivate
   QObject::connect(this->SliderOpacityPow, SIGNAL(valueChanged(double)), this->SpinBoxOpacityPow, SLOT(setValue(double)) );
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), q, SIGNAL(opacityPowChanged(double)) );
 
-  QObject::connect(this->CheckBoxStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
+  QObject::connect(this->ButtonStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
 }
 
 //-----------------------------------------------------------------------------
@@ -154,11 +154,7 @@ void qSlicerLongitudinalPETCTStudySelectionWidget
       bool disabled = d->ReportNode->IsStudyInUse(study);
       d->TableStudySelection->addStudyToTable(study, disabled);
 
-      if(i==0) // since all get centered all uncentered simultaneously no need to do it every iteration step
-        d->CheckBoxStudiesCentered->setChecked(study->GetCenteredVolumes());
     }
-
-
 
   std::cout << "END UPDATING STUDY SELECTION WIDGET" << std::endl;
 }
@@ -245,18 +241,18 @@ vtkMRMLLongitudinalPETCTReportNode* qSlicerLongitudinalPETCTStudySelectionWidget
 bool qSlicerLongitudinalPETCTStudySelectionWidget::centeredSelected()
 {
   Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
-  Q_ASSERT(d->CheckBoxStudiesCentered);
+  Q_ASSERT(d->ButtonStudiesCentered);
 
-  return d->CheckBoxStudiesCentered->isChecked();
+  return d->ButtonStudiesCentered->isChecked();
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerLongitudinalPETCTStudySelectionWidget::setCenteredSelected(bool selected)
 {
   Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
-  Q_ASSERT(d->CheckBoxStudiesCentered);
+  Q_ASSERT(d->ButtonStudiesCentered);
 
-  return d->CheckBoxStudiesCentered->setChecked(selected);
+  return d->ButtonStudiesCentered->setChecked(selected);
 }
 
 //-----------------------------------------------------------------------------
