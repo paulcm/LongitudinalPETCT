@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>525</width>
-    <height>328</height>
+    <height>208</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -101,6 +101,39 @@
           <property name="iconSize">
            <size>
             <width>18</width>
+            <height>19</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="ButtonStudiesCentered">
+          <property name="toolTip">
+           <string>Check to center image data in the view. Uncheck to maintain original position.</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+            <normaloff>:/Icons/center_volumes.png</normaloff>:/Icons/center_volumes.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>19</width>
             <height>19</height>
            </size>
           </property>
@@ -215,19 +248,6 @@
       </layout>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="CheckBoxStudiesCentered">
-     <property name="toolTip">
-      <string>Select to center image data in the view. Unselect to maintain original position.</string>
-     </property>
-     <property name="text">
-      <string>Show studies centered</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>
