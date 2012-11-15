@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>qSlicerLongitudinalPETCTModuleSettingsDialog</class>
+ <widget class="QDialog" name="qSlicerLongitudinalPETCTModuleSettingsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>345</width>
+    <height>194</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>8</number>
+   </property>
+   <property name="leftMargin">
+    <number>25</number>
+   </property>
+   <property name="topMargin">
+    <number>25</number>
+   </property>
+   <property name="rightMargin">
+    <number>25</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="LabelTitle">
+     <property name="text">
+      <string>Longitudinal PET/CT Analysis Module Settings:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>10</number>
+     </property>
+     <item>
+      <widget class="QCheckBox" name="CheckBoxCenterVolumes">
+       <property name="text">
+        <string>Center Volumes</string>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="CheckBoxVolumeRendering">
+       <property name="text">
+        <string>Volume Rendering</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/VolumeRendering.png</normaloff>:/Icons/VolumeRendering.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="CheckBoxSpinning">
+       <property name="text">
+        <string>Spinning</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/ViewRock.png</normaloff>:/Icons/ViewRock.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="CheckBoxMakeModels">
+       <property name="text">
+        <string>Make Models</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/SlicerModels.png</normaloff>:/Icons/SlicerModels.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="ButtonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>ButtonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>qSlicerLongitudinalPETCTModuleSettingsDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>198</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>223</x>
+     <y>108</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ButtonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>qSlicerLongitudinalPETCTModuleSettingsDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>198</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>223</x>
+     <y>108</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

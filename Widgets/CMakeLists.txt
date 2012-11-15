@@ -16,6 +16,8 @@ set(${KIT}_SRCS
   qSlicerLongitudinalPETCTFindingSelectionWidget.h
   qSlicerLongitudinalPETCTFindingSettingsDialog.cxx
   qSlicerLongitudinalPETCTFindingSettingsDialog.h
+  qSlicerLongitudinalPETCTModuleSettingsDialog.cxx
+  qSlicerLongitudinalPETCTModuleSettingsDialog.h
   qSlicerLongitudinalPETCTReportSelectionWidget.cxx
   qSlicerLongitudinalPETCTReportSelectionWidget.h
   qSlicerLongitudinalPETCTReportTableWidget.cxx
@@ -31,6 +33,7 @@ set(${KIT}_MOC_SRCS
   qSlicerLongitudinalPETCTColorSelectionDialog.h
   qSlicerLongitudinalPETCTFindingSelectionWidget.h
   qSlicerLongitudinalPETCTFindingSettingsDialog.h
+  qSlicerLongitudinalPETCTModuleSettingsDialog.h
   qSlicerLongitudinalPETCTReportSelectionWidget.h
   qSlicerLongitudinalPETCTReportTableWidget.h
   qSlicerLongitudinalPETCTStudySelectionTableWidget.h
@@ -43,6 +46,7 @@ set(${KIT}_UI_SRCS
   ../Resources/UI/qSlicerLongitudinalPETCTColorSelectionDialog.ui
   ../Resources/UI/qSlicerLongitudinalPETCTFindingSelectionWidget.ui
   ../Resources/UI/qSlicerLongitudinalPETCTFindingSettingsDialog.ui
+  ../Resources/UI/qSlicerLongitudinalPETCTModuleSettingsDialog.ui
   ../Resources/UI/qSlicerLongitudinalPETCTReportSelectionWidget.ui
   ../Resources/UI/qSlicerLongitudinalPETCTReportTableWidget.ui
   ../Resources/UI/qSlicerLongitudinalPETCTStudySelectionTableWidget.ui
