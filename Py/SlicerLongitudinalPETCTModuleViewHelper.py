@@ -4,6 +4,7 @@ from __main__ import vtk, slicer, tcl, qt
 # python includes
 import sys
 import time
+import datetime
 
 class SlicerLongitudinalPETCTModuleViewHelper( object ):
   '''
@@ -654,7 +655,16 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       return False
 
     
+  @staticmethod
+  def dateFromDICOM(dateStr):
+    if len(dateStr) >= 6:
+      y = int(dateStr[:4])
+      m = int(dateStr[4:6])
+      d = int(dateStr[6:8])
       
+      return datetime.date(y,m,d)
+    
+        
   @staticmethod
   def insertStr(original, new, pos):
     '''Inserts new inside original at pos.'''

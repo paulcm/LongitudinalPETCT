@@ -867,9 +867,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
         studySeg.SetReferenceCount(studySeg.GetReferenceCount()-1) 
         slicer.mrmlScene.AddNode(studySeg)
 
-        mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
-
-        studySeg.SetAndObserveModelHierarchyNodeID(mh.GetID())
+        if ViewHelper.getSetting('Models'):
+          mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
+          studySeg.SetAndObserveModelHierarchyNodeID(mh.GetID())
+        
         studySeg.SetAndObserveLabelVolumeNodeID(currentStudy.GetPETLabelVolumeNode().GetID())
 
         currentFinding.MapStudyNodeIDToSegmentationNodeID(currentStudy.GetID(),studySeg.GetID())
@@ -1459,7 +1460,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
       self.chartNode.SetProperty('default', 'type', 'Scatter');
       self.chartNode.SetProperty('default', 'showLegend', 'on') 
-      self.chartNode.SetProperty('default', 'xAxisType', 'categorical')
       
     chartViewNode = ViewHelper.getStandardChartViewNode() 
     chartViewNode.SetChartNodeID(self.chartNode.GetID())
@@ -1514,10 +1514,22 @@ class qSlicerLongitudinalPETCTModuleWidget:
           array.SetNumberOfTuples(tuples)
           tuple = 0
        
+          t = 0
           
           for j in xrange(samples):
+            
             study = currentReport.GetSelectedStudySelectedForAnalysis(j)
+
+            if j > 0:
+              oldstudy = currentReport.GetSelectedStudySelectedForAnalysis(j-1)
+              if (study != None) & (oldstudy != None):
+                
+                date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
+                olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
+                t += (date-olddate).days                                                    
+              
             seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+            
             del suvs[:]
             suvs.append(0.)
             suvs.append(0.)
@@ -1528,16 +1540,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
               suvs[1] = seg.GetSUVMean()
               suvs[2] = seg.GetSUVMin()
 
-            array.SetComponent(tuple, 0, float(study.GetAttribute('DICOM.StudyDate')))
+            array.SetComponent(tuple, 0, t)
             array.SetComponent(tuple, 1, suvs[i])
             array.SetComponent(tuple, 2, 0.)
               
             tuple += 1
-           
-            colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
-            self.chartNode.SetProperty(arrayNode.GetName(), 'color', colorStr)
               
           self.chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
+          
+          colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,saturationMultipliers[i])
+          self.chartNode.SetProperty(arrayNode.GetName(), 'color', colorStr)
         
         if len(findings) == 1:
           self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: '+finding.GetName()+' SUVbw')
@@ -1546,7 +1558,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if len(findings) > 1:
         self.chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis: All Findings SUVbw')
       
-      self.chartNode.SetProperty('default', 'xAxisLabel', 'DICOM Study Dates')
+      self.chartNode.SetProperty('default', 'xAxisLabel', 'days')
     
       
     ViewHelper.getStandardChartViewNode().Modified()
