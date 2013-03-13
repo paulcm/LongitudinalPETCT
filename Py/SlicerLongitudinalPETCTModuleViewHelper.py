@@ -407,6 +407,12 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     for vn in compViewNodes:
       if vn.GetBoxVisible != 0:
         vn.SetBoxVisible(0)
+     
+    
+    for s in range(studies):     
+      compSliceNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceNodes(s)  
+      for sn in compSliceNodes:
+        sn.SetUseLabelOutline(SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations"))
     #for i in range(sliceCompositeNodes.GetNumberOfItems()):
       #scn = sliceCompositeNodes.GetItemAsObject(i)
       #sn = sliceNodes.GetItemAsObject(i)

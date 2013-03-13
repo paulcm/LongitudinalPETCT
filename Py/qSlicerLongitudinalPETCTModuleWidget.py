@@ -180,6 +180,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.getModuleSettingsDialog().setProperty('volumeRendering',ViewHelper.getSetting('VolumeRendering'))
     self.getModuleSettingsDialog().setProperty('spinning',ViewHelper.getSetting('Spinning'))    
     self.getModuleSettingsDialog().setProperty('makeModels',ViewHelper.getSetting('Models'))
+    self.getModuleSettingsDialog().setProperty('outlineSegmentations',ViewHelper.getSetting('OutlineSegmentations'))
         
     self.getModuleSettingsDialog().show()
     
@@ -218,6 +219,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
       qt.QSettings().setValue(value,'true')
     else:
       qt.QSettings().setValue(value,'false')      
+    
+    value = "LongitudinalPETCT/OutlineSegmentations"
+    if self.getModuleSettingsDialog().property('outlineSegmentations'):
+      qt.QSettings().setValue(value,'true')
+    else:
+      qt.QSettings().setValue(value,'false')    
       
       
   def getFindingSettingsDialog(self):
@@ -264,6 +271,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if lm:
       lm.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView) # two over two
     
+    if ViewHelper.getSetting('OutlineSegmentations'):
+      slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed").SetUseLabelOutline(True)
+      slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow").SetUseLabelOutline(True)
+      slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen").SetUseLabelOutline(True)
     
     self.reportSelectionWidget = None
     self.reportSelector = None

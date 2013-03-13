@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>345</width>
-    <height>220</height>
+    <height>259</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -113,6 +113,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QCheckBox" name="CheckBoxOutlineSegmentations">
+       <property name="toolTip">
+        <string>Select whether segmentations should be just outlined or remain filled.</string>
+       </property>
+       <property name="text">
+        <string>Outline Segmentations</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/SlicesLabelOutline.png</normaloff>:/Icons/SlicesLabelOutline.png</iconset>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -149,7 +163,7 @@
         <string notr="true">font-style: italic;</string>
        </property>
        <property name="text">
-        <string>Settings will only apply after restart.</string>
+        <string>Modifications will only be applied after restart.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

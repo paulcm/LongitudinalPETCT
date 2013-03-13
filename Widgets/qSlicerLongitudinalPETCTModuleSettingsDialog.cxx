@@ -131,6 +131,15 @@ bool qSlicerLongitudinalPETCTModuleSettingsDialog::makeModels()
 }
 
 //-----------------------------------------------------------------------------
+bool qSlicerLongitudinalPETCTModuleSettingsDialog::outlineSegmentations()
+{
+  Q_D(qSlicerLongitudinalPETCTModuleSettingsDialog);
+  Q_ASSERT(d->CheckBoxOutlineSegmentations);
+
+  return d->CheckBoxOutlineSegmentations->isChecked();
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerLongitudinalPETCTModuleSettingsDialog::setCenterVolumes(bool checked)
 {
   Q_D(qSlicerLongitudinalPETCTModuleSettingsDialog);
@@ -166,6 +175,13 @@ void qSlicerLongitudinalPETCTModuleSettingsDialog::setMakeModels(bool checked)
   d->CheckBoxMakeModels->setChecked(checked);
 }
 
+//-----------------------------------------------------------------------------
+void qSlicerLongitudinalPETCTModuleSettingsDialog::setOutlineSegmentations(bool checked)
+{
+  Q_D(qSlicerLongitudinalPETCTModuleSettingsDialog);
+  Q_ASSERT(d->CheckBoxOutlineSegmentations);
 
+  d->CheckBoxOutlineSegmentations->setChecked(checked);
+}
 
 
