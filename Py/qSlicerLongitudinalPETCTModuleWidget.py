@@ -1743,6 +1743,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
         maxrow = "\n\""+finding.GetName()+"_SUVmax\""
         meanrow = "\n\""+finding.GetName()+"_SUVmean\""
         minrow = "\n\""+finding.GetName()+"_SUVmin\""
+        devrow = "\n\""+finding.GetName()+"_StdDev\""
+        volccrow = "\n\""+finding.GetName()+"_Volcc\""
+        count = "\n\""+finding.GetName()+"_Count\""
         
         for k in xrange(currentReport.GetNumberOfSelectedStudies()):
           study = currentReport.GetSelectedStudy(k)
@@ -1753,12 +1756,18 @@ class qSlicerLongitudinalPETCTModuleWidget:
               maxrow += empty
               meanrow += empty
               minrow += empty
+              devrow += empty
+              volccrow += empty
+              count += empty
             else:
               maxrow += ","+str(seg.GetSUVMax())
               meanrow += ","+str(seg.GetSUVMean())
               minrow += ","+str(seg.GetSUVMin())
+              devrow += ","+str(seg.GetStdDev())
+              volccrow += ","+str(seg.GetVolcc())
+              count += ","+str(seg.GetCount())
           
-        csv += maxrow+meanrow+minrow    
+        csv += maxrow+meanrow+minrow+devrow+volccrow+count    
 
     return csv
        
