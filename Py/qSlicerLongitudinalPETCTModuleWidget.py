@@ -8,6 +8,7 @@ import sys as SYS
 
 import thread as Thread
 import time
+from locale import currency
 #
 # qSlicerLongitudinalPETCTModuleWidget
 #
@@ -476,16 +477,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
         if firstDisplayCt:
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(0)
           selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
-          selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetWindowLevel(350,40)
+          selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().SetWindowLevel(250,50)
+        
+          
+        if selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().GetColorNodeID() == selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode().GetColorNodeID():
+            selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat")
           
         if firstDisplayPet:
-          petDisplayNode = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode()
-          if petDisplayNode:
-            petDisplayNode.SetAutoWindowLevel(0)
-            #petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
-            heatNode = slicer.util.getNode("PET-Heat")
-            if heatNode:
-              petDisplayNode.SetAndObserveColorNodeID(heatNode.GetID());
+          selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode().SetAutoWindowLevel(True)
 
       
         viewNode = ViewHelper.getStandardViewNode()
@@ -721,7 +720,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.tempCroppedVol == None:
       self.tempCroppedVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
       self.tempCroppedVol.SetName("TempCroppedVolume")
-      self.tempCroppedVol.SetHideFromEditors(True)
+      self.tempCroppedVol.SetHideFromEditors(False)
       self.tempCroppedVol.SetSaveWithScene(False)
 
     return self.tempCroppedVol     
@@ -730,7 +729,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.tempLabelVol == None:
       self.tempLabelVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
       self.tempLabelVol.SetName("TempLabelVolume")
-      self.tempLabelVol.SetHideFromEditors(True) 
+      self.tempLabelVol.SetHideFromEditors(False) 
       self.tempLabelVol.SetSaveWithScene(False)
       
     return self.tempLabelVol     
@@ -752,9 +751,14 @@ class qSlicerLongitudinalPETCTModuleWidget:
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
     
+    setLookupTable = False
+    
     if (currentStudy != None) & (currentFinding != None):
 
-      self.getTempCroppedVolume().Copy(currentStudy.GetPETVolumeNode())
+      if self.getTempCroppedVolume().GetScalarVolumeDisplayNode() == None:
+        setLookupTable = True
+          
+      #self.getTempCroppedVolume().Copy(currentStudy.GetPETVolumeNode())
       self.getTempCroppedVolume().SetName("LongitudinalPETCT_CroppedVolume") 
     
       self.getTempLabelVolume().Copy(currentStudy.GetPETLabelVolumeNode())
@@ -777,6 +781,17 @@ class qSlicerLongitudinalPETCTModuleWidget:
       
       propagate = caller == self
       ViewHelper.SetRYGBgFgLblVolumes(self.getTempCroppedVolume().GetID(),None,self.getTempLabelVolume().GetID(),propagate)  
+      
+      petDisplayNode = currentStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode()
+      croppedPETDisplayNode = self.getTempCroppedVolume().GetScalarVolumeDisplayNode()
+      
+      croppedPETDisplayNode.SetAndObserveColorNodeID(petDisplayNode.GetColorNodeID())
+        
+      croppedPETDisplayNode.SetAutoWindowLevel(False)
+      croppedPETDisplayNode.SetWindow(petDisplayNode.GetWindow())
+      croppedPETDisplayNode.SetLevel(petDisplayNode.GetLevel())
+                
+        
     
     self.getTempLabelVolume().GetDisplayNode().SetAndObserveColorNodeID(self.getCurrentReport().GetFindingTypesColorTableNodeID())
         
