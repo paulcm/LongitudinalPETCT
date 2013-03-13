@@ -129,10 +129,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
       self.editorWidget.editLabelMapsFrame.setEnabled(False)
       self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)      
-    
-      self.editorWidget.toolsBox.buttons['GrowCutEffect'].setVisible(False)
-      self.editorWidget.toolsBox.buttons['ChangeLabelEffect'].setVisible(False)
-      self.editorWidget.toolsBox.buttons['MakeModelEffect'].setVisible(False)
+
     
       editorWidgetParent.show()
       
