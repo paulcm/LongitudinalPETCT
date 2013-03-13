@@ -77,6 +77,8 @@ protected slots:
   void segmentationModelVisibilityChecked(bool toggled);
   void segmentationCellClicked(int row, int column);
 
+  void comboBoxValuesTypeIndexChanged(int index);
+
 
 protected:
   QScopedPointer<qSlicerLongitudinalPETCTReportTableWidgetPrivate> d_ptr;
@@ -91,6 +93,7 @@ protected:
   void updateVerticalHeaders();
 
   SelectableMode SelMode;
+
 
 
 private:

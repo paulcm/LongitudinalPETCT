@@ -75,7 +75,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   void SetROIRadius(double roiRadius[3]);
   void GetROIRadius(double radius[3]);
 
-  void SetSUVs(double max, double mean, double min);
+  void SetStatistics(double suvmax, double suvmean, double suvmin, double volcc = 0., double volmm3 = 0., double count = 0., double stddev = 0.);
 
 
   void SetAndObserveLabelVolumeNodeID(const char* labelVolumeNodeID);
@@ -97,6 +97,10 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   vtkGetMacro(SUVMax,double);
   vtkGetMacro(SUVMean,double);
   vtkGetMacro(SUVMin,double);
+  vtkGetMacro(Volcc,double);
+  vtkGetMacro(Volmm3,double);
+  vtkGetMacro(Count,double);
+  vtkGetMacro(StdDev,double);
 
   //void RemoveCurrentModelHierarchyFromScene();
 
@@ -121,6 +125,10 @@ protected:
   vtkSetMacro(SUVMax,double);
   vtkSetMacro(SUVMean,double);
   vtkSetMacro(SUVMin,double);
+  vtkSetMacro(Volcc,double);
+  vtkSetMacro(Volmm3,double);
+  vtkSetMacro(Count,double);
+  vtkSetMacro(StdDev,double);
 
   bool ModelVisible;
 
@@ -136,6 +144,10 @@ protected:
   double SUVMax;
   double SUVMean;
   double SUVMin;
+  double Volcc;
+  double Volmm3;
+  double Count;
+  double StdDev;
 
 };
 

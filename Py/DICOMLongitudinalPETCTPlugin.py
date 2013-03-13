@@ -7,6 +7,8 @@ from DICOMLib import DICOMLoadable
 
 import DICOMLib
 
+import math
+
 #
 # This is the plugin to handle translation of diffusion volumes
 # from DICOM files into MRML nodes.  It follows the DICOM module's
@@ -431,7 +433,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     svNode.SetScene(slicer.mrmlScene)
     
     vaStorageNode.ReadData(svNode)
-    
+          
     if svNode:
       svNode.SetName(loadable.name)
       
@@ -487,14 +489,26 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
 
       if len(self.petFileLoadables) == len(self.ctFileLoadables):
-        i = 0
-        while i < len(self.petFileLoadables):
-
+        for i in range(len(self.petFileLoadables)):
+    
           petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
-          ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
-
+          
           volLogic  = slicer.modules.volumes.logic() 
           petLabelVolume = volLogic.CreateAndAddLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
+
+          instanceUIDs = petScalarVolume.GetAttribute('DICOM.instanceUIDs')
+          instanceUID  = instanceUIDs.split(" ",1)[0]
+          petDir = slicer.modules.longitudinalpetct.logic().GetDirectoryOfDICOMSeries(instanceUID)
+      
+          parameters = {}
+          parameters["PETVolume"] = petScalarVolume.GetID()
+          parameters["PETDICOMPath"] = petDir
+          parameters["SUVVolume"] = petScalarVolume.GetID()
+
+          cliNode = None
+          cliNode = slicer.cli.run(slicer.modules.petsuvimagemaker, cliNode, parameters)  
+      
+          ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
 
           studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
           studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
@@ -542,7 +556,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           if logic:
             logic.CenterStudyVolumeNodes(studyNode,slicer.mrmlScene)
         
-          i += 1 
+
 
       
     

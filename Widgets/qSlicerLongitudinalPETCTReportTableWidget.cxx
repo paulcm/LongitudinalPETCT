@@ -105,9 +105,10 @@ void qSlicerLongitudinalPETCTReportTableWidgetPrivate
   this->TableReport->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
   this->TableReport->setSelectionMode(QAbstractItemView::NoSelection);
 
-  this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Click on table cell to select Study and Finding</td></tr><tr><td>-</td><td>Mouse over table cell to display SUV values for a segmentation</td></tr><tr><td>-</td><td>Enable/disable visibility of Models representing segmentations</td></tr></tbody></table></body></html>");
+  this->LabelInfo->setToolTip("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table cellspacing=\"5\"><tbody><tr><td>-</td><td>Click on table cell to select Study and Finding</td></tr><tr><td>-</td><td>Select which statistical value should be shown in table cells</td></tr><tr><td>-</td><td>Move mouse cursor over table cell to display statistical values for the segmentation</td></tr><tr><td>-</td><td>Enable/disable visibility of Models representing segmentations</td></tr></tbody></table></body></html>");
 
   QObject::connect(this->TableReport, SIGNAL(cellClicked(int,int)), q,SLOT(segmentationCellClicked(int,int)));
+  QObject::connect(this->ComboBoxValuesType, SIGNAL(currentIndexChanged(int)), q, SLOT(updateView()));
 
 }
 
@@ -149,6 +150,7 @@ qSlicerLongitudinalPETCTReportTableWidgetPrivate::createConnectedCellWidgetCheck
   cellWidgetCheckBox->setIconSize(QSize(16,16));
   cellWidgetCheckBox->setIndicatorIcon(this->IconPlaceholder);
   cellWidgetCheckBox->setChecked(true);
+  cellWidgetCheckBox->setStyleSheet("text-align: center");
 
   QObject::connect(cellWidgetCheckBox, SIGNAL(clicked(bool)), q, SLOT(segmentationModelVisibilityChecked(bool)) );
 
@@ -468,6 +470,7 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
   Q_D(qSlicerLongitudinalPETCTReportTableWidget);
   Q_ASSERT(d->TableReport);
   Q_ASSERT(d->LabelSelectedValue);
+  Q_ASSERT(d->ComboBoxValuesType);
 
   std::cout << "UPDATING REPORT TABLE WIDGET" << std::endl;
 
@@ -555,16 +558,51 @@ qSlicerLongitudinalPETCTReportTableWidget::updateView()
                   cellWidget->setChecked(segmentation->GetModelVisible());
                   QString tooltip =
                       QString(
-                          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"></style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table style=\"border-collapse: collapse;border-spacing: 2px 10px;margin:0;padding:0\" ><tbody>  <tr><td>SUV<span style=\"vertical-align:sub;\">MAX</span></td><td>%1</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MEAN</span></td><td>%2</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MIN</span></td><td>%3</td></tr></tbody></table></body></html>").arg(
+                          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">hr { margin: 0; padding: 2px } </style></head><body style=\"font-family:\'Lucida Grande\',sans-serif; font-size: 12pt; font-weight: 400; font-style: normal;border: 1px solid black;margin-top:0px;\"><table style=\"border-collapse: collapse;border-spacing: 2px 10px;margin:0;padding:0\" ><tbody><tr><td>SUV<span style=\"vertical-align:sub;\">MAX</span></td><td>%1</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MEAN</span></td><td>%2</td></tr><tr><td>SUV<span style=\"vertical-align:sub;\">MIN</span></td><td>%3</td></tr><tr><td colspan=\"2\"><hr /></td></tr><tr><td>Std.Dev.</td><td>%4</td></tr><tr><td>Vol.</td><td>%5 cc</td></tr><tr><td>Count</td><td>%6 vx</td></tr></tbody></table></body></html>").arg(
                           QString().setNum(segmentation->GetSUVMax()),
                           QString().setNum(segmentation->GetSUVMean()),
-                          QString().setNum(segmentation->GetSUVMin()));
-                  cellWidget->setToolTip(tooltip);
+                          QString().setNum(segmentation->GetSUVMin()),
+                          QString().setNum(segmentation->GetStdDev()),
+                  	  	  QString().setNum(segmentation->GetVolcc()),
+                          QString().setNum(segmentation->GetCount()));
+
+
+                          cellWidget->setToolTip(tooltip);
+
+
+                  switch (d->ComboBoxValuesType->currentIndex())
+                  {
+                  case 0:
+                	  cellWidget->setText(QString().setNum(segmentation->GetSUVMax()));
+                	  break;
+                  case 1:
+                	  cellWidget->setText(QString().setNum(segmentation->GetSUVMean()));
+                	  break;
+                  case 2:
+                   	  cellWidget->setText(QString().setNum(segmentation->GetSUVMin()));
+                   	break;
+                  case 3:
+                	  cellWidget->setText(QString().setNum(segmentation->GetStdDev()));
+                	  break;
+                  case 4:
+                	  cellWidget->setText(QString().setNum(segmentation->GetVolcc())+" cc");
+                	  break;
+                  case 5:
+                      cellWidget->setText(QString().setNum(segmentation->GetVolmm3())+" mm^3");
+                      break;
+                  case 6:
+                	  cellWidget->setText(QString().setNum(segmentation->GetCount())+" voxels");
+                	  break;
+                  default:
+                	  cellWidget->setText(NULL);
+                  }
+
                 }
               else
                 {
                   cellWidget->setToolTip(NULL);
                   cellWidget->setIndicatorIcon(d->IconPlaceholder);
+                  cellWidget->setText(NULL);
                 }
 
               if (i == lastSelectedFindingIndex && j == lastSelectedStudyIndex)
@@ -687,6 +725,12 @@ void qSlicerLongitudinalPETCTReportTableWidget
   emit studyClicked(column);
   emit findingClicked(row);
 }
+
+void qSlicerLongitudinalPETCTReportTableWidget::comboBoxValuesTypeIndexChanged(int index)
+{
+
+}
+
 
 
 //-----------------------------------------------------------------------------

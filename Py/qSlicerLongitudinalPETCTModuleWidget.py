@@ -483,7 +483,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
           if petDisplayNode:
             petDisplayNode.SetAutoWindowLevel(0)
             #petDisplayNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.petDisplayNodeModified) 
-            petDisplayNode.SetAndObserveColorNodeID("vtkMRMLPETProceduralColorNodePET-Heat");
+            heatNode = slicer.util.getNode("PET-Heat")
+            if heatNode:
+              petDisplayNode.SetAndObserveColorNodeID(heatNode.GetID());
 
       
         viewNode = ViewHelper.getStandardViewNode()
@@ -1154,58 +1156,35 @@ class qSlicerLongitudinalPETCTModuleWidget:
         
    
   def calculateSUVs(self):
-    a = time.time()
     
     currentStudy = self.getCurrentStudy()
     currentFinding = self.getCurrentFinding()
         
     if (currentStudy != None) & (currentFinding != None):
          
-      instanceUIDs = currentStudy.GetPETVolumeNode().GetAttribute('DICOM.instanceUIDs')
-      instanceUID  = instanceUIDs.split(" ",1)[0]
-      petDir = slicer.modules.longitudinalpetct.logic().GetDirectoryOfDICOMSeries(instanceUID)
-
-      if petDir:
-        parameters = {}
-        parameters['PETDICOMPath'] = petDir
-        parameters['PETVolume'] = currentStudy.GetPETVolumeNode().GetID()
-        parameters['VOIVolume'] = currentStudy.GetPETLabelVolumeNode().GetID()
-        parameters['ColorTable'] = self.getCurrentReport().GetFindingTypesColorTableNodeID()
-      
-        self.cliSUV = slicer.cli.run(slicer.modules.petstandarduptakevaluecomputation, self.cliSUV, parameters, wait_for_completion = True)
+      stats = LabelStatisticsLogic(currentStudy.GetPETVolumeNode(), currentStudy.GetPETLabelVolumeNode())
+      idx = None
+      idx = stats.labelStats["Labels"].index(currentFinding.GetColorID())
         
-        if self.cliSUV.GetStatusString() == 'Completed':
-          labelValues = self.cliSUV.GetParameterAsString('OutputLabelValue')
-          # values as comma separated string
-          max = self.cliSUV.GetParameterAsString('SUVMax')
-          mean = self.cliSUV.GetParameterAsString('SUVMean')
-          min = self.cliSUV.GetParameterAsString('SUVMin')
-      
-          splitter = ', '
-          labelValues = labelValues.split(splitter)
-          # values as string list
-          max = max.split(splitter)
-          mean = mean.split(splitter)
-          min = min.split(splitter)
-      
-          idx = labelValues.index(str(currentFinding.GetColorID()))
-        
-          # values as float values
-          max = float(max[idx])
-          mean = float(mean[idx])
-          min = float(min[idx])
-
+      if idx:
+          values = {}
+          values["suvmax"] = stats.labelStats[idx,"Max"]
+          values["suvmean"] = stats.labelStats[idx,"Mean"]
+          values["suvmin"] = stats.labelStats[idx, "Min"]
+          values["volcc"] = stats.labelStats[idx, "Volume cc"]
+          values["volmm3"] = stats.labelStats[idx, "Volume mm^3"]
+          values["count"] = stats.labelStats[idx, "Count"]
+          values["stddev"] = stats.labelStats[idx, "StdDev"]
+            
+          print values
       
           currentSeg = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
         
           if currentSeg:
-            currentSeg.SetSUVs(max,mean,min)
-                     
-        elif self.cliSUV.GetStatusString() == 'CompletedWithErrors':    
-          qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
-
-    b = time.time()
-    print "DURATION OF SUV COMPUTATION: " + str(b-a)+  "s"         
+            currentSeg.SetStatistics(values["suvmax"],values["suvmean"],values["suvmin"],values["volcc"],values["volmm3"],values["count"],values["stddev"])        
+                   
+      else:
+        qt.QMessageBox.warning(None, ViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')      
         
       
   def manageCollapsibleButtonsAbility(self, caller, event):

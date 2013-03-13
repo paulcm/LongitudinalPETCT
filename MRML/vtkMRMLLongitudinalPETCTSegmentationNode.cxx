@@ -60,6 +60,10 @@ vtkMRMLLongitudinalPETCTSegmentationNode::vtkMRMLLongitudinalPETCTSegmentationNo
   this->SUVMax = 0.;
   this->SUVMean = 0.;
   this->SUVMin = 0.;
+  this->Volcc = 0.;
+  this->Volmm3 = 0;
+  this->Count = 0.;
+  this->StdDev = 0;
 }
 
 
@@ -256,13 +260,18 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::GetROIRadius(double radius[3])
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTSegmentationNode::SetSUVs(double max, double mean, double min)
+void vtkMRMLLongitudinalPETCTSegmentationNode::SetStatistics(double suvmax, double suvmean, double suvmin, double volcc, double volmm3, double count, double stddev)
+
 {
   int disabledModify = this->StartModify();
 
-  this->SetSUVMax(max);
-  this->SetSUVMean(mean);
-  this->SetSUVMin(min);
+  this->SetSUVMax(suvmax);
+  this->SetSUVMean(suvmean);
+  this->SetSUVMin(suvmin);
+  this->SetVolcc(volcc);
+  this->SetVolmm3(volmm3);
+  this->SetCount(count);
+  this->SetStdDev(stddev);
 
   this->EndModify(disabledModify);
 }

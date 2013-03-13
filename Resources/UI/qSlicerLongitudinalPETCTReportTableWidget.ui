@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>525</width>
-    <height>191</height>
+    <height>196</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,7 +89,7 @@ S</string>
       </widget>
      </item>
      <item row="0" column="1" colspan="3">
-      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0,0">
        <property name="spacing">
         <number>8</number>
        </property>
@@ -123,6 +123,52 @@ S</string>
          <property name="text">
           <string/>
          </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Show:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="ComboBoxValuesType">
+         <item>
+          <property name="text">
+           <string>SUVMax</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>SUVMean</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>SUVMin</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>StdDev</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Volume cc</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Volume mm^3</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Count</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>
