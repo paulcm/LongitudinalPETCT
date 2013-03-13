@@ -480,6 +480,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         firstDisplayPetLabels = selectedStudy.GetPETLabelVolumeNode().GetScalarVolumeDisplayNode() == None
                 
         if firstDisplayPet | firstDisplayCt | firstDisplayPetLabels:
+          self.onStudySelectionWidgetShowStudiesCentered(self.getStudySelectionWidget().property('centeredSelected'))  
           self.updateBgFgToUserSelectedStudy(selectedStudy, True)
 
         if firstDisplayPetLabels:
@@ -1193,6 +1194,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       idx = stats.labelStats["Labels"].index(currentFinding.GetColorID())
         
       if idx:
+          idx = stats.labelStats["Labels"][idx]
           values = {}
           values["suvmax"] = stats.labelStats[idx,"Max"]
           values["suvmean"] = stats.labelStats[idx,"Mean"]
