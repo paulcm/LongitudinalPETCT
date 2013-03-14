@@ -105,8 +105,6 @@ void qSlicerLongitudinalPETCTStudySelectionWidgetPrivate
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), this->SliderOpacityPow, SLOT(setValue(double)) );
   QObject::connect(this->SliderOpacityPow, SIGNAL(valueChanged(double)), this->SpinBoxOpacityPow, SLOT(setValue(double)) );
   QObject::connect(this->SpinBoxOpacityPow, SIGNAL(valueChanged(double)), q, SIGNAL(opacityPowChanged(double)) );
-
-  QObject::connect(this->ButtonStudiesCentered, SIGNAL(toggled(bool)), q, SIGNAL(showStudiesCentered(bool)) );
 }
 
 //-----------------------------------------------------------------------------
@@ -237,23 +235,6 @@ vtkMRMLLongitudinalPETCTReportNode* qSlicerLongitudinalPETCTStudySelectionWidget
   return d->ReportNode.GetPointer();
 }
 
-//-----------------------------------------------------------------------------
-bool qSlicerLongitudinalPETCTStudySelectionWidget::centeredSelected()
-{
-  Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonStudiesCentered);
-
-  return d->ButtonStudiesCentered->isChecked();
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerLongitudinalPETCTStudySelectionWidget::setCenteredSelected(bool selected)
-{
-  Q_D(qSlicerLongitudinalPETCTStudySelectionWidget);
-  Q_ASSERT(d->ButtonStudiesCentered);
-
-  return d->ButtonStudiesCentered->setChecked(selected);
-}
 
 //-----------------------------------------------------------------------------
 void qSlicerLongitudinalPETCTStudySelectionWidget::selectStudyInRow(int row)

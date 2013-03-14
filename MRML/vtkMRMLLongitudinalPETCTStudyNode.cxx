@@ -44,7 +44,6 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
   this->SetHideFromEditors(true);
   this->SelectedForSegmentation = false;
   this->SelectedForAnalysis = true;
-  this->CenteredVolumes = true;
 
   this->PETVolumeNode = NULL;
   this->PETVolumeNodeID = NULL;
@@ -126,13 +125,6 @@ vtkMRMLLongitudinalPETCTStudyNode::ReadXMLAttributes(const char** atts)
           else
             this->SetSelectedForAnalysis(false);
         }
-      else if (!strcmp(attName, "VolumesCentered"))
-        {
-          if (!strcmp(attValue, "true"))
-            this->SetCenteredVolumes(true);
-          else
-            this->SetCenteredVolumes(false);
-        }
       else if (!strcmp(attName, "PETVolumeNodeID"))
         {
           this->SetAndObservePETVolumeNodeID(attValue);
@@ -171,7 +163,6 @@ void vtkMRMLLongitudinalPETCTStudyNode::WriteXML(ostream& of, int nIndent)
 
   of << indent << " SelectedForSegmentation=\"" << (this->SelectedForSegmentation ? "true" : "false") << "\"";
   of << indent << " SelectedForAnalysis=\"" << (this->SelectedForAnalysis ? "true" : "false") << "\"";
-  of << indent << " VolumesCentered=\"" << (this->CenteredVolumes ? "true" : "false") << "\"";
 
   if (this->CenteringTransformNodeID)
       of << indent << " CenteringTransformNodeID=\"" << this->CenteringTransformNodeID << "\"";
@@ -201,7 +192,6 @@ void vtkMRMLLongitudinalPETCTStudyNode::Copy(vtkMRMLNode *anode)
       {
         this->SetSelectedForSegmentation(node->GetSelectedForSegmentation());
         this->SetSelectedForAnalysis(node->GetSelectedForAnalysis());
-        this->SetCenteredVolumes(node->GetCenteredVolumes());
 
         this->SetAndObservePETVolumeNodeID(node->GetPETVolumeNodeID());
         this->SetAndObserveCTVolumeNodeID(node->GetCTVolumeNodeID());
@@ -221,7 +211,6 @@ void vtkMRMLLongitudinalPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Selected for Segmentation: " << this->SelectedForSegmentation << "\n";
   os << indent << "Selected for Analysis: " << this->SelectedForAnalysis << "\n";
-  os << indent << "Volumes centered: " << this->CenteredVolumes << "\n";
 
   os << indent << "PETVolumeNodeID: " << (this->PETVolumeNodeID ? this->PETVolumeNodeID : "(none)") << "\n";
   os << indent << "CTVolumeNodeID: " << (this->CTVolumeNodeID ? this->CTVolumeNodeID : "(none)") << "\n";
@@ -270,7 +259,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETVolumeNodeID(
   if (this->Scene && this->PETVolumeNode)
     this->Scene->AddReferencedNodeID(this->PETVolumeNodeID, this);
 
-  if(this->PETVolumeNode && this->CenteringTransformNode && this->CenteredVolumes)
+  if(this->PETVolumeNode && this->CenteringTransformNode)
     this->PETVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
 
 }
@@ -317,7 +306,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCTVolumeNodeID(
   if (this->Scene && this->CTVolumeNode)
     this->Scene->AddReferencedNodeID(this->CTVolumeNodeID, this);
 
-  if(this->CTVolumeNode && this->CenteringTransformNode && this->CenteredVolumes)
+  if(this->CTVolumeNode && this->CenteringTransformNode)
     this->CTVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
 
 }
@@ -363,7 +352,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETLabelVolumeNodeID(
   if (this->Scene && this->PETLabelVolumeNode)
     this->Scene->AddReferencedNodeID(this->PETLabelVolumeNodeID, this);
 
-  if(this->PETLabelVolumeNode && this->CenteringTransformNode && this->CenteredVolumes)
+  if(this->PETLabelVolumeNode && this->CenteringTransformNode)
     this->PETLabelVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
 }
 
@@ -404,7 +393,7 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCenteringTransformNodeID(
   vtkSetAndObserveMRMLObjectMacro(this->CenteringTransformNode, tnode);
   this->SetCenteringTransformNodeID(centeringTransformNodeID);
 
-  this->ObserveCenteringTransform(this->CenteredVolumes);
+  this->ObserveCenteringTransform(true); //this->CenteredVolumes);
 
   if (this->Scene && this->CenteringTransformNode)
     this->Scene->AddReferencedNodeID(this->CenteringTransformNodeID, this);
@@ -499,24 +488,38 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
 
   if (this->SegmentationROINode)
     {
-      if (this->CenteredVolumes)
-        {
-          if (this->SegmentationROINode->GetParentTransformNode()
+      if (this->CenteringTransformNode && this->SegmentationROINode->GetParentTransformNode()
               != this->CenteringTransformNode)
             {
+
               this->SegmentationROINode->SetAndObserveTransformNodeID(
                   this->CenteringTransformNode->GetID());
               this->Modified();
             }
-        }
       else
         {
           this->SegmentationROINode->SetAndObserveTransformNodeID(NULL);
           this->Modified();
         }
 
+
       if (this->Scene)
         this->Scene->AddReferencedNodeID(this->SegmentationROINodeID, this);
+
+
+//      double xyz[3] = {0.,0.,0.};
+//      this->SegmentationROINode->GetXYZ(xyz);
+//
+//      if(this->GetCenteringTransformNode())
+//        {
+//    	  vtkSmartPointer<vtkMatrix4x4> matrix;
+//    	  matrix = this->GetCenteringTransformNode()->GetMatrixTransformToParent();
+//    	  xyz[0] = xyz[0]-matrix->GetElement(0,3);
+//    	  xyz[1] = xyz[1]-matrix->GetElement(1,3);
+//    	  xyz[2] = xyz[2]-matrix->GetElement(2,3);
+//
+//    	  this->SegmentationROINode->SetXYZ(xyz);
+//        }
 
     }
 }
@@ -571,19 +574,6 @@ vtkMRMLLongitudinalPETCTStudyNode::ObserveCenteringTransform(bool observe)
 
 
   this->Modified();
-}
-
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTStudyNode::SetCenteredVolumes(bool centered)
-{
-  if(this->CenteredVolumes == centered)
-    return;
-
-  this->CenteredVolumes = centered;
-
-  this->ObserveCenteringTransform(centered);
-
 }
 
 

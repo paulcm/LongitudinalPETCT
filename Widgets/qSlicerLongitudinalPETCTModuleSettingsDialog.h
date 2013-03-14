@@ -38,7 +38,7 @@ class Q_SLICER_LONGITUDINALPETCT_MODULE_WIDGETS_EXPORT qSlicerLongitudinalPETCTM
 {
   Q_OBJECT
 
-  Q_PROPERTY(bool centerVolumes READ centerVolumes WRITE setCenterVolumes)
+  Q_PROPERTY(bool registration READ registration WRITE setRegistration)
   Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
   Q_PROPERTY(bool spinning READ spinning WRITE setSpinning)
   Q_PROPERTY(bool makeModels READ makeModels WRITE setMakeModels)
@@ -51,13 +51,13 @@ public:
   virtual ~qSlicerLongitudinalPETCTModuleSettingsDialog();
 
 
-  bool centerVolumes();
+  bool registration();
   bool volumeRendering();
   bool spinning();
   bool makeModels();
   bool outlineSegmentations();
 
-  void setCenterVolumes(bool checked);
+  void setRegistration(bool checked);
   void setVolumeRendering(bool checked);
   void setSpinning(bool checked);
   void setMakeModels(bool checked);

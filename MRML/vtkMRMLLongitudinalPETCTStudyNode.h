@@ -113,7 +113,6 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
 
   vtkGetMacro(VolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode*);
 
-
   vtkBooleanMacro(SelectedForSegmentation, bool);
   vtkGetMacro(SelectedForSegmentation, bool);
   vtkSetMacro(SelectedForSegmentation, bool);
@@ -121,11 +120,6 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   vtkBooleanMacro(SelectedForAnalysis, bool);
   vtkGetMacro(SelectedForAnalysis, bool);
   vtkSetMacro(SelectedForAnalysis, bool);
-
-  vtkGetMacro(CenteredVolumes, bool);
-
-  void SetCenteredVolumes(bool centered);
-
 
   void UpdateScene(vtkMRMLScene* scene);
   void SetScene(vtkMRMLScene* scene);
@@ -151,7 +145,6 @@ protected:
 
   bool SelectedForSegmentation;
   bool SelectedForAnalysis;
-  bool CenteredVolumes;
 
   char* PETVolumeNodeID;
   char* CTVolumeNodeID;

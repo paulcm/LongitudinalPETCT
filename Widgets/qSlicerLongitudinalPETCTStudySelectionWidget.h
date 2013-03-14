@@ -42,7 +42,6 @@ class Q_SLICER_LONGITUDINALPETCT_MODULE_WIDGETS_EXPORT qSlicerLongitudinalPETCTS
   Q_PROPERTY(bool volumeRendering READ volumeRendering WRITE setVolumeRendering)
   Q_PROPERTY(bool spinView READ spinView WRITE setSpinView)
   Q_PROPERTY(double opacityPow READ opacityPow WRITE setOpacityPow)
-  Q_PROPERTY(bool centeredSelected READ centeredSelected WRITE setCenteredSelected)
 
 
 public:
@@ -53,13 +52,11 @@ public:
   bool volumeRendering();
   bool spinView();
   double opacityPow();
-  bool centeredSelected();
 
 
   void setVolumeRendering(bool checked);
   void setSpinView(bool checked);
   void setOpacityPow(double opacityPow);
-  void setCenteredSelected(bool selected);
 
   Q_INVOKABLE void setReportNode(vtkMRMLLongitudinalPETCTReportNode* reportNode);
   Q_INVOKABLE vtkMRMLLongitudinalPETCTReportNode* reportNode();
@@ -72,13 +69,10 @@ signals:
   void linearOpacityToggled(bool toggled);
   void spinViewToggled(bool toggled);
   void opacityPowChanged(double d);
-  void showStudiesCentered(bool centered);
-
 
 public slots:
   void updateView();
   void selectStudyInRow(int row);
-
 
 protected slots:
   void studySelectedInTable(int index, bool selected);

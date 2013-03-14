@@ -551,10 +551,6 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
           slicer.mrmlScene.AddNode(studyNode) 
                   
           reportNode.AddStudyNodeID(studyNode.GetID())
-          
-          
-          if logic:
-            logic.CenterStudyVolumeNodes(studyNode,slicer.mrmlScene)
         
 
 

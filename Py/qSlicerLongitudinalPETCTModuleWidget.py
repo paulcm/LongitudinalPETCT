@@ -33,8 +33,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.reportSelectionWidget.setMRMLScene(slicer.mrmlScene)
       if self.reportSelectionWidget.mrmlNodeComboBoxReport():
         self.getReportSelectionWidget().mrmlNodeComboBoxReport().connect('currentNodeChanged(vtkMRMLNode*)',self.onCurrentReportChanged)
-      self.reportSelectionWidget.connect('showModuleSettingsDialog()',self.showModuleSettingsDialog)
-      
+      self.reportSelectionWidget.connect('showModuleSettingsDialog()',self.showModuleSettingsDialog)    
       
     return self.reportSelectionWidget  
   
@@ -51,12 +50,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       volRen = ViewHelper.getSetting('VolumeRendering')
       spinView = ViewHelper.getSetting('Spinning')
       opctypow = self.studySelectionWidget.property('opacityPow')
-      centered = ViewHelper.getSetting('CenterVolumes')
       
       currentStudy = self.getCurrentStudy()
       
       if currentStudy:
-        centered = currentStudy.GetCenteredVolumes()
         vrdn = currentStudy.GetVolumeRenderingDisplayNode()
         
         viewNode = ViewHelper.getStandardViewNode()
@@ -69,13 +66,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
             opctypow = float(vrdn.GetAttribute('OpacityPow'))
           except:
             opctypow = self.studySelectionWidget.property('opacityPow')
-            
-            
         
       self.studySelectionWidget.setProperty('volumeRendering',volRen)
       self.studySelectionWidget.setProperty('spinView',spinView)
       self.studySelectionWidget.setProperty('opacityPow',opctypow)
-      self.studySelectionWidget.setProperty('centeredSelected',centered)
       
     
       self.studySelectionWidget.setReportNode(self.getCurrentReport())
@@ -85,8 +79,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.studySelectionWidget.connect('spinViewToggled(bool)',ViewHelper.spinStandardViewNode)
       self.studySelectionWidget.connect('volumeRenderingToggled(bool)',self.manageVolumeRenderingVisibility)
       self.studySelectionWidget.connect('opacityPowChanged(double)',self.onSetOpacityPowForCurrentStudy)
-      self.studySelectionWidget.connect('showStudiesCentered(bool)',self.onStudySelectionWidgetShowStudiesCentered)
-  
+
     return self.studySelectionWidget  
   
   
@@ -173,7 +166,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
   
   def showModuleSettingsDialog(self):
       
-    self.getModuleSettingsDialog().setProperty('centerVolumes',ViewHelper.getSetting('CenterVolumes'))
+    self.getModuleSettingsDialog().setProperty('registration',ViewHelper.getSetting('Registration'))
     self.getModuleSettingsDialog().setProperty('volumeRendering',ViewHelper.getSetting('VolumeRendering'))
     self.getModuleSettingsDialog().setProperty('spinning',ViewHelper.getSetting('Spinning'))    
     self.getModuleSettingsDialog().setProperty('makeModels',ViewHelper.getSetting('Models'))
@@ -183,33 +176,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
   def saveModuleSettings(self):
     
-    value = "LongitudinalPETCT/CenterVolumes"
-    if self.getModuleSettingsDialog().property('centerVolumes'):
+    value = "LongitudinalPETCT/Registration"
+    if self.getModuleSettingsDialog().property('registration'):
       qt.QSettings().setValue(value,'true')
-      #self.getStudySelectionWidget().setProperty('centeredSelected',True)
     else:
       qt.QSettings().setValue(value,'false')
-      #self.getStudySelectionWidget().setProperty('centeredSelected',False)
+
       
     value = "LongitudinalPETCT/VolumeRendering"
     if self.getModuleSettingsDialog().property('volumeRendering'):
       qt.QSettings().setValue(value,'true')
-      #self.getStudySelectionWidget().setProperty('volumeRendering',True)
-      #self.getAnalysisSettingsWidget().setProperty('volumeRendering',True)
     else:
       qt.QSettings().setValue(value,'false')
-      #self.getStudySelectionWidget().setProperty('volumeRendering',False)
-      #self.getAnalysisSettingsWidget().setProperty('volumeRendering',False)
+
       
     value = "LongitudinalPETCT/Spinning"
     if self.getModuleSettingsDialog().property('spinning'):
       qt.QSettings().setValue(value,'true')
-      #self.getStudySelectionWidget().setProperty('spinView',True)
-      #self.getAnalysisSettingsWidget().setProperty('spinView',True)
     else:
       qt.QSettings().setValue(value,'false')
-      #self.getStudySelectionWidget().setProperty('spinView',False)
-      #self.getAnalysisSettingsWidget().setProperty('spinView',False)
       
     value = "LongitudinalPETCT/Models"
     if self.getModuleSettingsDialog().property('makeModels'):
@@ -294,6 +279,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.tempObserverEditorTag = None
     self.viewNodeObserverID = -1
     #self.segmentationROIOldPosition = [0.,0.,0.]
+    
     
     self.chartArrayNodes = []
     self.chartNode = None
@@ -400,8 +386,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
  
        
   def changeSelectedStudy(self, newIndex):
-    currentReport = self.getCurrentReport()
     
+    currentReport = self.getCurrentReport()
     # update model/logic
     if currentReport:
       study = currentReport.GetSelectedStudy(newIndex)
@@ -419,13 +405,21 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if currentFinding:
         currentSegROI = currentFinding.GetSegmentationROINode()
       
-        if (currentStudy != None) & ( currentSegROI != None):
+        if (currentStudy != None) & (currentSegROI != None):
+          remPos = ViewHelper.getROITranslationFromTransform(currentSegROI)
           currentStudy.SetAndObserveSegmentationROINodeID(currentSegROI.GetID())
-
-          self.updateSegmentationROIPosition()
+          addPos = ViewHelper.getROITranslationFromTransform(currentSegROI)
+          
+          if not currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID()):
+            xyz = [0.,0.,0.]
+            currentSegROI.GetXYZ(xyz)
+            xyz = [xyz[0]+remPos[0]-addPos[0],xyz[1]+remPos[1]-addPos[1],xyz[2]+remPos[2]-addPos[2]] 
+            currentSegROI.SetXYZ(xyz)
+          else:          
+            self.updateSegmentationROIPosition()
           
         elif study:
-          currentStudy.SetAndObserveSegmentationROINodeID('') #TODO see why None doesn't work
+          currentStudy.SetAndObserveSegmentationROINodeID(None) #TODO see why None doesn't work
     
     # update view
     self.updateBgFgToUserSelectedStudy(study)
@@ -443,9 +437,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if (currentStudy != None) & (currentFinding != None):
       currentSegmentation = currentFinding.GetSegmentationMappedByStudyNodeID(currentStudy.GetID())
+      
+      xyz = [0.,0.,0.]
           
       if currentSegmentation:
-        xyz = [0.,0.,0.]
         radius = [0.,0.,0.]
             
         currentSegmentation.GetROIxyz(xyz)
@@ -461,8 +456,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           if self.analysisCollapsibleButton.property('collapsed') == False:
             ViewHelper.setCompareSliceNodesCrossingPositionRAS(self.getCurrentReport().GetIndexOfSelectedStudySelectedForAnalysis(currentStudy), xyzRAS)   
-
-
+      
+                
+  
+  
   def onStudySelected(self, idx):
     currentReport = self.getReportSelector().currentNode()
     if currentReport:
@@ -472,12 +469,37 @@ class qSlicerLongitudinalPETCTModuleWidget:
         petID = ""
         ctID = ""
         
+        #Registration
+        if (ViewHelper.getSetting('Registration')) & (selectedStudy.GetCenteringTransformNode() == None) & (idx > 0):
+            transform = slicer.mrmlScene.AddNode(slicer.vtkMRMLLinearTransformNode())
+            
+            parameters = {}
+            #baseline
+            parameters["fixedVolume"] = currentReport.GetStudy(0).GetPETVolumeNodeID()
+            # current for registration
+            parameters["movingVolume"] = selectedStudy.GetPETVolumeNodeID()
+            # transformation
+            parameters["linearTransform"] = transform.GetID()
+            # default settings
+            parameters["useRigid"] = True
+            parameters["numberOfIterations"] = 1000
+            parameters["initializeTransformMode"] = "useMomentsAlign"
+            
+            
+            dialog = ViewHelper.createBusyProgressBarDialog("Registering "+selectedStudy.GetPETVolumeNode().GetName()+" with " + currentReport.GetStudy(0).GetPETVolumeNode().GetName() )
+            dialog.show()
+            cliNode = None
+            cliNode = slicer.cli.run(slicer.modules.brainsfit, cliNode, parameters, wait_for_completion = True)
+            dialog.done(0)
+            transform.SetName(selectedStudy.GetPETVolumeNode().GetName()+"_BaselineRegistrationTransform")
+            selectedStudy.SetAndObserveCenteringTransformNodeID(transform.GetID())
+               
+        
         firstDisplayPet = selectedStudy.GetPETVolumeNode().GetScalarVolumeDisplayNode() == None
         firstDisplayCt = selectedStudy.GetCTVolumeNode().GetScalarVolumeDisplayNode() == None
         firstDisplayPetLabels = selectedStudy.GetPETLabelVolumeNode().GetScalarVolumeDisplayNode() == None
                 
-        if firstDisplayPet | firstDisplayCt | firstDisplayPetLabels:
-          self.onStudySelectionWidgetShowStudiesCentered(self.getStudySelectionWidget().property('centeredSelected'))  
+        if firstDisplayPet | firstDisplayCt:
           self.updateBgFgToUserSelectedStudy(selectedStudy, True)
 
         if firstDisplayPetLabels:
@@ -526,6 +548,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
                 roiNode.SetReferenceCount(roiNode.GetReferenceCount()-1)
                 vrDisplayNode.GetROINode().SetName(petVolume.GetName() + "_VR_ROI")
                 vrDisplayNode.GetROINode().SetDisplayVisibility(False)
+                
+                ViewHelper.resetThreeDViewsFocalPoints(resetFirst = True)
+                
 
             
             selectedStudy.SetAndObserveVolumeRenderingDisplayNodeID(vrDisplayNode.GetID())
@@ -710,20 +735,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       for vn in ViewHelper.getCompareViewNodes():
         vn.SetAxisLabelsVisible(on)      
       
-                          
-        
-  def onStudySelectionWidgetShowStudiesCentered(self, centered):
-    currentReport = self.getCurrentReport()
-    currentStudy = self.getCurrentStudy()
-    if currentReport:
-
-      for i in range(0,currentReport.GetNumberOfStudyNodeIDs(),1): 
-        currentReport.GetStudy(i).SetCenteredVolumes(centered)
       
-      if currentStudy:
-        self.manageVolumeRenderingVisibility()
-        #self.manageVRDisplayNodesVisibility(currentStudy)
-        self.updateBgFgToUserSelectedStudy(currentStudy)
   
   def getTempCroppedVolume(self):
     if self.tempCroppedVol == None:
@@ -855,8 +867,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
         qt.QTimer.singleShot(0,self.calculateSUVs)
 
 
-      if self.getStudySelectionWidget().property('centeredSelected'):
-        currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransformNodeID())
+      #if self.getStudySelectionWidget().property('centeredSelected'):
+      currentFinding.GetSegmentationROINode().SetAndObserveTransformNodeID(currentStudy.GetCenteringTransformNodeID())
         
       self.updateBgFgToUserSelectedStudy(currentStudy,True)
 
@@ -1589,7 +1601,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
         study = self.getCurrentReport().GetSelectedStudySelectedForAnalysis(i)
         if study:
           ViewHelper.SetCompareBgFgLblVolumes(self.getCurrentReport().GetIndexOfSelectedStudySelectedForAnalysis(study),study.GetCTVolumeNode().GetID(),study.GetPETVolumeNode().GetID(),study.GetPETLabelVolumeNode().GetID(),True)      
-        
+          
+      
+      ViewHelper.resetThreeDViewsFocalPoints()  
+          
+          
+          
 
   def onActivateROIPlacement(self, activate):
     appLogic = slicer.app.applicationLogic()
@@ -1634,7 +1651,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
         roiXYZ = [0.,0.,0.]
         roiNode.GetXYZ(roiXYZ)
         
-        if currentStudy.GetCenteredVolumes() & (currentStudy.GetCenteringTransformNode() != None):
+        if currentStudy.GetCenteringTransformNode() != None:
           centerTransform = currentStudy.GetCenteringTransformNode()
           centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
           roiXYZ = [roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3)] 

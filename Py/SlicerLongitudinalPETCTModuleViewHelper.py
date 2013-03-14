@@ -1,5 +1,5 @@
 # slicer imports
-from __main__ import vtk, slicer, tcl, qt
+from __main__ import vtk, slicer, qt, ctk
 
 # python includes
 import sys
@@ -413,6 +413,11 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       compSliceNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceNodes(s)  
       for sn in compSliceNodes:
         sn.SetUseLabelOutline(SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations"))
+        
+      compSliceCompositeNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceCompositeNodes(s) 
+      for scn in compSliceCompositeNodes:
+        scn.SetLinkedControl(True)
+        
     #for i in range(sliceCompositeNodes.GetNumberOfItems()):
       #scn = sliceCompositeNodes.GetItemAsObject(i)
       #sn = sliceNodes.GetItemAsObject(i)
@@ -674,6 +679,58 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
   @staticmethod
   def insertStr(original, new, pos):
     '''Inserts new inside original at pos.'''
-    return original[:pos] + new + original[pos:]                  
+    return original[:pos] + new + original[pos:]     
+
+
+  @staticmethod
+  def getROITranslationFromTransform(roi):
+      
+    pos = [0.,0.,0.]
+    if roi.GetTransformNodeID():
+      trans = slicer.util.getNode(roi.GetTransformNodeID())  
+      if trans:
+        matrix = trans.GetMatrixTransformToParent()
+        if matrix:
+         pos = [matrix.GetElement(0,3),matrix.GetElement(1,3),matrix.GetElement(2,3)] 
+    
+    return pos          
+
+  @staticmethod
+  def resetThreeDViewsFocalPoints(resetFirst = False):
+
+    threeDViews = slicer.util.findChildren(className='qMRMLThreeDView')
+    for i in range(len(threeDViews)):
+        
+        if (i==0) & (resetFirst == False):
+          continue
+        
+        threeDViews[i].resetFocalPoint()
+        threeDViews[i].lookFromViewAxis(ctk.ctkAxesWidget.Anterior)
+
+          
+          
+
+  @staticmethod
+  def createBusyProgressBarDialog(text):
+    
+    lbl = qt.QLabel(text)
+    lbl.setAlignment(qt.Qt.AlignCenter)
+      
+    pb = qt.QProgressBar()
+    pb.setMinimum(0)
+    pb.setMaximum(0)
+    pb.setTextVisible(False)
+    pb.setMinimumWidth(lbl.sizeHint.width())
+      
+    vbl = qt.QVBoxLayout()
+    vbl.addWidget(lbl)
+    vbl.addWidget(pb)
+      
+    dialog = qt.QDialog()
+    dialog.setLayout(vbl)
+      
+    return dialog
+      
+        
     
     #return '#%02X%02X%02X' % (r,g,b)
