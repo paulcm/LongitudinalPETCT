@@ -95,12 +95,12 @@ qSlicerLongitudinalPETCTModuleSettingsDialog::~qSlicerLongitudinalPETCTModuleSet
 
 
 //-----------------------------------------------------------------------------
-bool qSlicerLongitudinalPETCTModuleSettingsDialog::centerVolumes()
+bool qSlicerLongitudinalPETCTModuleSettingsDialog::registration()
 {
   Q_D(qSlicerLongitudinalPETCTModuleSettingsDialog);
-  Q_ASSERT(d->CheckBoxCenterVolumes);
+  Q_ASSERT(d->CheckBoxRegistration);
 
-  return d->CheckBoxCenterVolumes->isChecked();
+  return d->CheckBoxRegistration->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -140,12 +140,12 @@ bool qSlicerLongitudinalPETCTModuleSettingsDialog::outlineSegmentations()
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerLongitudinalPETCTModuleSettingsDialog::setCenterVolumes(bool checked)
+void qSlicerLongitudinalPETCTModuleSettingsDialog::setRegistration(bool checked)
 {
   Q_D(qSlicerLongitudinalPETCTModuleSettingsDialog);
-  Q_ASSERT(d->CheckBoxCenterVolumes);
+  Q_ASSERT(d->CheckBoxRegistration);
 
-  d->CheckBoxCenterVolumes->setChecked(checked);
+  d->CheckBoxRegistration->setChecked(checked);
 }
 
 //-----------------------------------------------------------------------------

@@ -83,16 +83,16 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="CheckBoxCenterVolumes">
+      <widget class="QCheckBox" name="CheckBoxRegistration">
        <property name="toolTip">
-        <string>Select whether all image data should be centered in the view.</string>
+        <string>Select whether all studies should be registered with the baseline study.</string>
        </property>
        <property name="text">
-        <string>Center Volumes</string>
+        <string>Registration</string>
        </property>
        <property name="icon">
         <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
-         <normaloff>:/Icons/center_volumes.png</normaloff>:/Icons/center_volumes.png</iconset>
+         <normaloff>:/Icons/Transforms.png</normaloff>:/Icons/Transforms.png</iconset>
        </property>
        <property name="checked">
         <bool>false</bool>
