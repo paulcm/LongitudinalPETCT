@@ -24,5 +24,6 @@
         <file>Icons/placeholder.png</file>
         <file>Icons/settings_small.png</file>
         <file>Icons/SlicesLabelOutline.png</file>
+        <file>Icons/Transforms.png</file>
     </qresource>
 </RCC>
