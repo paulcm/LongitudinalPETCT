@@ -180,10 +180,10 @@ void qSlicerLongitudinalPETCTReportSelectionWidget
         QDate dob = QDate::fromString(QString(d->ReportNode->GetAttribute("DICOM.PatientBirthDate")).trimmed(),"yyyyMMdd");
         d->LabelDoBInfo->setText(dob.toString(Qt::SystemLocaleLongDate));
         d->LabelSexInfo->setText(d->ReportNode->GetAttribute("DICOM.PatientSex"));
-        QString patientSize = QString(d->ReportNode->GetAttribute("DICOM.PatientSize")).trimmed();
-        if( ! patientSize.isEmpty())
-          patientSize.append(" m");
-        d->LabelSizeInfo->setText(patientSize);
+        QString patientHeight = QString(d->ReportNode->GetAttribute("DICOM.PatientHeight")).trimmed();
+        if( ! patientHeight.isEmpty())
+          patientHeight.append(" m");
+        d->LabelSizeInfo->setText(patientHeight);
 
     }
   else
