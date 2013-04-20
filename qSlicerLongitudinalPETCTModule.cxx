@@ -76,14 +76,14 @@ QString qSlicerLongitudinalPETCTModule::helpText()const
 //-----------------------------------------------------------------------------
 QString qSlicerLongitudinalPETCTModule::acknowledgementText()const
 {
-  return "This work is done as part of a master thesis (for the University of Heidelberg) at the Surgical Planning Lab (Brigham and Women’s Hospital, Boston)";
+  return "This work is done as part of a master thesis (for the University of Heidelberg) at the Surgical Planning Lab (Brigham and Women's Hospital, Boston)";
 }
 
 //-----------------------------------------------------------------------------
 QStringList qSlicerLongitudinalPETCTModule::contributors()const
 {
   QStringList moduleContributors;
-  moduleContributors << QString("Paul Mercea (University of Heidelberg), Andrey Fedorov (SPL)");
+  moduleContributors << QString("Paul Mercea (University of Heidelberg), Markus Van Tol (University of Iowa) and Andrey Fedorov (SPL)");
   return moduleContributors;
 }
 
@@ -132,7 +132,6 @@ qSlicerAbstractModuleRepresentation * qSlicerLongitudinalPETCTModule::createWidg
 vtkMRMLAbstractLogic* qSlicerLongitudinalPETCTModule::createLogic()
 {
   vtkSlicerLongitudinalPETCTLogic* logic = vtkSlicerLongitudinalPETCTLogic::New();
-  logic->Initialize(); // need to initialize because vtkNewMacro doesn't take care of that
 
   return logic;
 }
