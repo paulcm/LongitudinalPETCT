@@ -33,30 +33,14 @@
 // STD includes
 #include <cassert>
 
-// CTK includes
-#include <ctkDICOMDatabase.h>
-#include <ctkDICOMIndexer.h>
-
-// Qt includes
-#include <QSettings>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlRecord>
-#include <QMap>
-#include <QFileInfo>
-#include <QDir>
-
-// DCMTK includes
-#include <dcmtk/dcmdata/dcfilefo.h>
-#include <dcmtk/dcmdata/dcdeftag.h>
-
+// VTK includes
 #include <vtkNew.h>
 #include <vtkMatrix4x4.h>
 #include <vtkSmartPointer.h>
-
 #include <vtkImageData.h>
 #include <vtkLookupTable.h>
 
+// MRML includes
 #include <vtkMRMLVolumeNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
 
@@ -64,10 +48,6 @@
 #include <vtkMRMLColorTableNode.h>
 #include <vtkMRMLColorLogic.h>
 
-
-const QString vtkSlicerLongitudinalPETCTLogic::DATABASEDIRECTORY = "DatabaseDirectory";
-const QString vtkSlicerLongitudinalPETCTLogic::DATABASECONNECTIONNAME = "LongitudinalPETCT";
-const QString vtkSlicerLongitudinalPETCTLogic::DATABASEFILENAME = "ctkDICOM.sql";
 
 
 
@@ -77,15 +57,12 @@ vtkStandardNewMacro(vtkSlicerLongitudinalPETCTLogic);
 //----------------------------------------------------------------------------
 vtkSlicerLongitudinalPETCTLogic::vtkSlicerLongitudinalPETCTLogic()
 {
-  this->SelectedReportNode = NULL;
-  this->Initialize();
 }
 
 //----------------------------------------------------------------------------
 vtkSlicerLongitudinalPETCTLogic::~vtkSlicerLongitudinalPETCTLogic()
 {
-  if(this->DICOMDatabase)
-    delete this->DICOMDatabase;
+
 }
 
 //----------------------------------------------------------------------------
@@ -205,60 +182,6 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
 
   return true;
 }
-//  vtkNew<vtkMatrix4x4> originalIJKToRAS;
-//  referenceVolume->GetIJKToRASMatrix(originalIJKToRAS.GetPointer());
-//
-//  vtkNew<vtkMatrix4x4> referenceIJKToRAS;
-//  referenceIJKToRAS->DeepCopy(originalIJKToRAS.GetPointer());
-//
-//  char* scanOrder = const_cast<char*>(vtkMRMLVolumeNode::ComputeScanOrderFromIJKToRAS(referenceIJKToRAS.GetPointer()));
-//  bool center = vtkMRMLVolumeNode::ComputeIJKToRASFromScanOrder(scanOrder,referenceVolume->GetSpacing(),referenceVolume->GetImageData()->GetDimensions(),true,referenceIJKToRAS.GetPointer());
-//
-//  if(!center)
-//    {
-//      vtkDebugMacro("vtkSlicerLongitudinalPETCTLogic: Centering of bigger volume failed");
-//      return false;
-//    }
-//
-//  double translation[3];
-//  translation[0] = referenceIJKToRAS->GetElement(0,3) - originalIJKToRAS->GetElement(0,3);
-//  translation[1] = referenceIJKToRAS->GetElement(1,3) - originalIJKToRAS->GetElement(1,3);
-//  translation[2] = referenceIJKToRAS->GetElement(2,3) - originalIJKToRAS->GetElement(2,3);
-//
-//
-//  // centering reference volume
-//  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
-//  vtkNew<vtkMatrix4x4> referenceRASToIJK;
-//
-//  referenceRASToIJK->DeepCopy(referenceIJKToRAS.GetPointer());
-//  referenceRASToIJK->Invert();
-//
-//  referenceVolume->SetIJKToRASMatrix(referenceIJKToRAS.GetPointer());
-//  referenceVolume->SetRASToIJKMatrix(referenceRASToIJK.GetPointer());
-//
-//
-//  // centering secondary volume
-//  vtkNew<vtkMatrix4x4> secondaryIJKToRAS;
-//  secondaryVolume->GetIJKToRASMatrix(secondaryIJKToRAS.GetPointer());
-//
-//  // modify IJKToRAS with translation of reference volume
-//  secondaryIJKToRAS->SetElement(0,3, secondaryIJKToRAS->GetElement(0,3)+translation[0]);
-//  secondaryIJKToRAS->SetElement(1,3, secondaryIJKToRAS->GetElement(1,3)+translation[1]);
-//  secondaryIJKToRAS->SetElement(2,3, secondaryIJKToRAS->GetElement(2,3)+translation[2]);
-//
-//  vtkNew<vtkMatrix4x4> secondaryRASToIJK;
-//  secondaryRASToIJK->DeepCopy(secondaryIJKToRAS.GetPointer());
-//  secondaryRASToIJK->Invert();
-//
-//  secondaryVolume->SetIJKToRASMatrix(secondaryRASToIJK.GetPointer());
-//  secondaryVolume->SetRASToIJKMatrix(secondaryRASToIJK.GetPointer());
-//
-//
-//  referenceVolume->Modified();
-//  secondaryVolume->Modified();
-//
-//  return true;
-
 
 
 //---------------------------------------------------------------------------
@@ -290,7 +213,6 @@ void vtkSlicerLongitudinalPETCTLogic::RegisterNodes()
   vtkNew<vtkMRMLLongitudinalPETCTSegmentationNode> segmentationNode;
   this->GetMRMLScene()->RegisterNodeClass(segmentationNode.GetPointer());
 
- // assert(this->GetMRMLScene() != 0);
 }
 
 //---------------------------------------------------------------------------
@@ -311,231 +233,8 @@ void vtkSlicerLongitudinalPETCTLogic
 {
 }
 
-//---------------------------------------------------------------------------
-bool vtkSlicerLongitudinalPETCTLogic::IsDICOMDataBaseAvailable()
-{
-   return (this->GetDICOMDatabase());
-}
-
-//---------------------------------------------------------------------------
-bool vtkSlicerLongitudinalPETCTLogic::IsRequiredDataInDICOMDatabase(const QString& patientUID, const QStringList& studyUIDs, const QStringList& seriesUIDs)
-{
-  bool dataIsInDICOMDB = true;
-
-  ctkDICOMDatabase* tempDatabasePtr = this->GetDICOMDatabase();
-
-  if (tempDatabasePtr) // only searching if database available
-    {
-      QStringList tempPatientUIDs = tempDatabasePtr->patients(); // all patient UIDs from DICOM database
-
-      if (tempPatientUIDs.contains(patientUID)) // continue only if requested patient UID in database
-        {
-          QStringList tempStudyUIDs = tempDatabasePtr->studiesForPatient(patientUID); // all studys from DICOM database for requested patient UID
-
-          for (int i = 0; i < studyUIDs.size(); ++i) // iterate over all given study UIDs
-            {
-              QString tempRequestedStudyUID = studyUIDs.at(i);
-
-              if (tempStudyUIDs.contains(tempRequestedStudyUID)) // continue only if patient's studies from DB contain requested study
-                {
-                  QStringList tempSeriesUIDs = tempDatabasePtr->seriesForStudy(tempRequestedStudyUID);
-
-                  for (int j = 0; j < seriesUIDs.size(); ++j) // iterate over all given image series UIDs
-                    {
-                      QString tempRequestedSeriesUID = seriesUIDs.at(j);
-
-                      if (!tempSeriesUIDs.contains(tempRequestedSeriesUID)) // if requested series is not in database set result false
-                        {
-                          dataIsInDICOMDB = false;
-                          break;
-                        }
-                    }
-                }
-              else // requested study is not in database
-                {
-                  dataIsInDICOMDB = false;
-                  break;
-                }
-            }
-        }
-    }
-  else // no database avaialbe
-    return false;
-
-  return dataIsInDICOMDB;
-}
-
-//---------------------------------------------------------------------------
-void vtkSlicerLongitudinalPETCTLogic::Initialize()
-{
-  this->DICOMDatabase = NULL;
-}
-
-//---------------------------------------------------------------------------
-ctkDICOMDatabase* vtkSlicerLongitudinalPETCTLogic::GetDICOMDatabase()
-{
-  if (this->DICOMDatabase)
-    return this->DICOMDatabase;
-
-  else
-    {
-      QSettings settings;
-      QString dbPath = settings.value(DATABASEDIRECTORY, "").toString();
-
-      if (dbPath.isEmpty())
-        {
-          vtkWarningMacro(
-              "InitializeDICOMDatabase: no DatabaseDirectory path found, please update the settings.\nUsing " << qPrintable(dbPath));
-          return NULL;
-        }
-
-      this->DICOMDatabase = new ctkDICOMDatabase();
-
-      QString fullDatabaseFilename = dbPath + "/" + DATABASEFILENAME;
-
-      this->GetDICOMDatabase()->openDatabase(fullDatabaseFilename,
-          DATABASECONNECTIONNAME);
-
-      if (this->GetDICOMDatabase()->isOpen() == false)
-        {
-          vtkWarningMacro(
-              "OpenDICOMDatabase: DICOM database could not be opened using " << qPrintable(fullDatabaseFilename));
-          delete this->DICOMDatabase; // free allocated memory
-          this->DICOMDatabase = NULL;
-
-          return NULL;
-        }
-
-      QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-      db.setDatabaseName(fullDatabaseFilename);
-
-      if (db.open() == false)
-        {
-          vtkWarningMacro("OpenDICOMQSqlDatabase: QSql DICOM database could not be opened using " << qPrintable(fullDatabaseFilename));
-          delete this->DICOMDatabase; // free allocated memory
-          this->DICOMDatabase = NULL;
-
-          return NULL;
-        }
-
-    }
-
-  return this->DICOMDatabase;
-}
-
-//---------------------------------------------------------------------------
-QStringList vtkSlicerLongitudinalPETCTLogic::GetPETCTPatientUIDs()
-{
-
-  QStringList petCtPatientUIDs;
-
-  ctkDICOMDatabase* tempDatabasePtr = this->GetDICOMDatabase();
-
-  if (tempDatabasePtr)
-    {
-      QStringList tempAllPatients = tempDatabasePtr->patients();
-
-      for (int i = 0; i < tempAllPatients.size(); ++i)
-        {
-          QString tempPatientUID = tempAllPatients.at(i);
-
-          if (!this->GetPETCTStudyUIDs(tempPatientUID).empty()) // check if patient has any PET\CT Study
-            petCtPatientUIDs.append(tempPatientUID);
-        }
-    }
-
-  return petCtPatientUIDs;
-}
 
 
-//---------------------------------------------------------------------------
-QStringList vtkSlicerLongitudinalPETCTLogic::GetPETCTStudyUIDs(const QString& patientUID)
-{
-  QStringList petCtStudyUIDs;
-
-  ctkDICOMDatabase* tempDatabasePtr = this->GetDICOMDatabase();
-
-  if (tempDatabasePtr)
-    {
-      QStringList tempStudiesUIDs = tempDatabasePtr->studiesForPatient(patientUID); // all studies for this patient
-
-      for (int i = 0; i < tempStudiesUIDs.size(); ++i)
-        {
-          QString tempStudyUID = tempStudiesUIDs.at(i);
-
-          if (this->IsPETCTStudy(tempStudyUID) && !petCtStudyUIDs.contains(tempStudyUID)) // check if study is of modality PT\CT and not in list yet
-            {
-              petCtStudyUIDs.append(tempStudyUID);
-
-            }
-        }
-    }
-
-  return petCtStudyUIDs;
-}
-
-
-//---------------------------------------------------------------------------
-bool vtkSlicerLongitudinalPETCTLogic::IsPETCTStudy(const QString& studyUID)
-{
-  ctkDICOMDatabase* tempDatabasePtr = this->GetDICOMDatabase();
-
-  bool isPETCTStudy = true; // assume true because while iterating sudy's serieses it will set to false if a series beLongitudinals to a non PET/CT study
-
-  if (tempDatabasePtr && !studyUID.isEmpty()) // don't continue if no db connection or no StudyUID available
-    {
-      DcmFileFormat fileformat;
-      OFCondition status;
-      OFString modality;
-      QString qmodality;
-
-      QStringList tempSeriesList = tempDatabasePtr->seriesForStudy(studyUID); // UID's of all series in the study
-
-      if (tempSeriesList.size() >= 2) // at least 1 PET and 1 CT image series needed
-        {
-          for (int i = 0; i < tempSeriesList.size(); ++i) // iterating through all of study's image series
-            {
-              qmodality = ""; // reset every iteration step to avoid comparison with old value
-
-              QString tempSeriesUID = tempSeriesList.at(i);
-              QStringList tempImagesList = tempDatabasePtr->filesForSeries(tempSeriesUID); // file names of all DICOM images in series
-
-              if (!tempImagesList.isEmpty()) // at least 1 image needed
-                {
-                  QString tempFirstImageFilename = tempImagesList.at(0);
-
-                  status = fileformat.loadFile(tempFirstImageFilename.toStdString().c_str()); // load DICOM file with dcmtk
-
-                  if (status.good())
-                    {
-
-                      if(fileformat.getDataset()->findAndGetOFStringArray(DCM_ModalitiesInStudy, modality).good())
-                          qmodality = QString(modality.c_str()); // only convert to QString if modality was found
-
-                      if (!(qmodality.contains("PT") && qmodality.contains("CT")))
-                        isPETCTStudy = false;
-                    }
-                }
-              else
-                isPETCTStudy = false; // no image in series
-            }
-        }
-      else
-        isPETCTStudy = false; // study doesn't contain at least 2 image series
-    }
-  else
-    return false; // no DB connection or no StudyUID
-
-
-  return isPETCTStudy;
-}
-
-//---------------------------------------------------------------------------
-void vtkSlicerLongitudinalPETCTLogic::AddReportNode(vtkMRMLLongitudinalPETCTReportNode* reportNode)
-{
-  if(reportNode)
-    ReportNodes.push_back(reportNode);
-}
 
 //---------------------------------------------------------------------------
 vtkMRMLColorTableNode* vtkSlicerLongitudinalPETCTLogic::GetDefaultFindingTypesColorTable(vtkMRMLColorNode* defaultEditorColorNode)
@@ -580,38 +279,5 @@ vtkMRMLColorTableNode* vtkSlicerLongitudinalPETCTLogic::GetDefaultFindingTypesCo
   return colorTable.GetPointer();
 }
 
-const char*
-vtkSlicerLongitudinalPETCTLogic::GetDirectoryOfDICOMSeries(const char* sopInstanceUID)
-{
-  QString directoryPath = "";
-  ctkDICOMDatabase* tempDatabase = this->GetDICOMDatabase();
 
-  if (tempDatabase)
-    {
-      QString fileForInstance = tempDatabase->fileForInstance(sopInstanceUID);
-      QFileInfo fileInfo(fileForInstance);
-      QDir directory = fileInfo.absoluteDir();
 
-      if(directory.exists())
-        directoryPath.append(directory.absolutePath());
-    }
-
-  return directoryPath.toStdString().c_str();
-}
-
-//vtkMRMLScalarVolumeNode* vtkSlicerLongitudinalPETCTLogic::CreateLabelVolumeForScalarVolume(vtkMRMLScalarVolumeNode* volumeNode, vtkMRMLScene* scene)
-//{
-//  if(!volumeNode || !scene)
-//    return NULL;
-//
-//  vtkSlicerVolumesLogic* volumesLogic = vtkSlicerVolumesLogic::New();
-//
-//  std::string name = volumeNode->GetName();
-//  name.append("_Label");
-//  vtkSmartPointer<vtkMRMLScalarVolumeNode> labelVolume = volumesLogic->CreateLabelVolume(scene, volumeNode, name.c_str());
-//
-//  volumesLogic->Delete();
-//
-//  return labelVolume;
-//
-//}
