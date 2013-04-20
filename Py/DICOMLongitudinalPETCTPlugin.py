@@ -25,7 +25,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.tags['patientName'] = "0010,0010"
     self.tags['patientBirthDate'] = "0010,0030"
     self.tags['patientSex'] = "0010,0040"
-    self.tags['patientSize'] = "0010,1020"
+    self.tags['patientHeight'] = "0010,1020"
     self.tags['patientWeight'] = "0010,1030"
     
     self.tags['relatedSeriesSequence'] = "0008,1250"
@@ -41,7 +41,8 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
 
     self.tags['seriesDescription'] = "0008,103e"
     self.tags['seriesModality'] = "0008,0060"
-    self.tags['instanceUID'] = "0008,0018"
+    self.tags['seriesInstanceUID'] = "0020,000E"
+    self.tags['sopInstanceUID'] = "0008,0018"
   
     self.tags['studyInstanceUID'] = "0020,000D"
     self.tags['studyDate'] = "0008,0020"
@@ -54,7 +55,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.tags['position'] = "0020,0032"
     self.tags['orientation'] = "0020,0037"
     self.tags['pixelData'] = "7fe0,0010"
-  
+ 
     
     self.fileLists = []
     self.patientName = ""
@@ -63,500 +64,347 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     self.ctTerm = "CT"
     self.petTerm = "PT"
-    
 
+    self.scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
+  
+  
+  def __getDirectoryOfImageSeries(self, sopInstanceUID):
+    file = slicer.dicomDatabase.fileForInstance(sopInstanceUID)
+    return os.path.dirname(file)  
+
+  def __getSeriesInformation(self,seriesFiles,dicomTag):
+    if seriesFiles:
+      return  slicer.dicomDatabase.fileValue(seriesFiles[0],dicomTag)          
+
+
+
+  def __scanForValidPETCTStudies(self,fileLists):
+    
+    petStudies = set()
+    ctStudies = set()
+    
+    petCtStudies = []
+    
+    for fileList in fileLists:
+    
+      studyUID = self.__getSeriesInformation(fileList, self.tags['studyInstanceUID'])
+      modality = self.__getSeriesInformation(fileList, self.tags['seriesModality'])  
+    
+      if modality == self.petTerm:
+        petStudies.add(studyUID)    
+      
+      if modality == self.ctTerm:
+        ctStudies.add(studyUID)
+    
+    for stdUID in petStudies:
+      if stdUID in ctStudies:
+        petCtStudies.append(stdUID)       
+    
+    print petCtStudies
+    
+    return petCtStudies
+          
 
   def examine(self,fileLists):
     """ Returns a list of DICOMLoadable instances
     corresponding to ways of interpreting the
     fileLists parameter.
     """
-    del self.fileLists[:]
-    self.fileLists += fileLists
+    petCtStudies = self.__scanForValidPETCTStudies(fileLists)
+    
+    mainLoadable = DICOMLib.DICOMLoadable()
+    mainLoadable.tooltip = "PET/CT Studies for Longitudinal PET/CT Report"
+    
+    studyplrlsing = "Studies" if len(petCtStudies) != 1 else "Study" 
+    mainLoadable.name = str(len(petCtStudies))+" PET/CT "+ studyplrlsing
+    
+    mainLoadable.selected = True
+    mainLoadable.confidence = 1.0                
+    
+    petImageSeries = 0
+    ctImageSeries = 0
+    
+    for fileList in fileLists:
+      
+      petSeries = self.__getSeriesInformation(fileList, self.tags['seriesModality']) == self.petTerm
+      ctSeries = self.__getSeriesInformation(fileList, self.tags['seriesModality']) == self.ctTerm
+      fromPetCtStudy = self.__getSeriesInformation(fileList, self.tags['studyInstanceUID']) in petCtStudies
+      
+      if (petSeries | ctSeries) & fromPetCtStudy:
         
-    loadables = []
-    
-    self.petFileLoadables = []
-    self.ctFileLoadables = []
-    
-    validStudyCounter = 0
-
-    petFileLists = self.findPetSeriesImageFiles()
-
-    ctFileLists = map(self.findCtSeriesFilesForPetSeries, petFileLists)
-
-    
-    counter = 0
-    
-    allFiles = []
-    warning = ""
-    
-    if len(petFileLists) == len(ctFileLists):
-      i = 0
-      for petFiles in petFileLists:
-        if petFiles:
-          if ctFileLists[i]:
-            loadablePTs = self.examineFiles(petFiles, self.petTerm)
-            loadableCTs = self.examineFiles(ctFileLists[i], self.ctTerm)
-          
-            if loadablePTs:
-              loadablePT = loadablePTs[0]
-              if loadableCTs:
-                loadableCT = loadableCTs[0]
-                self.petFileLoadables.append(loadablePT)
-                allFiles += loadablePT.files
-                if loadablePT.warning:
-                  warning += loadablePT.name + ": "+loadablePT.warning+" "
+        loadables = self.getCachedLoadables(fileList)
+        
+        if not loadables:
+          loadables = self.scalarVolumePlugin.examineFiles(fileList)
+          self.cacheLoadables(fileList, loadables)
+        
+        for ldbl in loadables:
+          if ldbl.selected:
+            type = ""  
+            if petSeries:
+              petImageSeries += 1
+              type = "PT"
+            elif ctSeries:
+              ctImageSeries += 1
+              type = "CT"
             
-                self.ctFileLoadables.append(loadableCT)
-                allFiles += loadableCT.files
-                if loadableCT.warning:
-                  warning += loadableCT.name + ": "+loadableCT.warning+" "
+            mainLoadable.files += ldbl.files
             
-                counter += 1
-        i += 1           
-              
-    
-    if counter > 0:
-      loadable = DICOMLib.DICOMLoadable()
-      loadable.files = allFiles
-      loadable.name = "PET/CT: "+str(counter) + " "
-      if(counter == 1):
-        loadable.name += "study "
-      else:
-        loadable.name += "studies "
-    
-      loadable.name += self.studiesTimeframeStr()
-      loadable.warning = warning
-       
-      loadable.selected = True
-      loadable.confidence = 1.0
-    
-      loadables = [loadable]
-          
-    
-    return loadables
-
-#TODO PixelData and Orientation
-
-  def studiesTimeframeStr(self):
-    
-    studydates = self.allSelectedStudyDates()
-    resultStr = ""
-    
-    if studydates:
-      resultStr = "from "+studydates[0]+" "
-      
-      length = len(studydates)
-      
-      if length > 1:
-        resultStr += "to "+studydates[length-1]
-        
-    return resultStr
-  
-
-  def allSelectedStudyDates(self):
-    
-    dates = []
-    
-    for loadablePet in self.petFileLoadables:
-      studyDate = self.studyDate(loadablePet.files)
-      
-      if (studyDate in dates) == False:
-        dates.append(studyDate)
-    
-    return sorted(dates)
-      
-
-  def studyDateImageFile(self,file):
-    """___"""
-    return slicer.dicomDatabase.fileValue(file, self.tags['studyDate'])
-    
-  def studyDate(self,files):
-    """___"""
-    
-    studyDate = self.studyDateImageFile(files[0])
-    
-    #comment for performance
-    
-    #for file in files:
-      #tempStudyDate = self.studyDateImageFile(file)
-      
-      #if tempStudyDate != studyDate:
-        #studyDate = ""
-    
-    return studyDate
-  
-  
-  
-  def findPetSeriesImageFiles(self):
-    """___"""
-    petSeriesFiles = []
-    
-    for files in self.fileLists:
-      if self.isSpecificSeries(files, self.petTerm):
-        petSeriesFiles.append(files)
-
-    return petSeriesFiles
-  
-
-       
-  
-  def findMostSimilarCtSeriesFiles(self, ctFilesList, petFiles):
-    """___"""
-    ctSeriesFiles = []
-    
-    if petFiles:
-      petVolume = self.volume(petFiles)
-      i = 0
-      similarity = -1
-      slices = -1
-      mostSimilarIdx = -1
-    
-      for i in xrange(len(ctFilesList)):
-        ctVolume = self.volume(ctFilesList[i])       
-        ratio = min(petVolume,ctVolume) / max(petVolume,ctVolume)
-        if ratio > similarity:
-          similarity = ratio
-          mostSimilarIdx = i
-          slices = len(ctFilesList[i])
-        elif ratio == similarity:
-          if len(ctFilesList[i]) > slices:
-            similarity = ratio
-            mostSimilarIdx = i
-    
-      
-      #if mostSimilarIdx >= 0 & mostSimilarIdx < len(ctFilesList):
-        #ctSeriesFiles = ctFilesList[mostSimilarIdx]
-    
-    return mostSimilarIdx #ctSeriesFiles      
-    
-  
-  def findCtSeriesFilesForPetSeries(self, petFiles):
-    """___"""
-    
-    if not petFiles:
-      return
-    
-    label = "The Longitudinal PET/CT Analysis Reader has detected multiple CT series in a study with the following PET series:\n\n"
-    
-    petDescription = slicer.dicomDatabase.fileValue(petFiles[0],self.tags['seriesDescription']) 
-    
-    dims = self.dimensions(petFiles)
-    info = self.acquireImageSeriesComparisonInformation(petFiles)
-    
-    petDescription += "  |  Slices: "+str(len(petFiles)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+str(info['ContentTime'])
-    
-    label += petDescription + "\n\n\nA CT series has been selected automatically. Please change the selection if you want to use another CT series.\n"
-      
-    studyUID = self.studyInstanceUID(petFiles)
-    ctSeriesFilesList = []
-    
-    ctDescriptions = []
-    
-    for files in self.fileLists:
-      if self.isSpecificModalityImage(files[0],self.ctTerm): # for performance: check only first file
-        if self.isSpecificSeries(files, self.ctTerm):
-          if self.studyInstanceUIDForImage(files[0]) == studyUID: # for performace: check only first file
-            if self.studyInstanceUID(files) == studyUID:
-              ctSeriesFilesList.append(files)
-              dims = self.dimensions(files)
-              info = self.acquireImageSeriesComparisonInformation(files)
-              ctDescriptions.append(slicer.dicomDatabase.fileValue(files[0],self.tags['seriesDescription']) + "  |  Slices: "+str(len(files)) + "  |  Dimensions: ("+str(int(dims[0]+.5))+"mm x "+str(int(dims[1]+.5))+"mm x "+str(int(dims[2]+.5))+"mm)  |  Content Time: "+str(info['ContentTime'])) 
-              
-    index = 0
-    
-    if len(ctSeriesFilesList) > 1:
-      msidx = self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
-      selected = qt.QInputDialog.getItem(None, 'Select matching CT Series for PET',label,ctDescriptions,msidx,False)
-    
-    
-      try:
-        index = ctDescriptions.index(str(selected))
-      except IndexError:
-        index = msidx 
-    
-    if ctSeriesFilesList:
-      return ctSeriesFilesList[index] #self.findMostSimilarCtSeriesFiles(ctSeriesFilesList, petFiles)
-    
-    else:
-      return None
-    
-  def studyInstanceUIDForImage(self, file):
-    """___"""
-    return slicer.dicomDatabase.fileValue(file, self.tags['studyInstanceUID'])
-        
-  
-  def studyInstanceUID(self,files):
-    """___"""
-    studyInstanceUID = self.studyInstanceUIDForImage(files[0])
-    
-    # commented for performance
-    
-    #for file in files:
-      #tempStudyInstanceUID = self.studyInstanceUIDForImage(file)
-      
-      #if tempStudyInstanceUID != studyInstanceUID:
-       #studyInstanceUID = ""
-    
-    return studyInstanceUID 
-  
-  
-  def isSpecificModalityImage(self, file, modality):
-    """___"""
-    return slicer.dicomDatabase.fileValue(file,self.tags['seriesModality']) == modality
-
-
-  def isSpecificSeries(self,files,modality):
-    """ ___ """
-    isSpecificSeries = True
-      
-    for file in files:
-      if self.isSpecificModalityImage(file, modality) == False:
-        isSpecificSeries = False 
-                            
-    return isSpecificSeries
-  
-  
-  def volume(self,files):
-    """___"""
-    dims = self.dimensions(files)
-    
-    return dims[0]*dims[1]*dims[2]  
-  
- 
-  def dimensions(self,files):
-    """ ___ """
-    w = self.sliceSurface(files[0])[0]
-    h = self.sliceSurface(files[0])[1]
-    d = 0  
-    
-    info = self.acquireImageSeriesComparisonInformation(files)
-    if info:
-      d = info['ZDimension']
-        
-    return [w,h,d]
-  
-
-
-  def acquireImageSeriesComparisonInformation(self, files):
-    """ ___ """
-    if not files:
-      return None
-    
-    informations = {}
-    
-    minZ = 0
-    maxZ = 0
-    minContentTime = 0
+            ldbl.name = type +"_"+self.__getSeriesInformation(ldbl.files, self.tags['studyDate'])+"_"+self.__getSeriesInformation(ldbl.files, self.tags['seriesTime'])
+            self.cacheLoadables(ldbl.files, [ldbl])   
             
-    for i in xrange(len(files)):
-      
-      z = float(slicer.dicomDatabase.fileValue(files[i],self.tags['position']).split('\\')[2])
-      t = float(slicer.dicomDatabase.fileValue(files[i], self.tags['contentTime']))
-      
-      # initialize with values of first image file
-      if i==0:
-        minZ = z
-        maxZ = z
-        minContentTime = t
-      
-      else:
-        
-        if z < minZ:
-          minZ = z
-        
-        if z > maxZ:
-          maxZ = z
-        
-        if t < minContentTime:
-          minContentTime = t
-    
-    informations['ContentTime'] = minContentTime
-    informations['ZDimension'] = math.fabs(maxZ-minZ)
-    
-    return informations
-    
-  
-  def sliceSurface(self,file):
-        
-    rows = float(slicer.dicomDatabase.fileValue(file,self.tags['rows']))
-    cols = float(slicer.dicomDatabase.fileValue(file,self.tags['columns']))
-    spacingRows = float(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).split('\\')[0])
-    spacingCols = float(slicer.dicomDatabase.fileValue(file,self.tags['spacing']).split('\\')[1])
+            break # break for loop because only one loadable needed  
+                                   
+    mainLoadable.name = mainLoadable.name + " containing " + str(petImageSeries) + " PET and " + str(ctImageSeries) + " CT image series"
+                  
+    return [mainLoadable]
 
-    width = cols * spacingCols
-    height = rows * spacingRows
-
-    return [width, height]
-
-
-  def examineFiles(self,files,type):
-    """ Returns a list of DICOMLoadable instances
-    corresponding to ways of interpreting the
-    files parameter.
-    Process is to look for 'known' private tags corresponding
-    to the types of pet/ct datasets that the DicomToNrrd utility
-    should be able to process. Only need to look at one header
-    in the series since all should be the same with respect
-    to this check.
-    """
-
-    # get the series description to use as base for volume name
-    loadables = []
-    name = type
-
-    scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
-    loadables = scalarVolumePlugin.examineFiles(files)
-
-    for loadable in loadables:
-      if loadable.selected:
-        loadable.name = name + ' ' + self.studyDate(files)
-        loadable.selected = True
-        loadable.tooltip = "Appears to be " + type
-        loadable.confidence = .1
-        loadables = [loadable]   
-        break 
                 
-    return loadables
-  
-  def createScalarVolumeNode(self, vaStorageNode, loadable):
-    vaStorageNode.SetFileName(loadable.files[0])
-    vaStorageNode.ResetFileNameList()
-    
-    for file in loadable.files:
-      vaStorageNode.AddFileName(file)
-    
-    vaStorageNode.SetSingleFile(0)
-    
-    svNode = slicer.vtkMRMLScalarVolumeNode()
-    svNode.SetScene(slicer.mrmlScene)
-    
-    vaStorageNode.ReadData(svNode)
-          
-    if svNode:
-      svNode.SetName(loadable.name)
-      
-      instanceUIDs = ""
-      for file in loadable.files:
-        uid = slicer.dicomDatabase.fileValue(file,self.tags['instanceUID'])
-        if uid == "":
-          uid = "Unknown"
-        instanceUIDs += uid + " "
-      instanceUIDs = instanceUIDs[:-1]  # strip last space
-      svNode.SetAttribute("DICOM.instanceUIDs", instanceUIDs)
-      
-      svNode.SetScene(slicer.mrmlScene)
-      slicer.mrmlScene.AddNode(svNode)
-    
-    return svNode
+
            
 
+  def __seperateFilesListIntoImageSeries(self, files):
+    
+    imageSeries = {}
+    
+    for file in files:
+      seriesUID = self.__getSeriesInformation([file], self.tags['seriesInstanceUID'])
+      
+      if (seriesUID in imageSeries) == False:
+        imageSeries[seriesUID] = [] 
+            
+      imageSeries[seriesUID].append(file)  
+      
+    return imageSeries
+
+
+  def __seperateImageSeriesAndFilesIntoStudies(self, imageSeriesAndFiles):
+    
+    studies = {}
+    
+    for seriesUID in imageSeriesAndFiles.keys():
+      
+      if len(imageSeriesAndFiles[seriesUID]) == 0:
+        continue    
+      
+      studyUID = self.__getSeriesInformation(imageSeriesAndFiles[seriesUID], self.tags['studyInstanceUID'])   
+      
+      if (studyUID in studies) == False:
+        studies[studyUID] = []
+      
+      studies[studyUID].append(seriesUID)
+    
+      
+    return studies
+    
+    
+  def __extractSpecificModalitySeriesForStudies(self, studiesAndImageSeries, imageSeriesAndFiles, modality):
+    
+    seriesForStudies = {}
+    
+    for studyUID in studiesAndImageSeries.keys():
+      
+      seriesForStudies[studyUID] = []
+        
+      seriesList = studiesAndImageSeries[studyUID] 
+      
+      for seriesUID in seriesList:
+        
+        if seriesUID in imageSeriesAndFiles.keys():
+        
+          if len(imageSeriesAndFiles[seriesUID]) == 0:
+            continue
+        
+          if self.__getSeriesInformation(imageSeriesAndFiles[seriesUID], self.tags['seriesModality']) == modality:   
+            seriesForStudies[studyUID].append(seriesUID)      
+
+    return seriesForStudies         
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  
+  def __getImageSeriesDescription(self,files):
+    
+    rows = self.__getSeriesInformation(files, self.tags['rows'])
+    columns = self.__getSeriesInformation(files, self.tags['columns'])
+    slices = len(files)
+    
+    spacingRows = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[0]
+    spacingCols = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[1]
+    
+    width = int(columns) * float(spacingCols)
+    height = int(rows) * float(spacingRows)
+    
+    seriesTime = self.__getSeriesInformation(files, self.tags['seriesTime'])          
+    seriesTime = seriesTime[:2]+":"+seriesTime[2:4]+":"+seriesTime[4:6]
+    return "Series Time: "+seriesTime+ " | Width: "+str(width)+"mm | Height: "+str(height)+"mm | Slices: "+str(slices)
+
+  
   def load(self,loadable):
-    """ ___ """
-
+    
+    imageSeriesAndFiles = self.__seperateFilesListIntoImageSeries(loadable.files) 
+    studiesAndImageSeries = self.__seperateImageSeriesAndFilesIntoStudies(imageSeriesAndFiles)
+    
+    petImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.petTerm)
+    ctImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.ctTerm)
+    
+    # create Report node            
     reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTReportNode')
-    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1) 
-    slicer.mrmlScene.AddNode(reportNode)
+    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1)
+    slicer.mrmlScene.AddNode(reportNode)   
 
-    if self.petFileLoadables:
-      files = self.petFileLoadables[0].files
-        
-      patientName = slicer.dicomDatabase.fileValue(files[0], self.tags['patientName'])
-      patientBirthDate = slicer.dicomDatabase.fileValue(files[0], self.tags['patientBirthDate'])
-      patientSex = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSex'])
-      patientSize = slicer.dicomDatabase.fileValue(files[0], self.tags['patientSize'])
+    # setup Report's default color node and table for Finding types
+    colorLogic = slicer.modules.colors.logic()
+    defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
+    colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
+
+    reportNode.SetColorNodeID(colorNode.GetID())
+    logic = slicer.modules.longitudinalpetct.logic()
+
+    colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
+    colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
+    reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
+      
+    patientName = None
+    patientBirthDate = None
+    patientSex = None
+    patientHeight = None  
     
-      #Report Node    
-      reportNode.SetName('Report for '+patientName)
-      reportNode.SetAttribute('DICOM.PatientName',patientName)
-      reportNode.SetAttribute('DICOM.PatientBirthDate',patientBirthDate)
-      reportNode.SetAttribute('DICOM.PatientSex',patientSex)
-      reportNode.SetAttribute('DICOM.PatientSize',patientSize)
+    for studyUID in studiesAndImageSeries.keys():
+      petDescriptions = [] #petImageSeriesInStudies[studyUID]
+      ctDescriptions = []
+      studyDescription = "Multiple PET and/or CT image series have been found within a Study. Please change the selection if a different pair of image series should be loaded." 
       
-      colorLogic = slicer.modules.colors.logic()
-      defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
-      colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
+      
+      for petUID in petImageSeriesInStudies[studyUID]:
+        petDescriptions.append(self.__getImageSeriesDescription(imageSeriesAndFiles[petUID]))    
+      
+      for ctUID in ctImageSeriesInStudies[studyUID]:
+        ctDescriptions.append(self.__getImageSeriesDescription(imageSeriesAndFiles[ctUID]))     
+            
+      
+      selectedIndexes = [0,0]           
+     
+      if (len(petDescriptions) > 1) | (len(ctDescriptions) > 1):
+        dialog = PETCTSeriesSelectorDialog(None,studyDescription,petDescriptions, ctDescriptions, 0, 0)
+        dialog.parent.exec_()
+        selectedIndexes = dialog.getSelectedSeries()
+      
+      # UID of current PET series
+      petImageSeriesUID = petImageSeriesInStudies[studyUID][selectedIndexes[0]]
+      # UID of current CT series 
+      ctImageSeriesUID = ctImageSeriesInStudies[studyUID][selectedIndexes[1]]
+      
+      
+      # gathering patient information for Report node
+      if not patientName:
+        reportNode.SetAttribute('DICOM.PatientName', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientName']))
+      if not patientBirthDate:
+        reportNode.SetAttribute('DICOM.PatientBirthDate', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientBirthDate']))
+      if not patientSex:
+         reportNode.SetAttribute('DICOM.PatientSex', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientSex']))
+      if not patientHeight:
+        reportNode.SetAttribute('DICOM.PatientHeight', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientHeight']))
+                        
+      # create PET SUV volume node
+      petVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[petImageSeriesUID])[0])
+      petDir = self.__getDirectoryOfImageSeries(self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['sopInstanceUID']))
+      
+      parameters = {}
+      parameters["PETVolume"] = petVolumeNode.GetID()
+      parameters["PETDICOMPath"] = petDir
+      parameters["SUVVolume"] = petVolumeNode.GetID()
 
-      reportNode.SetColorNodeID(colorNode.GetID())
-      logic = slicer.modules.longitudinalpetct.logic()
+      cliNode = None
+      cliNode = slicer.cli.run(slicer.modules.petsuvimagemaker, cliNode, parameters) 
+      
+      # create PET label volume node
+      volLogic = slicer.modules.volumes.logic()
+      petLabelVolumeNode = volLogic.CreateAndAddLabelVolume(slicer.mrmlScene,petVolumeNode,petVolumeNode.GetName()+"_LabelVolume")
+      
+      
+      # create CT volume node
+      ctVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[ctImageSeriesUID])[0])
+      
+      # create Study node
+      studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTStudyNode')
+      studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)
+      
+      studyNode.SetName("STUDY_"+ self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyDate']))
 
-      colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
-      colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
-      reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
+      studyNode.SetAttribute('DICOM.StudyID',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyID']))
+      studyNode.SetAttribute('DICOM.StudyInstanceUID',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyInstanceUID']))
+      studyNode.SetAttribute('DICOM.StudyDate',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyDate']))
+      studyNode.SetAttribute('DICOM.StudyTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyTime']))
+      studyNode.SetAttribute('DICOM.RadioPharmaconStartTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['radioPharmaconStartTime']))
+      studyNode.SetAttribute('DICOM.DecayFactor',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['decayCorrection']))
+      studyNode.SetAttribute('DICOM.DecayCorrection',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['decayFactor']))
+      studyNode.SetAttribute('DICOM.FrameReferenceTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['frameRefTime']))
+      studyNode.SetAttribute('DICOM.RadionuclideHalfLife',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['radionuclideHalfLife']))
+      studyNode.SetAttribute('DICOM.SeriesTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['seriesTime']))
+      studyNode.SetAttribute('DICOM.PatientWeight',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientWeight']))
+      
+      studyNode.SetAndObservePETVolumeNodeID(petVolumeNode.GetID())
+      studyNode.SetAndObserveCTVolumeNodeID(ctVolumeNode.GetID())
+      studyNode.SetAndObservePETLabelVolumeNodeID(petLabelVolumeNode.GetID())
+          
+      slicer.mrmlScene.AddNode(studyNode) 
+      reportNode.AddStudyNodeID(studyNode.GetID())
+                    
+    return reportNode              
+      
 
-
-      vaStorageNode = slicer.vtkMRMLVolumeArchetypeStorageNode()
-
-      if len(self.petFileLoadables) == len(self.ctFileLoadables):
-        for i in range(len(self.petFileLoadables)):
+class PETCTSeriesSelectorDialog(object):
+  
+  def __init__(self, parent=None, studyDescription="",petDescriptions=[],ctDescriptions=[],petSelection=0,ctSelection=0):
     
-          petScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.petFileLoadables[i])
-          
-          volLogic  = slicer.modules.volumes.logic() 
-          petLabelVolume = volLogic.CreateAndAddLabelVolume(slicer.mrmlScene,petScalarVolume,self.petFileLoadables[i].name+"_LabelVolume")     
-
-          instanceUIDs = petScalarVolume.GetAttribute('DICOM.instanceUIDs')
-          instanceUID  = instanceUIDs.split(" ",1)[0]
-          petDir = slicer.modules.longitudinalpetct.logic().GetDirectoryOfDICOMSeries(instanceUID)
-      
-          parameters = {}
-          parameters["PETVolume"] = petScalarVolume.GetID()
-          parameters["PETDICOMPath"] = petDir
-          parameters["SUVVolume"] = petScalarVolume.GetID()
-
-          cliNode = None
-          cliNode = slicer.cli.run(slicer.modules.petsuvimagemaker, cliNode, parameters)  
-      
-          ctScalarVolume = self.createScalarVolumeNode(vaStorageNode, self.ctFileLoadables[i])
-
-          studyID = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyID'])
-          studyUID = self.studyInstanceUIDForImage(self.petFileLoadables[i].files[0])
-          studyDate = self.studyDateImageFile(self.petFileLoadables[i].files[0])
-          studyTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['studyTime'])
-
-          radioPharmaconStartTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radioPharmaconStartTime'])
-          decayCorrection = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayCorrection'])
-          decayFactor = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['decayFactor'])
-          frameRefTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['frameRefTime'])
-          radionuclideHalfLife = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['radionuclideHalfLife'])
-          seriesTime = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['seriesTime'])
-          patientWeight = slicer.dicomDatabase.fileValue(self.petFileLoadables[i].files[0], self.tags['patientWeight'])
-
-          
-          #Study Node
-          studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTStudyNode')
-          studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)  
-          
-
-          studyNode.SetName('Study_'+str(i))
-
-          studyNode.SetAttribute('DICOM.StudyID',studyID)
-          studyNode.SetAttribute('DICOM.StudyInstanceUID',studyUID)
-          studyNode.SetAttribute('DICOM.StudyDate',studyDate)
-          studyNode.SetAttribute('DICOM.StudyTime',studyTime)
-          studyNode.SetAttribute('DICOM.RadioPharmaconStartTime',radioPharmaconStartTime)
-          studyNode.SetAttribute('DICOM.DecayFactor',decayFactor)
-          studyNode.SetAttribute('DICOM.DecayCorrection',decayCorrection)
-          studyNode.SetAttribute('DICOM.FrameReferenceTime',frameRefTime)
-          studyNode.SetAttribute('DICOM.RadionuclideHalfLife',radionuclideHalfLife)
-          studyNode.SetAttribute('DICOM.SeriesTime',seriesTime)
-          studyNode.SetAttribute('DICOM.PatientWeight',patientWeight)
-
-
-          studyNode.SetAndObservePETVolumeNodeID(petScalarVolume.GetID())
-          studyNode.SetAndObserveCTVolumeNodeID(ctScalarVolume.GetID())
-          studyNode.SetAndObservePETLabelVolumeNodeID(petLabelVolume.GetID())
-          
-          slicer.mrmlScene.AddNode(studyNode) 
-                  
-          reportNode.AddStudyNodeID(studyNode.GetID())
-        
-
-
-      
+    self.studyDescription = studyDescription
+    self.petDescriptions = petDescriptions
+    self.ctDescriptions = ctDescriptions  
+    self.petSelection = petSelection
+    self.ctSelection = ctSelection
     
-    return reportNode
+    if not parent:
+      self.parent = qt.QDialog()
+      self.parent.setModal(True)
+      self.parent.setLayout(qt.QGridLayout())
+      self.layout = self.parent.layout()
+      self.setup()
+      self.parent.show()
+      
+    else:
+      self.parent = parent
+      self.layout = parent.layout() 
+      
+  
+  def setup(self):
+      
+    self.studyLabel = qt.QLabel(self.studyDescription)
+    self.studyLabel.setAlignment(qt.Qt.AlignCenter)
+    self.petLabel = qt.QLabel("PET Image Series")
+    self.petLabel.setAlignment(qt.Qt.AlignCenter)
+    self.ctLabel = qt.QLabel("CT Image Series")
+    self.ctLabel.setAlignment(qt.Qt.AlignCenter)
+    self.petList = qt.QListWidget()
+    self.petList.addItems(self.petDescriptions)
+    self.petList.setCurrentRow(self.petSelection)
+    self.ctList = qt.QListWidget()
+    self.ctList.addItems(self.ctDescriptions)
+    self.ctList.setCurrentRow(self.ctSelection)
+    self.button = qt.QPushButton("Ok")
+    
+    self.layout.addWidget(self.studyLabel,0,0,1,2)
+    self.layout.addWidget(self.petLabel,1,0,1,1)
+    self.layout.addWidget(self.ctLabel,1,1,1,1)
+    self.layout.addWidget(self.petList,2,0,1,1)
+    self.layout.addWidget(self.ctList,2,1,1,1)
+    self.layout.addWidget(self.button,3,0,1,2)
+    
+    self.button.connect('clicked()',self.parent.close)    
+      
+
+  def getSelectedSeries(self):
+    return [self.petList.currentRow, self.ctList.currentRow]              
+          
+          
   
 #
 # DICOMLongitudinalPETCTPlugin
