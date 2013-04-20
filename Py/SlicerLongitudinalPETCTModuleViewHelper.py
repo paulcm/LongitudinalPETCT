@@ -713,21 +713,22 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
   @staticmethod
   def createBusyProgressBarDialog(text):
     
-    lbl = qt.QLabel(text)
+    dialog = qt.QDialog()
+    dialog.setModal(True)
+    
+    vbl = qt.QVBoxLayout(dialog)
+    
+    lbl = qt.QLabel(text, dialog)
     lbl.setAlignment(qt.Qt.AlignCenter)
       
-    pb = qt.QProgressBar()
+    pb = qt.QProgressBar(dialog)
     pb.setMinimum(0)
     pb.setMaximum(0)
     pb.setTextVisible(False)
     pb.setMinimumWidth(lbl.sizeHint.width())
-      
-    vbl = qt.QVBoxLayout()
+       
     vbl.addWidget(lbl)
     vbl.addWidget(pb)
-      
-    dialog = qt.QDialog()
-    dialog.setLayout(vbl)
       
     return dialog
       
