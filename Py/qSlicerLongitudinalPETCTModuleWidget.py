@@ -298,6 +298,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     self.cliSUV = None
     self.cliModelMaker = None
+    self.cliRegistration = None
 
     self.findingROIVisiblityBackup = True
     self.reportNodesList = []
@@ -488,9 +489,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
             
             dialog = ViewHelper.createBusyProgressBarDialog("Registering "+selectedStudy.GetPETVolumeNode().GetName()+" with " + currentReport.GetStudy(0).GetPETVolumeNode().GetName() )
             dialog.show()
-            cliNode = None
-            cliNode = slicer.cli.run(slicer.modules.brainsfit, cliNode, parameters, wait_for_completion = True)
+            self.cliRegistration = None
+            self.cliRegistration = slicer.cli.run(slicer.modules.brainsfit, self.cliRegistration, parameters, wait_for_completion = False)
             dialog.done(0)
+            
             transform.SetName(selectedStudy.GetPETVolumeNode().GetName()+"_BaselineRegistrationTransform")
             selectedStudy.SetAndObserveCenteringTransformNodeID(transform.GetID())
                
