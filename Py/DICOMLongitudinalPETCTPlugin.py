@@ -100,7 +100,6 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       if stdUID in ctStudies:
         petCtStudies.append(stdUID)       
     
-    print petCtStudies
     
     return petCtStudies
           
@@ -296,7 +295,9 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       
       # gathering patient information for Report node
       if not patientName:
-        reportNode.SetAttribute('DICOM.PatientName', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientName']))
+        name = self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientName'])
+        reportNode.SetAttribute('DICOM.PatientName', name)
+        reportNode.SetName("Report for "+name)
       if not patientBirthDate:
         reportNode.SetAttribute('DICOM.PatientBirthDate', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientBirthDate']))
       if not patientSex:
@@ -328,7 +329,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTStudyNode')
       studyNode.SetReferenceCount(studyNode.GetReferenceCount()-1)
       
-      studyNode.SetName("STUDY_"+ self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyDate']))
+      studyNode.SetName("Study_"+ self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyDate']))
 
       studyNode.SetAttribute('DICOM.StudyID',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyID']))
       studyNode.SetAttribute('DICOM.StudyInstanceUID',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['studyInstanceUID']))
