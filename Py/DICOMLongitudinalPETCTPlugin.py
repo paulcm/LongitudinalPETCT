@@ -153,10 +153,14 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
             self.cacheLoadables(ldbl.files, [ldbl])   
             
             break # break for loop because only one loadable needed  
-                                   
-    mainLoadable.name = mainLoadable.name + " containing " + str(petImageSeries) + " PET and " + str(ctImageSeries) + " CT image series"
-                  
-    return [mainLoadable]
+    
+    loadables = []
+    
+    if mainLoadable.files:
+      mainLoadable.name = mainLoadable.name + " containing " + str(petImageSeries) + " PET and " + str(ctImageSeries) + " CT image series"
+      loadables = [mainLoadable]
+             
+    return loadables
 
                 
 
@@ -270,11 +274,18 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     for studyUID in studiesAndImageSeries.keys():
       petDescriptions = [] #petImageSeriesInStudies[studyUID]
       ctDescriptions = []
-      studyDescription = "Multiple PET and/or CT image series have been found within a Study. Please change the selection if a different pair of image series should be loaded." 
-      
+      studyDescription = None 
       
       for petUID in petImageSeriesInStudies[studyUID]:
-        petDescriptions.append(self.__getImageSeriesDescription(imageSeriesAndFiles[petUID]))    
+        petDescriptions.append(self.__getImageSeriesDescription(imageSeriesAndFiles[petUID]))  
+        
+        if not studyDescription:
+          date = self.__getSeriesInformation(imageSeriesAndFiles[petUID], self.tags['studyDate'])
+          date = date[:4]+"."+date[4:6]+"."+date[6:8]
+          time = self.__getSeriesInformation(imageSeriesAndFiles[petUID], self.tags['studyTime'])  
+          time = time[:2]+":"+time[2:4]+":"+time[4:6]
+          studyDescription = "Multiple PET and/or CT image series have been found for the Study from "+date+" "+time+". Please change the selection if a different pair of image series should be loaded." 
+            
       
       for ctUID in ctImageSeriesInStudies[studyUID]:
         ctDescriptions.append(self.__getImageSeriesDescription(imageSeriesAndFiles[ctUID]))     
