@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>qMRMLLongitudinalPETCTFindingSettingsDialog</class>
+ <widget class="QDialog" name="qMRMLLongitudinalPETCTFindingSettingsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>374</width>
+    <height>209</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>8</number>
+   </property>
+   <property name="leftMargin">
+    <number>25</number>
+   </property>
+   <property name="topMargin">
+    <number>25</number>
+   </property>
+   <property name="rightMargin">
+    <number>25</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="LabelFindingPresets">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Finding
+Presets:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="ButtonPresetTumor">
+       <property name="toolTip">
+        <string>Tumor</string>
+       </property>
+       <property name="accessibleName">
+        <string>Tumor</string>
+       </property>
+       <property name="text">
+        <string>Tumor</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/finding_presets_tumor.png</normaloff>:/Icons/finding_presets_tumor.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>36</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonFollowStyle</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string>ButtonGroupFindingPresets</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="ButtonPresetNode">
+       <property name="toolTip">
+        <string>Lymph Node</string>
+       </property>
+       <property name="accessibleName">
+        <string>Node</string>
+       </property>
+       <property name="text">
+        <string>Lymph
+Node</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/finding_presets_node.png</normaloff>:/Icons/finding_presets_node.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>36</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonFollowStyle</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
+       </property>
+       <property name="arrowType">
+        <enum>Qt::NoArrow</enum>
+       </property>
+       <attribute name="buttonGroup">
+        <string>ButtonGroupFindingPresets</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="ButtonPresetLiver">
+       <property name="toolTip">
+        <string>Liver</string>
+       </property>
+       <property name="accessibleName">
+        <string>Liver</string>
+       </property>
+       <property name="text">
+        <string>Liver</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/finding_presets_liver.png</normaloff>:/Icons/finding_presets_liver.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>36</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonFollowStyle</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string>ButtonGroupFindingPresets</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="ButtonPresetCerebellum">
+       <property name="toolTip">
+        <string>Cerebellum</string>
+       </property>
+       <property name="accessibleName">
+        <string>Cerebellum</string>
+       </property>
+       <property name="text">
+        <string>Cerebellum</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/finding_presets_cerebellum.png</normaloff>:/Icons/finding_presets_cerebellum.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>36</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonFollowStyle</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string>ButtonGroupFindingPresets</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="ButtonPresetAorta">
+       <property name="toolTip">
+        <string>Aorta</string>
+       </property>
+       <property name="accessibleName">
+        <string>Aorta</string>
+       </property>
+       <property name="text">
+        <string>Aorta</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../qSlicerLongitudinalPETCTModule.qrc">
+         <normaloff>:/Icons/finding_presets_aorta.png</normaloff>:/Icons/finding_presets_aorta.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>36</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonFollowStyle</enum>
+       </property>
+       <property name="autoRaise">
+        <bool>false</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string>ButtonGroupFindingPresets</string>
+       </attribute>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="Widget" native="true">
+     <layout class="QFormLayout" name="formLayout">
+      <item row="1" column="0">
+       <widget class="QLabel" name="LabelSelectColor">
+        <property name="text">
+         <string>Finding Color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="qMRMLLabelComboBox" name="ComboBoxColor" native="true"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="LabelName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Finding Name:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="LineEditName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Rename the Finding here</string>
+        </property>
+        <property name="maxLength">
+         <number>35</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="ButtonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>qMRMLLabelComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLLabelComboBox.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>ButtonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>qMRMLLongitudinalPETCTFindingSettingsDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>147</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>147</x>
+     <y>71</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ButtonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>qMRMLLongitudinalPETCTFindingSettingsDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>147</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>147</x>
+     <y>71</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <buttongroups>
+  <buttongroup name="ButtonGroupFindingPresets"/>
+ </buttongroups>
+</ui>

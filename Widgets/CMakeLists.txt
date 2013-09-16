@@ -8,49 +8,51 @@ set(${KIT}_INCLUDE_DIRECTORIES
   )
 
 set(${KIT}_SRCS
-  qSlicerLongitudinalPETCTAnalysisSettingsWidget.cxx
-  qSlicerLongitudinalPETCTAnalysisSettingsWidget.h
-  qSlicerLongitudinalPETCTColorSelectionDialog.cxx
-  qSlicerLongitudinalPETCTColorSelectionDialog.h
-  qSlicerLongitudinalPETCTFindingSelectionWidget.cxx
-  qSlicerLongitudinalPETCTFindingSelectionWidget.h
-  qSlicerLongitudinalPETCTFindingSettingsDialog.cxx
-  qSlicerLongitudinalPETCTFindingSettingsDialog.h
-  qSlicerLongitudinalPETCTModuleSettingsDialog.cxx
-  qSlicerLongitudinalPETCTModuleSettingsDialog.h
-  qSlicerLongitudinalPETCTReportSelectionWidget.cxx
-  qSlicerLongitudinalPETCTReportSelectionWidget.h
-  qSlicerLongitudinalPETCTReportTableWidget.cxx
-  qSlicerLongitudinalPETCTReportTableWidget.h
-  qSlicerLongitudinalPETCTStudySelectionTableWidget.cxx
-  qSlicerLongitudinalPETCTStudySelectionTableWidget.h
-  qSlicerLongitudinalPETCTStudySelectionWidget.cxx
-  qSlicerLongitudinalPETCTStudySelectionWidget.h
+  qMRMLLongitudinalPETCTAnalysisWidget.cxx
+  qMRMLLongitudinalPETCTAnalysisWidget.h
+  qMRMLLongitudinalPETCTFindingWidget.cxx
+  qMRMLLongitudinalPETCTFindingWidget.h
+  qMRMLLongitudinalPETCTFindingSettingsDialog.cxx
+  qMRMLLongitudinalPETCTFindingSettingsDialog.h
+  qMRMLLongitudinalPETCTModuleSettingsWidget.cxx
+  qMRMLLongitudinalPETCTModuleSettingsWidget.h
+  qMRMLLongitudinalPETCTReportWidget.cxx
+  qMRMLLongitudinalPETCTReportWidget.h
+  qMRMLLongitudinalPETCTReportOverviewWidget.cxx
+  qMRMLLongitudinalPETCTReportOverviewWidget.h
+  qMRMLLongitudinalPETCTStudyTableWidget.cxx
+  qMRMLLongitudinalPETCTStudyTableWidget.h
+  qMRMLLongitudinalPETCTStudyWidget.cxx
+  qMRMLLongitudinalPETCTStudyWidget.h
+  qMRMLLongitudinalPETCTDialog.cxx
+  qMRMLLongitudinalPETCTDialog.h
+  qMRMLLongitudinalPETCTWidget.cxx
+  qMRMLLongitudinalPETCTWidget.h
   )
 
 set(${KIT}_MOC_SRCS
-  qSlicerLongitudinalPETCTAnalysisSettingsWidget.h
-  qSlicerLongitudinalPETCTColorSelectionDialog.h
-  qSlicerLongitudinalPETCTFindingSelectionWidget.h
-  qSlicerLongitudinalPETCTFindingSettingsDialog.h
-  qSlicerLongitudinalPETCTModuleSettingsDialog.h
-  qSlicerLongitudinalPETCTReportSelectionWidget.h
-  qSlicerLongitudinalPETCTReportTableWidget.h
-  qSlicerLongitudinalPETCTStudySelectionTableWidget.h
-  qSlicerLongitudinalPETCTStudySelectionWidget.h
+  qMRMLLongitudinalPETCTAnalysisWidget.h
+  qMRMLLongitudinalPETCTFindingWidget.h
+  qMRMLLongitudinalPETCTFindingSettingsDialog.h
+  qMRMLLongitudinalPETCTModuleSettingsWidget.h
+  qMRMLLongitudinalPETCTReportWidget.h
+  qMRMLLongitudinalPETCTReportOverviewWidget.h
+  qMRMLLongitudinalPETCTStudyTableWidget.h
+  qMRMLLongitudinalPETCTStudyWidget.h
+  qMRMLLongitudinalPETCTDialog.h
+  qMRMLLongitudinalPETCTWidget.h
   )
 
 # UI files
 set(${KIT}_UI_SRCS
-  ../Resources/UI/qSlicerLongitudinalPETCTAnalysisSettingsWidget.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTColorSelectionDialog.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTFindingSelectionWidget.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTFindingSettingsDialog.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTModuleSettingsDialog.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTReportSelectionWidget.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTReportTableWidget.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTStudySelectionTableWidget.ui
-  ../Resources/UI/qSlicerLongitudinalPETCTStudySelectionWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTAnalysisWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTFindingWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTFindingSettingsDialog.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTModuleSettingsWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTReportWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTReportOverviewWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTStudyTableWidget.ui
+  ../Resources/UI/qMRMLLongitudinalPETCTStudyWidget.ui
   )
   
 set(${KIT}_RESOURCES

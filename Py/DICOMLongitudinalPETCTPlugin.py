@@ -7,7 +7,7 @@ from DICOMLib import DICOMLoadable
 
 import DICOMLib
 
-import math
+import math as math
 
 #
 # This is the plugin to handle translation of diffusion volumes
@@ -22,6 +22,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
   def __init__(self):
     super(DICOMLongitudinalPETCTPluginClass,self).__init__()
     self.loadType = "Longitudinal PET/CT Analysis"
+    self.tags['patientID'] = "0010,0020"
     self.tags['patientName'] = "0010,0010"
     self.tags['patientBirthDate'] = "0010,0030"
     self.tags['patientSex'] = "0010,0040"
@@ -97,8 +98,8 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
         ctStudies.add(studyUID)
     
     for stdUID in petStudies:
-      if stdUID in ctStudies:
-        petCtStudies.append(stdUID)       
+      #if stdUID in ctStudies:   * removed for PET only support
+      petCtStudies.append(stdUID)       
     
     
     return petCtStudies
@@ -151,6 +152,8 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
             
             ldbl.name = type +"_"+self.__getSeriesInformation(ldbl.files, self.tags['studyDate'])+"_"+self.__getSeriesInformation(ldbl.files, self.tags['seriesTime'])
             self.cacheLoadables(ldbl.files, [ldbl])   
+            if ldbl.warning:
+              mainLoadable.warning += ldbl.warning +" "
             
             break # break for loop because only one loadable needed  
     
@@ -248,30 +251,77 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     petImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.petTerm)
     ctImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.ctTerm)
+   
+    patientID = None  
+    patientName = None
+    patientBirthDate = None
+    patientSex = None
+    patientHeight = None 
     
-    # create Report node            
-    reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTReportNode')
-    reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1)
-    slicer.mrmlScene.AddNode(reportNode)   
+    probeFiles = None
+    if imageSeriesAndFiles.keys():
+      probeImgSerUID = imageSeriesAndFiles.keys()[0]
+      probeFiles =  imageSeriesAndFiles[probeImgSerUID]   
+    
+    if probeFiles:
+      patientID = self.__getSeriesInformation(probeFiles, self.tags['patientID'])
+      patientName = self.__getSeriesInformation(probeFiles, self.tags['patientName'])
+      patientBirthDate = self.__getSeriesInformation(probeFiles, self.tags['patientBirthDate'])
+      patientSex = self.__getSeriesInformation(probeFiles, self.tags['patientSex'])
+      patientHeight = self.__getSeriesInformation(probeFiles, self.tags['patientHeight'])
+       
+
+    reportNode = None
+    
+    # import into existing Report node  
+    matchingReports = []
+    reportNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLLongitudinalPETCTReportNode')
+    reportNodes.SetReferenceCount(reportNodes.GetReferenceCount()-1)
+    
+    for i in xrange(reportNodes.GetNumberOfItems()):
+      rn = reportNodes.GetItemAsObject(i)  
+      if (rn.GetAttribute("DICOM.PatientID") == patientID) | ((rn.GetAttribute("DICOM.PatientName") == patientName) & (rn.GetAttribute("DICOM.PatientBirthDate") == patientBirthDate) & (rn.GetAttribute("DICOM.PatientSex") == patientSex)):
+        matchingReports.append(i)
+   
+    if matchingReports:
+      selectables = []
+      selectables.append("Create new PET/CT Report")
+      for id in matchingReports:
+        rn = reportNodes.GetItemAsObject(id)
+        selectables.append("Import into "+ rn.GetName() + " --- Number of available studies: "+str(rn.GetNumberOfStudyNodeIDs()) )             
+      dialogTitle = "Import PET/CT Studies into existing Report"
+      dialogLabel = "One or more Reports for the selected Patient already exist!"
+      selected = qt.QInputDialog.getItem(None,dialogTitle,dialogLabel,selectables,0,False)  
+    
+      if (selected in selectables) & (selected != selectables[0]):   
+        reportNode = reportNodes.GetItemAsObject(selectables.index(selected)-1)
+    
+    # create new Report node    
+    if not reportNode:        
+      reportNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTReportNode')
+      reportNode.SetReferenceCount(reportNode.GetReferenceCount()-1)
+      slicer.mrmlScene.AddNode(reportNode)  
+
+      reportNode.SetName("Report for "+patientName)
+      reportNode.SetAttribute('DICOM.PatientID', patientID)  
+      reportNode.SetAttribute('DICOM.PatientName', patientName)
+      reportNode.SetAttribute('DICOM.PatientBirthDate', patientBirthDate)
+      reportNode.SetAttribute('DICOM.PatientSex', patientSex)
+      reportNode.SetAttribute('DICOM.PatientHeight', patientHeight)
+
 
     # setup Report's default color node and table for Finding types
     colorLogic = slicer.modules.colors.logic()
     defaultColorNodeID = colorLogic.GetDefaultEditorColorNodeID()
-    colorNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
-
-    reportNode.SetColorNodeID(colorNode.GetID())
-    logic = slicer.modules.longitudinalpetct.logic()
-
-    colorTable = logic.GetDefaultFindingTypesColorTable(colorNode)
-    colorTable.SetReferenceCount(colorTable.GetReferenceCount()-1)
-    reportNode.SetAndObserveFindingTypesColorTableNodeID(colorTable.GetID())
-      
-    patientName = None
-    patientBirthDate = None
-    patientSex = None
-    patientHeight = None  
+    colorTableNode = slicer.mrmlScene.GetNodeByID(defaultColorNodeID)
+    reportNode.SetColorTableNodeID(colorTableNode.GetID())   
+ 
     
     for studyUID in studiesAndImageSeries.keys():
+      
+      if reportNode.IsStudyInReport(studyUID):
+        continue      
+        
       petDescriptions = [] #petImageSeriesInStudies[studyUID]
       ctDescriptions = []
       studyDescription = None 
@@ -301,21 +351,11 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       # UID of current PET series
       petImageSeriesUID = petImageSeriesInStudies[studyUID][selectedIndexes[0]]
       # UID of current CT series 
-      ctImageSeriesUID = ctImageSeriesInStudies[studyUID][selectedIndexes[1]]
+      ctImageSeriesUID = None
+      if ctDescriptions: # for PET only support
+        ctImageSeriesUID = ctImageSeriesInStudies[studyUID][selectedIndexes[1]]
       
-      
-      # gathering patient information for Report node
-      if not patientName:
-        name = self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientName'])
-        reportNode.SetAttribute('DICOM.PatientName', name)
-        reportNode.SetName("Report for "+name)
-      if not patientBirthDate:
-        reportNode.SetAttribute('DICOM.PatientBirthDate', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientBirthDate']))
-      if not patientSex:
-         reportNode.SetAttribute('DICOM.PatientSex', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientSex']))
-      if not patientHeight:
-        reportNode.SetAttribute('DICOM.PatientHeight', self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientHeight']))
-                        
+                    
       # create PET SUV volume node
       petVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[petImageSeriesUID])[0])
       petDir = self.__getDirectoryOfImageSeries(self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['sopInstanceUID']))
@@ -325,16 +365,24 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       parameters["PETDICOMPath"] = petDir
       parameters["SUVVolume"] = petVolumeNode.GetID()
 
+      
+      quantificationCLI = qt.QSettings().value('LongitudinalPETCT/quantificationCLIModule')
+      
+      if quantificationCLI == None:
+        quantificationCLI = "petsuvimagemaker"
+       
+       
       cliNode = None
-      cliNode = slicer.cli.run(slicer.modules.petsuvimagemaker, cliNode, parameters) 
+      cliNode = slicer.cli.run(getattr(slicer.modules, quantificationCLI), cliNode, parameters) 
       
       # create PET label volume node
       volLogic = slicer.modules.volumes.logic()
       petLabelVolumeNode = volLogic.CreateAndAddLabelVolume(slicer.mrmlScene,petVolumeNode,petVolumeNode.GetName()+"_LabelVolume")
       
-      
+      ctVolumeNode = None
       # create CT volume node
-      ctVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[ctImageSeriesUID])[0])
+      if ctImageSeriesUID:
+        ctVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[ctImageSeriesUID])[0])
       
       # create Study node
       studyNode = slicer.mrmlScene.CreateNodeByClass('vtkMRMLLongitudinalPETCTStudyNode')
@@ -351,11 +399,14 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       studyNode.SetAttribute('DICOM.DecayCorrection',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['decayFactor']))
       studyNode.SetAttribute('DICOM.FrameReferenceTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['frameRefTime']))
       studyNode.SetAttribute('DICOM.RadionuclideHalfLife',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['radionuclideHalfLife']))
-      studyNode.SetAttribute('DICOM.SeriesTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['seriesTime']))
+      studyNode.SetAttribute('DICOM.PETSeriesTime',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['seriesTime']))
+      if ctImageSeriesUID: 
+        studyNode.SetAttribute('DICOM.CTSeriesTime',self.__getSeriesInformation(imageSeriesAndFiles[ctImageSeriesUID], self.tags['seriesTime']))
       studyNode.SetAttribute('DICOM.PatientWeight',self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['patientWeight']))
       
       studyNode.SetAndObservePETVolumeNodeID(petVolumeNode.GetID())
-      studyNode.SetAndObserveCTVolumeNodeID(ctVolumeNode.GetID())
+      if ctVolumeNode:
+        studyNode.SetAndObserveCTVolumeNodeID(ctVolumeNode.GetID())
       studyNode.SetAndObservePETLabelVolumeNodeID(petLabelVolumeNode.GetID())
           
       slicer.mrmlScene.AddNode(studyNode) 

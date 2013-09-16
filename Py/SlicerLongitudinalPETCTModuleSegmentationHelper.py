@@ -1,13 +1,9 @@
 # slicer imports
-from __main__ import vtk, slicer, tcl, qt
+from __main__ import vtk, slicer, ctk, qt
 
 # python includes
 import sys
 
-
-  
-  
-    
 
 
 class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
@@ -25,8 +21,7 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
       croppedImgData = croppedLblVolume.GetImageData()
       mainImageData = mainLblVolume.GetImageData()
       
-      if (croppedImgData != None) & (mainImageData != None):
-      
+      if (croppedImgData != None) & (mainImageData != None): 
         rastoijk = vtk.vtkMatrix4x4()
         mainLblVolume.GetRASToIJKMatrix(rastoijk)
       
@@ -35,7 +30,6 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
     
         croppedLblIJKShiftedOrigin = rastoijk.MultiplyDoublePoint(croppedLblRASOrigin)
         croppedLblIJKShiftedOrigin = [ int(croppedLblIJKShiftedOrigin[0] + 0.5), int(croppedLblIJKShiftedOrigin[1] + 0.5), int(croppedLblIJKShiftedOrigin[2] + 0.5)]
-        
         dims = croppedImgData.GetDimensions()
         
         for x in range(0,dims[0],1):
@@ -133,4 +127,5 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
           lblVolume.SetAndObserveImageData(output)
           output.Modified()
           lblVolume.Modified()
+                  
             

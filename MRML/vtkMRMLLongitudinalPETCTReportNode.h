@@ -45,7 +45,7 @@
 
 class vector;
 class string;
-class vtkMRMLColorNode;
+class vtkMRMLColorTableNode;
 
 
 
@@ -77,6 +77,8 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   virtual const char* GetNodeTagName() {return "PETCT_Report";};
 
 
+  bool IsStudyInReport(const char* dicomStudyInstanceUID);
+
   int AddStudyNodeID(const char* studyNodeID);
   bool RemoveStudyNodeID(const char* studyNodeID);
 
@@ -90,7 +92,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
 
   vtkMRMLLongitudinalPETCTFindingNode* GetFinding(int index) const;
 
-  bool FindingNameInList(const std::string& name);
+  bool IsFindingNameInUse(const char* findingName);
 
   const char* GetNthStudyNodeID(int index);
   const char* GetNthFindingNodeID(int index);
@@ -110,38 +112,27 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTRe
   int GetIndexOfSelectedStudySelectedForAnalysis(const vtkMRMLLongitudinalPETCTStudyNode* study);
   int GetIndexOfFindingNodeID(const char* findingNodeID);
 
-  void SetAndObserveFindingTypesColorTableNodeID(const char* findingTypesColorTableNodeID);
-  vtkGetStringMacro(FindingTypesColorTableNodeID);
+  vtkSetStringMacro(ActiveStudyNodeID);
+  vtkGetStringMacro(ActiveStudyNodeID);
 
-  vtkGetMacro(FindingTypesColorTableNode, vtkMRMLColorTableNode*);
+  vtkSetStringMacro(ActiveFindingNodeID);
+  vtkGetStringMacro(ActiveFindingNodeID);
 
+  vtkSetStringMacro(ColorTableNodeID);
+  vtkGetStringMacro(ColorTableNodeID);
 
-  vtkSetStringMacro(UserSelectedStudyNodeID);
-  vtkGetStringMacro(UserSelectedStudyNodeID);
+  vtkSetStringMacro(RegistrationFixedStudyNodeID);
+  vtkGetStringMacro(RegistrationFixedStudyNodeID);
 
-  vtkSetStringMacro(UserSelectedFindingNodeID);
-  vtkGetStringMacro(UserSelectedFindingNodeID);
+  vtkMRMLLongitudinalPETCTStudyNode* GetActiveStudyNode();
+  vtkMRMLLongitudinalPETCTFindingNode* GetActiveFindingNode();
 
-  vtkSetStringMacro(ColorNodeID);
-  vtkGetStringMacro(ColorNodeID);
+  vtkMRMLLongitudinalPETCTStudyNode* GetRegistrationFixedStudyNode();
 
-  vtkMRMLLongitudinalPETCTStudyNode* GetUserSelectedStudyNode();
-  vtkMRMLLongitudinalPETCTFindingNode* GetUserSelectedFindingNode();
-  const vtkMRMLColorNode* GetColorNode();
+  const vtkMRMLColorTableNode* GetColorTableNode();
 
-  int GetFindingTypesCount();
-  void AddFindingType(const char* name, double color[4]);
-  void RemoveLastFindingType();
-
-  const char* GetFindingTypeName(int colorID);
-  int GetFindingTypeColorID(const std::string& typeName);
-
-  bool IsFindingTypeInUse(int colorID);
+  bool IsFindingColorInUse(int colorID);
   bool IsStudyInUse(const vtkMRMLLongitudinalPETCTStudyNode* study);
-
-
-  int GetNumberOfDefaultFindingTypes();
-
 
   void UpdateScene(vtkMRMLScene *scene);
   void UpdateReferences();
@@ -166,22 +157,19 @@ protected:
   IDsVectorType StudyNodeIDs;
   IDsVectorType FindingNodeIDs;
 
-  vtkMRMLColorTableNode* FindingTypesColorTableNode;
 
   bool IsStudyNodeIDPresent(const char* studyNodeID);
   bool IsFindingNodeIDPresent(const char* findingNodeID);
 
-  vtkSetStringMacro(FindingTypesColorTableNodeID);
 
-  char* UserSelectedStudyNodeID;
-  char* UserSelectedFindingNodeID;
-  char* FindingTypesColorTableNodeID;
-  char* ColorNodeID;
+  char* ActiveStudyNodeID;
+  char* ActiveFindingNodeID;
+  char* ColorTableNodeID;
+
+  char* RegistrationFixedStudyNodeID;
 
   vtkSmartPointer<vtkIntArray> ObservedEvents;
 
-private:
-  int NumberOfDefaultFindingTypes;
 
 };
 

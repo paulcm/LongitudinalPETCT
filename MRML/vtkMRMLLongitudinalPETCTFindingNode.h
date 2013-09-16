@@ -65,6 +65,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   void PrintSelf(ostream& os, vtkIndent indent);
 
   typedef std::map<std::string,std::string> StudyIDSegIDMap;
+  typedef std::map<std::string,std::vector<double> > StudyIDROIControlPointsMap;
 
   virtual vtkMRMLNode* CreateNodeInstance();
 
@@ -80,27 +81,16 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   /// Get node XML tag name (like Volume, Model)
   virtual const char* GetNodeTagName() {return "PETCT_Finding";};
 
-
   bool MapStudyNodeIDToSegmentationNodeID(const char* studyNodeID, const char* segmentationNodeID);
   vtkMRMLLongitudinalPETCTSegmentationNode* RemoveStudyNodeIDToSegmentationNodeIDMap(const char* studyNodeID);
   vtkMRMLLongitudinalPETCTSegmentationNode* GetSegmentationMappedByStudyNodeID(const char* studyNodeID);
-
-  vtkSetStringMacro(TypeName);
-  vtkGetStringMacro(TypeName);
 
   vtkGetMacro(ColorID, int);
   vtkSetMacro(ColorID, int);
 
   int GetNumberOfSegmentations();
 
-  void SetAndObserveSegmentationROINodeID(const char* segmentationROINodeID);
-  void SetAndObserveSegmentationROINodeID(const std::string& segmentationROINodeID);
-  vtkGetStringMacro(SegmentationROINodeID);
-
-  vtkGetMacro(SegmentationROINode, vtkMRMLAnnotationROINode*);
-
   const StudyIDSegIDMap& GetStudyNodeIDToSegmentationNodeIDMap() const;
-
 
   void ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData);
   void UpdateReferences();
@@ -108,30 +98,33 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTFi
   void UpdateScene(vtkMRMLScene *scene);
   void SetScene(vtkMRMLScene* scene);
 
+  void SetROIxyz(double roiXYZ[3]);
+  void GetROIxyz(double xyz[3]);
+
+  void SetROIRadius(double roiRadius[3]);
+  void GetROIRadius(double radius[3]);
+
+  vtkBooleanMacro(SegmentationROISpecified, bool);
+  vtkGetMacro(SegmentationROISpecified, bool);
+  vtkSetMacro(SegmentationROISpecified, bool);
+
 protected:
   vtkMRMLLongitudinalPETCTFindingNode();
   ~vtkMRMLLongitudinalPETCTFindingNode();
   vtkMRMLLongitudinalPETCTFindingNode(const vtkMRMLLongitudinalPETCTFindingNode&);
   void operator=(const vtkMRMLLongitudinalPETCTFindingNode&);
 
-  vtkSetStringMacro(SegmentationROINodeID);
+
+  bool SegmentationROISpecified;
 
   bool IsSegmentationNodeInMap(const char* segmentationNodeID);
 
-  void UpdateSegmentationModelHierarchyParent(vtkMRMLLongitudinalPETCTSegmentationNode* segmentation);
-
   StudyIDSegIDMap StudyIDToSegmentationIDMap;
 
-
-  //std::map<vtkMRMLLongitudinalPETCTStudyNode*,vtkMRMLLongitudinalPETCTSegmentationNode*> StudyToSegmentationMap;
-
-  vtkMRMLAnnotationROINode* SegmentationROINode;
-
-  char* TypeName;
   int ColorID;
 
-  char* SegmentationROINodeID;
-
+  double ROIxyz[3];
+  double ROIRadius[3];
 
 
 };

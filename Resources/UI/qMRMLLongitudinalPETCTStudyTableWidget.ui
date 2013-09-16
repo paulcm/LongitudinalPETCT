@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>qMRMLLongitudinalPETCTStudyTableWidget</class>
+ <widget class="QWidget" name="qMRMLLongitudinalPETCTStudyTableWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1318</width>
+    <height>78</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QTableWidget" name="Table">
+     <column>
+      <property name="text">
+       <string>Study ID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Date</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Patient Weight</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Radiopharmacon Start Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>CT Series Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>PET Series Time</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Radionuclide Half Life</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Decay Correction</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Decay Factor</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Study Instance UID</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../qSlicerLongitudinalPETCTModule.qrc"/>
+ </resources>
+ <connections/>
+</ui>

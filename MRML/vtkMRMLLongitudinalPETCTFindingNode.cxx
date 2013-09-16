@@ -37,24 +37,24 @@ vtkMRMLNodeNewMacro(vtkMRMLLongitudinalPETCTFindingNode);
 vtkMRMLLongitudinalPETCTFindingNode::vtkMRMLLongitudinalPETCTFindingNode()
 {
   this->SetHideFromEditors(false);
-  this->TypeName = NULL;
   this->ColorID = -1;
 
-  this->SegmentationROINode = NULL;
-  this->SegmentationROINodeID = NULL;
+  this->SegmentationROISpecified = false;
+
+  this->ROIxyz[0] = 0.;
+  this->ROIxyz[1] = 0.;
+  this->ROIxyz[2] = 0.;
+
+  this->ROIRadius[0] = 0.;
+  this->ROIRadius[1] = 0.;
+  this->ROIRadius[2] = 0.;
 
 }
 
 //----------------------------------------------------------------------------
 vtkMRMLLongitudinalPETCTFindingNode::~vtkMRMLLongitudinalPETCTFindingNode()
 {
-  this->SetAndObserveSegmentationROINodeID(NULL);
 
-  if(this->TypeName)
-    delete [] this->TypeName;
-
-  if(this->SegmentationROINodeID)
-    delete [] this->SegmentationROINodeID;
 }
 
 //----------------------------------------------------------------------------
@@ -73,17 +73,32 @@ vtkMRMLLongitudinalPETCTFindingNode::ReadXMLAttributes(const char** atts)
       attName = *(atts++);
       attValue = *(atts++);
 
-      if (!strcmp(attName, "ColorID"))
+      if (!strcmp(attName, "SegmentationROISpecified"))
+        {
+          if (!strcmp(attValue, "true"))
+            this->SetSegmentationROISpecified(true);
+          else
+            this->SetSegmentationROISpecified(false);
+        }
+      else if (!strcmp(attName, "ColorID"))
         {
           this->SetColorID(atoi(attValue));
         }
-      else if (!strcmp(attName, "TypeName"))
+      else if (!strcmp(attName, "ROIxyz"))
         {
-          this->SetTypeName(attValue);
+          std::stringstream ss;
+          ss << attValue;
+          ss >> this->ROIxyz[0];
+          ss >> this->ROIxyz[1];
+          ss >> this->ROIxyz[2];
         }
-      else if (!strcmp(attName, "SegmentationROINodeID"))
+      else if (!strcmp(attName, "ROIRadius"))
         {
-          this->SetAndObserveSegmentationROINodeID(attValue);
+          std::stringstream ss;
+          ss << attValue;
+          ss >> this->ROIRadius[0];
+          ss >> this->ROIRadius[1];
+          ss >> this->ROIRadius[2];
         }
       else if (!strcmp(attName, "StudyNodeIDSegmentationNodeIDMap"))
         {
@@ -120,13 +135,16 @@ vtkMRMLLongitudinalPETCTFindingNode::WriteXML(ostream& of, int nIndent)
 
   vtkIndent indent(nIndent);
 
+  of << indent << " SegmentationROISpecified=\"" << (this->GetSegmentationROISpecified() ? "true" : "false") << "\"";
+
+  of << indent << " ROIxyz=\"" << this->ROIxyz[0] << " " << this->ROIxyz[1]
+      << " " << this->ROIxyz[2] << "\"";
+
+  of << indent << " ROIRadius=\"" << this->ROIRadius[0] << " "
+      << this->ROIRadius[1] << " " << this->ROIRadius[2] << "\"" << std::endl;
+
   if (this->ColorID)
     of << indent << " ColorID=\"" << this->ColorID << "\"";
-  if (this->TypeName)
-    of << indent << " TypeName=\"" << this->TypeName << "\"";
-  if (this->SegmentationROINodeID)
-    of << indent << " SegmentationROINodeID=\"" << this->SegmentationROINodeID
-        << "\"";
 
   of << indent << " StudyNodeIDSegmentationNodeIDMap=\"";
   StudyIDSegIDMap::iterator it;
@@ -159,9 +177,10 @@ vtkMRMLLongitudinalPETCTFindingNode::Copy(vtkMRMLNode *anode)
   if (node)
     {
       this->SetColorID(node->GetColorID());
-      this->SetTypeName(node->GetTypeName());
-      this->SetAndObserveSegmentationROINodeID(
-          node->GetSegmentationROINodeID());
+      this->SetSegmentationROISpecified(node->GetSegmentationROISpecified());
+
+      node->GetROIxyz(this->ROIxyz);
+      node->GetROIRadius(this->ROIRadius);
 
       // remove all mapped values manually and do not use clear to make sure observer removel and referencing is handled correctly
       StudyIDSegIDMap::iterator it;
@@ -191,9 +210,10 @@ void vtkMRMLLongitudinalPETCTFindingNode::PrintSelf(ostream& os, vtkIndent inden
   Superclass::PrintSelf(os,indent);
 
   os << indent << "ColorID: " << this->ColorID << "\n";
-  os << indent << "TypeName: " << (this->TypeName ? this->TypeName : "(none)")<< "\n";
-  os << indent << "SegmentationROINodeID: " << (this->SegmentationROINodeID ? this->SegmentationROINodeID : "(none)") << "\n";
   os << indent << "StudyNodeIDs to SegmentationNodeIDs mapping: "<< (this->GetNumberOfSegmentations() == 0 ? "(none)" : "" ) <<"\n";
+
+  os << indent << "ROIxyz: [" << this->ROIxyz[0] <<","<< this->ROIxyz[1] <<"," << this->ROIxyz[2] << "]\n";
+  os << indent << "ROIRadius: [" << this->ROIRadius[0] <<","<< this->ROIRadius[1] <<"," << this->ROIRadius[2] << "]\n";
 
   StudyIDSegIDMap::iterator it;
   for ( it=this->StudyIDToSegmentationIDMap.begin() ; it != this->StudyIDToSegmentationIDMap.end(); it++ )
@@ -202,47 +222,45 @@ void vtkMRMLLongitudinalPETCTFindingNode::PrintSelf(ostream& os, vtkIndent inden
 }
 
 //----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
-    const char* segmentationROINodeID)
+void vtkMRMLLongitudinalPETCTFindingNode::SetROIxyz(double roiXYZ[3])
 {
+  this->ROIxyz[0] = roiXYZ[0];
+  this->ROIxyz[1] = roiXYZ[1];
+  this->ROIxyz[2] = roiXYZ[2];
 
-  // first remove references and observers from old node
-  if (this->SegmentationROINode)
-    {
-      vtkUnObserveMRMLObjectMacro(this->SegmentationROINode);
+  this->SetSegmentationROISpecified(true);
 
-      if (this->Scene
-          && this->Scene->IsNodeReferencingNodeID(this,
-              this->SegmentationROINode->GetID()))
-        this->Scene->RemoveReferencedNodeID(this->SegmentationROINode->GetID(),
-            this);
-    }
+  this->Modified();
+}
 
-  vtkMRMLAnnotationROINode* roiNode = NULL;
-
-  if (this->GetScene() && segmentationROINodeID)
-    {
-      roiNode = vtkMRMLAnnotationROINode::SafeDownCast(
-          this->GetScene()->GetNodeByID(segmentationROINodeID));
-    }
-
-  vtkSetAndObserveMRMLObjectMacro(this->SegmentationROINode, roiNode);
-  this->SetSegmentationROINodeID(segmentationROINodeID);
-
-  if (this->Scene && this->SegmentationROINode)
-    this->Scene->AddReferencedNodeID(this->SegmentationROINodeID, this);
+//----------------------------------------------------------------------------
+void vtkMRMLLongitudinalPETCTFindingNode::GetROIxyz(double xyz[3])
+{
+  xyz[0] = this->ROIxyz[0];
+  xyz[1] = this->ROIxyz[1];
+  xyz[2] = this->ROIxyz[2];
 }
 
 
 //----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTFindingNode::SetAndObserveSegmentationROINodeID(
-    const std::string& segmentationROINodeID)
+void vtkMRMLLongitudinalPETCTFindingNode::SetROIRadius(double roiRadius[3])
 {
-  this->SetAndObserveSegmentationROINodeID(segmentationROINodeID.c_str());
+  this->ROIRadius[0] = roiRadius[0];
+  this->ROIRadius[1] = roiRadius[1];
+  this->ROIRadius[2] = roiRadius[2];
+
+  this->SetSegmentationROISpecified(true);
+
+  this->Modified();
 }
 
+//----------------------------------------------------------------------------
+void vtkMRMLLongitudinalPETCTFindingNode::GetROIRadius(double radius[3])
+{
+  radius[0] = this->ROIRadius[0];
+  radius[1] = this->ROIRadius[1];
+  radius[2] = this->ROIRadius[2];
+}
 
 
 //----------------------------------------------------------------------------
@@ -340,11 +358,14 @@ vtkMRMLLongitudinalPETCTFindingNode::IsSegmentationNodeInMap(
   return false;
 }
 
+//----------------------------------------------------------------------------
 const vtkMRMLLongitudinalPETCTFindingNode::StudyIDSegIDMap&
 vtkMRMLLongitudinalPETCTFindingNode::GetStudyNodeIDToSegmentationNodeIDMap() const
 {
   return this->StudyIDToSegmentationIDMap;
 }
+
+
 
 //----------------------------------------------------------------------------
 void vtkMRMLLongitudinalPETCTFindingNode::SetScene(vtkMRMLScene* scene)
@@ -361,14 +382,6 @@ void vtkMRMLLongitudinalPETCTFindingNode::SetScene(vtkMRMLScene* scene)
 void vtkMRMLLongitudinalPETCTFindingNode::UpdateScene(vtkMRMLScene *scene)
 {
    Superclass::UpdateScene(scene);
-
-   if(this->Scene && this->Scene == scene)
-     {
-       vtkMRMLNode* segmentationROINode = this->Scene->GetNodeByID(this->SegmentationROINodeID);
-
-       if(segmentationROINode && this->SegmentationROINode != segmentationROINode)
-         this->SetAndObserveSegmentationROINodeID(this->SegmentationROINodeID);
-     }
 }
 
 
@@ -380,8 +393,6 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateReferences()
 
   if(this->Scene)
     {
-      if(this->SegmentationROINodeID && this->Scene->GetNodeByID(this->SegmentationROINodeID) == NULL)
-        this->SetAndObserveSegmentationROINodeID(NULL);
 
       StudyIDSegIDMap::iterator it;
       for ( it=this->StudyIDToSegmentationIDMap.begin() ; it != this->StudyIDToSegmentationIDMap.end(); it++ )
@@ -398,16 +409,6 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateReferences()
             {
               this->StudyIDToSegmentationIDMap.erase((*it).first);
 
-//              if(!studyNode && segNode)
-//                {
-//                  this->Scene->RemoveReferencedNodeID(segNodeID, this);
-//                  std::cout << "ERASING2" << std::endl;
-//                }
-//
-//              else if(studyNode && !segNode)
-//                {
-//                  this->Scene->RemoveReferencedNodeID(studyNodeID, this);
-//                }
             }
         }
     }
@@ -420,32 +421,27 @@ vtkMRMLLongitudinalPETCTFindingNode::UpdateReferenceID(const char *oldID,
 {
   this->Superclass::UpdateReferenceID(oldID, newID);
 
-  if (this->SegmentationROINode && !strcmp(oldID, this->SegmentationROINodeID))
-    this->SetAndObserveSegmentationROINodeID(newID);
-
-  else
+  StudyIDSegIDMap::iterator it;
+  for (it = this->StudyIDToSegmentationIDMap.begin();
+      it != this->StudyIDToSegmentationIDMap.end(); it++)
     {
-      StudyIDSegIDMap::iterator it;
-      for (it = this->StudyIDToSegmentationIDMap.begin();
-          it != this->StudyIDToSegmentationIDMap.end(); it++)
-        {
-          const char* studyNodeID = (*it).first.c_str();
-          const char* segNodeID = (*it).second.c_str();
+      const char* studyNodeID = (*it).first.c_str();
+      const char* segNodeID = (*it).second.c_str();
 
-          if (!strcmp(studyNodeID, oldID))
-            {
-              this->StudyIDToSegmentationIDMap.erase((*it).first);
-              this->StudyIDToSegmentationIDMap.insert(
-                  std::make_pair(newID, segNodeID));
-            }
-          else if (!strcmp(segNodeID, oldID))
-            {
-              this->StudyIDToSegmentationIDMap.erase((*it).first);
-              this->StudyIDToSegmentationIDMap.insert(
-                  std::make_pair(studyNodeID, newID));
-            }
+      if (!strcmp(studyNodeID, oldID))
+        {
+          this->StudyIDToSegmentationIDMap.erase((*it).first);
+          this->StudyIDToSegmentationIDMap.insert(
+              std::make_pair(newID, segNodeID));
+        }
+      else if (!strcmp(segNodeID, oldID))
+        {
+          this->StudyIDToSegmentationIDMap.erase((*it).first);
+          this->StudyIDToSegmentationIDMap.insert(
+              std::make_pair(studyNodeID, newID));
         }
     }
+
 }
 
 //----------------------------------------------------------------------------
@@ -459,7 +455,6 @@ vtkMRMLLongitudinalPETCTFindingNode::ProcessMRMLEvents(vtkObject *caller,
 
   if(segCaller && event == vtkCommand::ModifiedEvent)
         this->Modified(); // forwarding Modified
-
 }
 
 

@@ -93,18 +93,11 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   vtkGetMacro(PETLabelVolumeNode,vtkMRMLScalarVolumeNode*);
 
 
-  void SetAndObserveSegmentationROINodeID(const char* segmentationROINodeID);
-  void SetAndObserveSegmentationROINodeID(const std::string& segmentationROINodeID);
-  vtkGetStringMacro(SegmentationROINodeID);
+  void SetAndObserveRegistrationTransformNodeID(const char* registrationTransformNodeID);
+  void SetAndObserveRegistrationTransformNodeID(const std::string& registrationTransformNodeID);
+  vtkGetStringMacro(RegistrationTransformNodeID);
 
-  vtkGetMacro(SegmentationROINode,vtkMRMLAnnotationROINode*);
-
-
-  void SetAndObserveCenteringTransformNodeID(const char* centeringTransformNodeID);
-  void SetAndObserveCenteringTransformNodeID(const std::string& centeringTransformNodeID);
-  vtkGetStringMacro(CenteringTransformNodeID);
-
-  vtkGetMacro(CenteringTransformNode,vtkMRMLLinearTransformNode*);
+  vtkGetMacro(RegistrationTransformNode,vtkMRMLLinearTransformNode*);
 
 
   void SetAndObserveVolumeRenderingDisplayNodeID(const char* volumeRenderingDisplayNodeID);
@@ -133,13 +126,12 @@ protected:
   vtkMRMLLongitudinalPETCTStudyNode(const vtkMRMLLongitudinalPETCTStudyNode&);
   void operator=(const vtkMRMLLongitudinalPETCTStudyNode&);
 
-  void ObserveCenteringTransform(bool observe);
+  void ObserveRegistrationTransform(bool observe);
 
   vtkSetStringMacro(PETVolumeNodeID);
   vtkSetStringMacro(CTVolumeNodeID);
   vtkSetStringMacro(PETLabelVolumeNodeID);
-  vtkSetStringMacro(CenteringTransformNodeID);
-  vtkSetStringMacro(SegmentationROINodeID);
+  vtkSetStringMacro(RegistrationTransformNodeID);
   vtkSetStringMacro(VolumeRenderingDisplayNodeID);
 
 
@@ -149,18 +141,15 @@ protected:
   char* PETVolumeNodeID;
   char* CTVolumeNodeID;
   char* PETLabelVolumeNodeID;
-  char* CenteringTransformNodeID;
-  char* SegmentationROINodeID;
+  char* RegistrationTransformNodeID;
   char* VolumeRenderingDisplayNodeID;
 
 
   vtkMRMLScalarVolumeNode* PETVolumeNode;
   vtkMRMLScalarVolumeNode* CTVolumeNode;
-
   vtkMRMLScalarVolumeNode* PETLabelVolumeNode;
-  vtkMRMLLinearTransformNode* CenteringTransformNode;
 
-  vtkMRMLAnnotationROINode* SegmentationROINode;
+  vtkMRMLLinearTransformNode* RegistrationTransformNode;
   vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;
 };
 

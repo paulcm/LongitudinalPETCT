@@ -19,6 +19,16 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
 
 
   @staticmethod
+  def GetRYGSliceNodes():
+    sliceNodes = []
+    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed"))
+    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow"))
+    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen"))
+    
+    return sliceNodes
+        
+  
+  @staticmethod
   def SetForegroundOpacity(opacity, rYGExcluded = False):
     compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
     for compositeNode in compositeNodes.values():
@@ -29,7 +39,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       compositeNode.SetForegroundOpacity(opacity)  
 
   @staticmethod
-  def SetRYGBgFgLblVolumes(bgID, fgID = None, lblID = None, fit = False):
+  def SetRYGBgFgLblVolumes(bgID = None, fgID = None, lblID = None, fit = False):
     
     compositeNodes = []
     
@@ -412,7 +422,9 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     for s in range(studies):     
       compSliceNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceNodes(s)  
       for sn in compSliceNodes:
-        sn.SetUseLabelOutline(SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations"))
+        outline = SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations")
+        if outline == True:  
+          sn.SetUseLabelOutline(SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations"))
         
       compSliceCompositeNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceCompositeNodes(s) 
       for scn in compSliceCompositeNodes:
@@ -563,27 +575,51 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       else:
         vn.SetAnimationMode(slicer.vtkMRMLViewNode.Off)
   
+  @staticmethod 
+  def adjustColorFunction(colorTransferFunction, scalarVolumeDisplayNode):
+    
+    
+    if scalarVolumeDisplayNode:
+      colorNode = scalarVolumeDisplayNode.GetColorNode()  
+      window = scalarVolumeDisplayNode.GetWindow()
+      cnctf = colorNode.GetColorTransferFunction()
+      
+      ctf = vtk.vtkColorTransferFunction()
+      d = [0.,0.,0.]
+      
+      num = colorNode.GetNumberOfColors()
+      rng = cnctf.GetRange()[1]
+      
+      colorTransferFunction.RemoveAllPoints()
+      
+      for i in xrange(num):
+        cnctf.GetColor(rng*i/(num-1),d)      
+        colorTransferFunction.AddRGBPoint(window*i/(num-1), d[0],d[1],d[2])
+  
+  
+  
   @staticmethod      
-  def opacityPowerFunction(window, pow, points):
-    opacityFunction = None
+  def adjustOpacityPowerFunction(gradientOpacityFunction, window, pow, points):
+
     rg = int(points)-1
     
     window = float(window)
     pow = float(pow)
     points = float(points)
           
-    if window > 0:
-      opacityFunction = vtk.vtkPiecewiseFunction()
-      opacityFunction.AddPoint(0.,0.,0.5,0.)  
+    if (gradientOpacityFunction != None) & (window > 0):
+      
+      gradientOpacityFunction.RemoveAllPoints()
+      
+      gradientOpacityFunction.AddPoint(0.,0.,0.5,0.)  
       
       for i in range(1,rg):
        
         m = float(i/points)
-        opacityFunction.AddPoint((window*m),m**pow,0.5,0.)
+        gradientOpacityFunction.AddPoint((window*m),m**pow,0.5,0.)
               
-      opacityFunction.AddPoint(window,1.,0.5,0.)
-    
-    return opacityFunction          
+      gradientOpacityFunction.AddPoint(window,1.,0.5,0.)
+            
   
   @staticmethod
   def RGBtoHex(r,g,b, satMod = 1.0):
@@ -657,14 +693,30 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
             mNode.SetDisplayVisibility(0)
         
     
+  @staticmethod  
+  def setSetting(settingStr, value):
+    settingStr = "LongitudinalPETCT/"+settingStr 
+    qt.QSettings().setValue(settingStr,str(value))
+              
   @staticmethod
   def getSetting(settingStr):
+    
+    set = None
     setting = qt.QSettings().value('LongitudinalPETCT/'+settingStr)
-    if (setting == None) | (setting == 'true'):
-      return True
-    elif setting == 'false':
-      return False
-
+    
+    if setting:
+      try:
+        set = float(setting)
+        return set
+    
+      except ValueError:
+        set = setting  
+         
+        if (set == 'true'):
+         return True
+        
+        elif (set == 'false'):
+          return False
     
   @staticmethod
   def dateFromDICOM(dateStr):
@@ -731,7 +783,65 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     vbl.addWidget(pb)
       
     return dialog
+ 
+  @staticmethod  
+  def getSegmentationColorChangeMessageBox():    
+    qt.QMessageBox.information(None, SlicerLongitudinalPETCTModuleViewHelper.moduleDialogTitle(),"Please note that only segmentations with the same color label as the current Finding's color will be used for segmentation!") 
+
+ 
+  @staticmethod    
+  def makeModels(study, finding, colorTable):
+
+    if (study == None) | (finding == None) | (colorTable == None):
+      return    
+     
+    seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
       
-        
+    if seg:
+      labelVolume = seg.GetLabelVolumeNode()
+
+      #create a temporary model hierarchy for generating models
+      tempMH = slicer.vtkMRMLModelHierarchyNode()
+      slicer.mrmlScene.AddNode(tempMH)
+      
+      if (labelVolume != None) & (tempMH != None):
+        parameters = {}
+        parameters['InputVolume'] = labelVolume.GetID()
+        parameters['ColorTable'] = colorTable.GetID()
+        parameters['ModelSceneFile'] = tempMH.GetID()
+        parameters['GenerateAll'] = False
+        parameters['StartLabel'] = finding.GetColorID()
+        parameters['EndLabel'] = finding.GetColorID()
+        parameters['Name'] = labelVolume.GetName() + "_" + finding.GetName()+"_M"
+
+        cliModelMaker = None
+        cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, cliModelMaker, parameters, wait_for_completion = True)  
+        genModelNodes = vtk.vtkCollection()
+        tempMH.GetChildrenModelNodes(genModelNodes)
+
+        if genModelNodes.GetNumberOfItems() > 0:
+          modelNode = genModelNodes.GetItemAsObject(0)
+          if modelNode:
+            if modelNode.IsA('vtkMRMLModelNode'):
+              hnode = slicer.vtkMRMLHierarchyNode.GetAssociatedHierarchyNode(modelNode.GetScene(), modelNode.GetID())
+              if hnode:
+                if seg.GetModelHierarchyNode():
+                  SlicerLongitudinalPETCTModuleViewHelper.removeModelHierarchyAndChildModelNodesFromScene(seg.GetModelHierarchyNode())
+                  
+                  hnode.SetName(seg.GetName()+"_Model")
+                  seg.SetAndObserveModelHierarchyNodeID(hnode.GetID())
+                  modelNode.SetName(labelVolume.GetName() + "_" + finding.GetName()+"_M")
+                  if modelNode.GetDisplayNode():
+                    modelNode.GetDisplayNode().SetName(labelVolume.GetName() + "_" + finding.GetName()+"_D")
+                    modelNode.GetDisplayNode().AddViewNodeID(SlicerLongitudinalPETCTModuleViewHelper.getStandardViewNode().GetID())
+                  hnode.SetName(labelVolume.GetName() + "_" + finding.GetName()+"_H")
+                  modelNode.SetHideFromEditors(False)
+                else:
+                  seg.SetAndObserveModelHierarchyNodeID("")
+                  slicer.mrmlScene.RemoveNode(modelNode)   
+                  slicer.mrmlScene.RemoveNode(hnode)
+   
+          slicer.mrmlScene.RemoveNode(tempMH.GetDisplayNode())
+          slicer.mrmlScene.RemoveNode(tempMH)        
     
     #return '#%02X%02X%02X' % (r,g,b)

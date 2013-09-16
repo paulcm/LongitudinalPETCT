@@ -1,14 +1,14 @@
 /*=auto=========================================================================
 
-  Portions (c) Copyright 2005 Brigham and Women's Hospital (BWH) All Rights Reserved.
+Portions (c) Copyright 2005 Brigham and Women's Hospital (BWH) All Rights Reserved.
 
-  See COPYRIGHT.txt
-  or http://www.slicer.org/copyright/copyright.txt for details.
+See COPYRIGHT.txt
+or http://www.slicer.org/copyright/copyright.txt for details.
 
-  Program:   3D Slicer
-  Module:    $RCSfile: vtkMRMLVolumeRenderingParametersNode.h,v $
-  Date:      $Date: 2006/03/19 17:12:29 $
-  Version:   $Revision: 1.3 $
+Program: 3D Slicer
+Module: $RCSfile: vtkMRMLVolumeRenderingParametersNode.h,v $
+Date: $Date: 2006/03/19 17:12:29 $
+Version: $Revision: 1.3 $
 
 =========================================================================auto=*/
 // .NAME vtkMRMLLongitudinalPETCTSegmentationNode
@@ -48,7 +48,7 @@
 /// \ingroup Slicer_QtModules_LongitudinalPETCTSegmentationNode
 class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSegmentationNode : public vtkMRMLNode
 {
-  public:   
+  public:
 
   static vtkMRMLLongitudinalPETCTSegmentationNode *New();
   vtkTypeMacro(vtkMRMLLongitudinalPETCTSegmentationNode,vtkMRMLNode);
@@ -77,13 +77,11 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
 
   void SetStatistics(double suvmax, double suvmean, double suvmin, double volcc = 0., double volmm3 = 0., double count = 0., double stddev = 0.);
 
-
   void SetAndObserveLabelVolumeNodeID(const char* labelVolumeNodeID);
   void SetAndObserveLabelVolumeNodeID(const std::string& labelVolumeNodeID);
   vtkGetStringMacro(LabelVolumeNodeID);
 
   vtkGetMacro(LabelVolumeNode,vtkMRMLScalarVolumeNode*);
-
 
   void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
   void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
@@ -152,4 +150,3 @@ protected:
 };
 
 #endif
-

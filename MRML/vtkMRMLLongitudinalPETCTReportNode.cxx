@@ -26,7 +26,6 @@ Version:   $Revision: 1.2 $
 // STD includes
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
-#include <vtkMRMLColorNode.h>
 #include <vtkMRMLColorTableNode.h>
 #include <cassert>
 
@@ -42,20 +41,15 @@ vtkMRMLLongitudinalPETCTReportNode::vtkMRMLLongitudinalPETCTReportNode()
   int disabledModify = this->StartModify();
   this->SetHideFromEditors(false);
 
-  this->UserSelectedStudyNodeID = NULL;
-  this->UserSelectedFindingNodeID = NULL;
+  this->ActiveStudyNodeID = NULL;
+  this->ActiveFindingNodeID = NULL;
+  this->RegistrationFixedStudyNodeID = NULL;
 
-  this->FindingTypesColorTableNode = NULL;
-  this->FindingTypesColorTableNodeID = NULL;
-
-  this->ColorNodeID = NULL;
+  this->ColorTableNodeID = NULL;
 
   this->ObservedEvents = vtkSmartPointer<vtkIntArray>::New();
   this->ObservedEvents->InsertNextValue(vtkCommand::ModifiedEvent);
 
-
-  // TODO dynamically
-  this->NumberOfDefaultFindingTypes = 6;
 
   this->EndModify(disabledModify);
 }
@@ -67,23 +61,22 @@ vtkMRMLLongitudinalPETCTReportNode::~vtkMRMLLongitudinalPETCTReportNode()
   this->RemoveAllStudyNodeIDs();
   this->RemoveAllFindingNodeIDs();
 
-  if(this->FindingTypesColorTableNode)
-    this->SetFindingTypesColorTableNodeID(NULL);
 
   if(this->ObservedEvents)
     this->ObservedEvents = NULL;
 
-  if(this->UserSelectedStudyNodeID)
-    delete [] this->UserSelectedStudyNodeID;
+  if(this->ActiveStudyNodeID)
+    delete [] this->ActiveStudyNodeID;
 
-  if(this->UserSelectedFindingNodeID)
-    delete [] this->UserSelectedFindingNodeID;
+  if(this->ActiveFindingNodeID)
+    delete [] this->ActiveFindingNodeID;
 
-  if(this->FindingTypesColorTableNodeID)
-    delete [] this->FindingTypesColorTableNodeID;
 
-  if(this->ColorNodeID)
-    delete [] this->ColorNodeID;
+  if(this->ColorTableNodeID)
+    delete [] this->ColorTableNodeID;
+
+  if(this->RegistrationFixedStudyNodeID)
+    delete [] this->RegistrationFixedStudyNodeID;
 }
 
 //----------------------------------------------------------------------------
@@ -102,25 +95,25 @@ vtkMRMLLongitudinalPETCTReportNode::ReadXMLAttributes(const char** atts)
       attName = *(atts++);
       attValue = *(atts++);
 
-      if (!strcmp(attName, "UserSelectedStudyNodeID"))
+      if (!strcmp(attName, "ActiveStudyNodeID"))
       {
-        this->SetUserSelectedStudyNodeID(attValue);
+        this->SetActiveStudyNodeID(attValue);
       }
-      else if (!strcmp(attName, "UserSelectedFindingNodeID"))
+      else if (!strcmp(attName, "ActiveFindingNodeID"))
       {
-        this->SetUserSelectedFindingNodeID(attValue);
+        this->SetActiveFindingNodeID(attValue);
       }
-      else if (!strcmp(attName, "UserSelectedFindingNodeID"))
+      else if (!strcmp(attName, "ActiveFindingNodeID"))
       {
-        this->SetUserSelectedFindingNodeID(attValue);
+        this->SetActiveFindingNodeID(attValue);
       }
-      else if (!strcmp(attName, "FindingTypesColorTableNodeID"))
+      else if (!strcmp(attName, "ColorTableNodeID"))
       {
-        this->SetAndObserveFindingTypesColorTableNodeID(attValue);
+        this->SetColorTableNodeID(attValue);
       }
-      else if (!strcmp(attName, "ColorNodeID"))
+      else if (!strcmp(attName, "RegistrationFixedStudyNodeID"))
       {
-        this->SetColorNodeID(attValue);
+        this->SetRegistrationFixedStudyNodeID(attValue);
       }
       else if (!strcmp(attName, "StudyNodeIDs"))
         {
@@ -155,17 +148,16 @@ vtkMRMLLongitudinalPETCTReportNode::WriteXML(ostream& of, int nIndent)
 
   vtkIndent indent(nIndent);
 
-  if (this->UserSelectedStudyNodeID)
-    of << indent << " UserSelectedStudyNodeID=\""
-        << this->UserSelectedStudyNodeID << "\"";
-  if (this->UserSelectedFindingNodeID)
-    of << indent << " UserSelectedFindingNodeID=\""
-        << this->UserSelectedFindingNodeID << "\"";
-  if (this->FindingTypesColorTableNodeID)
-    of << indent << " FindingTypesColorTableNodeID=\""
-        << this->FindingTypesColorTableNodeID << "\"";
-  if (this->ColorNodeID)
-    of << indent << " ColorNodeID=\"" << this->ColorNodeID << "\"";
+  if (this->ActiveStudyNodeID)
+    of << indent << " ActiveStudyNodeID=\""
+        << this->ActiveStudyNodeID << "\"";
+  if (this->ActiveFindingNodeID)
+    of << indent << " ActiveFindingNodeID=\""
+        << this->ActiveFindingNodeID << "\"";
+  if (this->ColorTableNodeID)
+    of << indent << " ColorTableNodeID=\"" << this->ColorTableNodeID << "\"";
+  if (this->RegistrationFixedStudyNodeID)
+     of << indent << " RegistrationFixedStudyNodeID=\"" << this->RegistrationFixedStudyNodeID << "\"";
 
   std::stringstream stdyss;
   unsigned int n;
@@ -205,11 +197,10 @@ void vtkMRMLLongitudinalPETCTReportNode::Copy(vtkMRMLNode *anode)
 
   if (node)
     {
-      this->SetUserSelectedStudyNodeID(node->GetUserSelectedStudyNodeID());
-      this->SetUserSelectedFindingNodeID(node->GetUserSelectedFindingNodeID());
-      this->SetAndObserveFindingTypesColorTableNodeID(
-          node->GetFindingTypesColorTableNodeID());
-      this->SetColorNodeID(node->GetColorNodeID());
+      this->SetActiveStudyNodeID(node->GetActiveStudyNodeID());
+      this->SetActiveFindingNodeID(node->GetActiveFindingNodeID());
+      this->SetColorTableNodeID(node->GetColorTableNodeID());
+      this->SetRegistrationFixedStudyNodeID(node->GetRegistrationFixedStudyNodeID());
 
       this->RemoveAllStudyNodeIDs();
 
@@ -267,10 +258,12 @@ void vtkMRMLLongitudinalPETCTReportNode::PrintSelf(ostream& os, vtkIndent indent
 {
   Superclass::PrintSelf(os,indent);
 
-  os << indent << "UserSelectedStudyNodeID: " << (this->UserSelectedStudyNodeID ? this->UserSelectedStudyNodeID : "(none)") << "\n";
-  os << indent << "UserSelectedFindingNodeID: " << (this->UserSelectedFindingNodeID ? this->UserSelectedFindingNodeID : "(none)") << "\n";
-  os << indent << "FindingTypesColorTableNodeID: " << (this->FindingTypesColorTableNodeID ? this->FindingTypesColorTableNodeID : "(none)") << "\n";
-  os << indent << "DefaultColorNodeID: " << (this->ColorNodeID ? this->ColorNodeID : "(none)") << "\n";
+  os << indent << "ActiveStudyNodeID: " << (this->ActiveStudyNodeID ? this->ActiveStudyNodeID : "(none)") << "\n";
+  os << indent << "ActiveFindingNodeID: " << (this->ActiveFindingNodeID ? this->ActiveFindingNodeID : "(none)") << "\n";
+  os << indent << "DefaultColorTableNodeID: " << (this->ColorTableNodeID ? this->ColorTableNodeID : "(none)") << "\n";
+
+  os << indent << "RegistrationFixedStudyNodeID: " << (this->RegistrationFixedStudyNodeID ? this->RegistrationFixedStudyNodeID : "(none)") << "\n";
+
 
   IDsVectorType::iterator it;
 
@@ -352,6 +345,19 @@ int vtkMRMLLongitudinalPETCTReportNode::GetNumberOfSelectedStudiesSelectedForAna
     }
 
   return count;
+}
+
+bool vtkMRMLLongitudinalPETCTReportNode::IsStudyInReport(const char* dicomStudyInstanceUID)
+{
+  for(int i=0; i < this->GetNumberOfStudyNodeIDs(); ++i)
+    {
+      std::string uid = this->GetStudy(i)->GetAttribute("DICOM.StudyInstanceUID");
+
+      if(uid.compare(dicomStudyInstanceUID) == 0)
+        return true;
+    }
+
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -501,7 +507,6 @@ vtkMRMLLongitudinalPETCTReportNode::AddStudyNodeID(const char* studyNodeID)
 
   int pos = this->GetNumberOfStudyNodeIDs();
 
-  std::cout << "D1" << std::endl;
   vtkMRMLLongitudinalPETCTStudyNode* study = NULL;
 
   if (this->Scene)
@@ -591,11 +596,12 @@ vtkMRMLLongitudinalPETCTFindingNode* vtkMRMLLongitudinalPETCTReportNode::GetFind
 
 
 //----------------------------------------------------------------------------
-bool vtkMRMLLongitudinalPETCTReportNode::FindingNameInList(const std::string& name)
+bool vtkMRMLLongitudinalPETCTReportNode::IsFindingNameInUse(const char* findingName)
 {
   for(int i=0; i < this->GetNumberOfFindingNodeIDs(); ++i)
     {
-      if(this->FindingNodeIDs.at(i).compare(name) == 0)
+      std::string name = this->GetFinding(i)->GetName();
+      if(name.compare(findingName) == 0)
         return true;
     }
 
@@ -757,80 +763,20 @@ int vtkMRMLLongitudinalPETCTReportNode::GetIndexOfFindingNodeID(const char* find
 }
 
 //----------------------------------------------------------------------------
-const vtkMRMLColorNode* vtkMRMLLongitudinalPETCTReportNode::GetColorNode()
+const vtkMRMLColorTableNode* vtkMRMLLongitudinalPETCTReportNode::GetColorTableNode()
 {
-  vtkMRMLColorNode* node = NULL;
-  if(this->GetScene() && this->ColorNodeID)
+  vtkMRMLColorTableNode* node = NULL;
+  if(this->GetScene() && this->ColorTableNodeID)
     {
-      node = vtkMRMLColorNode::SafeDownCast(this->Scene->GetNodeByID(this->ColorNodeID));
+      node = vtkMRMLColorTableNode::SafeDownCast(this->Scene->GetNodeByID(this->ColorTableNodeID));
     }
 
   return node;}
 
-//----------------------------------------------------------------------------
-int vtkMRMLLongitudinalPETCTReportNode::GetFindingTypeColorID(const std::string& typeName)
-{
-  int id = -1;
-
-  if(this->FindingTypesColorTableNode)
-    id = this->FindingTypesColorTableNode->GetColorIndexByName(typeName.c_str());
-
-  return id;
-}
-
-//----------------------------------------------------------------------------
-const char* vtkMRMLLongitudinalPETCTReportNode::GetFindingTypeName(int colorID)
-{
-
-  if(this->FindingTypesColorTableNode && colorID >= 0 && colorID < this->FindingTypesColorTableNode->GetNumberOfColors())
-    return this->FindingTypesColorTableNode->GetColorName(colorID);
-
-  return NULL;
-}
-
 
 
 //----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTReportNode::AddFindingType(const char* name, double color[4])
-{
-  if( ! this->FindingTypesColorTableNode || ! name)
-    return;
-
-  int size = this->FindingTypesColorTableNode->GetNumberOfColors();
-  this->FindingTypesColorTableNode->SetNumberOfColors(size+1);
-
-  this->FindingTypesColorTableNode->SetColor(size,name,color[0],color[1],color[2],color[3]);
-}
-
-//----------------------------------------------------------------------------
-void vtkMRMLLongitudinalPETCTReportNode::RemoveLastFindingType()
-{
-
-  if( ! this->FindingTypesColorTableNode || this->FindingTypesColorTableNode->GetNumberOfColors() == 0)
-    return;
-
-  if(this->IsFindingTypeInUse(this->FindingTypesColorTableNode->GetNumberOfColors()-1))
-    return;
-
-  vtkNew<vtkMRMLColorTableNode> workingCopy;
-  workingCopy->Copy(this->FindingTypesColorTableNode);
-
-  workingCopy->SetNumberOfColors(this->FindingTypesColorTableNode->GetNumberOfColors()-1);
-
-  for(int i=0; i < this->FindingTypesColorTableNode->GetNumberOfColors()-1; ++i)
-    {
-      const char* name = this->FindingTypesColorTableNode->GetColorName(i);
-
-      double color[4];
-      this->FindingTypesColorTableNode->GetColor(i,color);
-      workingCopy->SetColor(i,name,color[0],color[1],color[2],color[3]);
-    }
-
-  this->FindingTypesColorTableNode->Copy(workingCopy.GetPointer());
-}
-
-//----------------------------------------------------------------------------
-bool vtkMRMLLongitudinalPETCTReportNode::IsFindingTypeInUse(int colorID)
+bool vtkMRMLLongitudinalPETCTReportNode::IsFindingColorInUse(int colorID)
 {
   for(int i=0; i < this->GetNumberOfFindingNodeIDs(); ++i)
     {
@@ -840,24 +786,6 @@ bool vtkMRMLLongitudinalPETCTReportNode::IsFindingTypeInUse(int colorID)
 
   return false;
 }
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongitudinalPETCTReportNode::GetFindingTypesCount()
-{
-  int nr = -1;
-
-  if(this->FindingTypesColorTableNode)
-    nr = this->FindingTypesColorTableNode->GetNumberOfColors();
-
-  return nr;
-}
-
-//----------------------------------------------------------------------------
-int vtkMRMLLongitudinalPETCTReportNode::GetNumberOfDefaultFindingTypes()
-{
-  return this->NumberOfDefaultFindingTypes;
-}
-
 
 
 
@@ -877,59 +805,36 @@ bool vtkMRMLLongitudinalPETCTReportNode::IsStudyInUse(const vtkMRMLLongitudinalP
 
 
 //----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTReportNode::SetAndObserveFindingTypesColorTableNodeID(
-    const char* findingTypesColorTableNodeID)
-{
-
-  // first remove references and observers from old node
-  if (this->FindingTypesColorTableNode)
-    {
-      vtkUnObserveMRMLObjectMacro(this->FindingTypesColorTableNode);
-
-      if (this->Scene
-          && this->Scene->IsNodeReferencingNodeID(this,
-              this->FindingTypesColorTableNode->GetID()))
-        this->Scene->RemoveReferencedNodeID(this->FindingTypesColorTableNode->GetID(),
-            this);
-    }
-
-  // than set new node
-  vtkMRMLColorTableNode* ctnode = NULL;
-
-  if (this->GetScene() && findingTypesColorTableNodeID)
-    {
-      ctnode = vtkMRMLColorTableNode::SafeDownCast(
-          this->GetScene()->GetNodeByID(findingTypesColorTableNodeID));
-    }
-
-  vtkSetAndObserveMRMLObjectMacro(this->FindingTypesColorTableNode, ctnode);
-  this->SetFindingTypesColorTableNodeID(findingTypesColorTableNodeID);
-
-
-  if (this->Scene)
-    this->Scene->AddReferencedNodeID(this->FindingTypesColorTableNodeID, this);
-}
-
-//----------------------------------------------------------------------------
-vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetUserSelectedStudyNode()
+vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetActiveStudyNode()
 {
     vtkMRMLLongitudinalPETCTStudyNode* node = NULL;
-    if(this->GetScene() && this->UserSelectedStudyNodeID)
+    if(this->GetScene() && this->ActiveStudyNodeID)
       {
-        node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(this->Scene->GetNodeByID(this->UserSelectedStudyNodeID));
+        node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(this->Scene->GetNodeByID(this->ActiveStudyNodeID));
       }
 
     return node;
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLLongitudinalPETCTFindingNode* vtkMRMLLongitudinalPETCTReportNode::GetUserSelectedFindingNode()
+vtkMRMLLongitudinalPETCTFindingNode* vtkMRMLLongitudinalPETCTReportNode::GetActiveFindingNode()
 {
     vtkMRMLLongitudinalPETCTFindingNode* node = NULL;
-    if(this->GetScene() && this->UserSelectedFindingNodeID)
+    if(this->GetScene() && this->ActiveFindingNodeID)
       {
-        node = vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(this->Scene->GetNodeByID(this->UserSelectedFindingNodeID));
+        node = vtkMRMLLongitudinalPETCTFindingNode::SafeDownCast(this->Scene->GetNodeByID(this->ActiveFindingNodeID));
+      }
+
+    return node;
+}
+
+//----------------------------------------------------------------------------
+vtkMRMLLongitudinalPETCTStudyNode* vtkMRMLLongitudinalPETCTReportNode::GetRegistrationFixedStudyNode()
+{
+    vtkMRMLLongitudinalPETCTStudyNode* node = NULL;
+    if(this->GetScene() && this->RegistrationFixedStudyNodeID)
+      {
+        node = vtkMRMLLongitudinalPETCTStudyNode::SafeDownCast(this->Scene->GetNodeByID(this->RegistrationFixedStudyNodeID));
       }
 
     return node;
@@ -994,33 +899,27 @@ vtkMRMLLongitudinalPETCTReportNode::UpdateReferences()
   if (this->Scene)
     {
 
-      if (this->FindingTypesColorTableNodeID
-          && this->Scene->GetNodeByID(this->FindingTypesColorTableNodeID) == NULL)
-        this->SetAndObserveFindingTypesColorTableNodeID(NULL);
+      IDsVectorType::iterator it;
 
-      else
+      for (it = this->StudyNodeIDs.begin(); it != this->StudyNodeIDs.end();
+          ++it)
         {
-          IDsVectorType::iterator it;
-
-          for (it = this->StudyNodeIDs.begin(); it != this->StudyNodeIDs.end();
-              ++it)
+          if (this->Scene->GetNodeByID((*it).c_str()) == NULL)
             {
-              if (this->Scene->GetNodeByID((*it).c_str()) == NULL)
-                {
-                  this->RemoveStudyNodeID((*it).c_str());
-                  break;
-                }
-            }
-          for (it = this->FindingNodeIDs.begin();
-              it != this->FindingNodeIDs.end(); ++it)
-            {
-              if (this->Scene->GetNodeByID((*it).c_str()) == NULL)
-                {
-                  this->RemoveFindingNodeID((*it).c_str());
-                  break;
-                }
+              this->RemoveStudyNodeID((*it).c_str());
+              break;
             }
         }
+      for (it = this->FindingNodeIDs.begin(); it != this->FindingNodeIDs.end();
+          ++it)
+        {
+          if (this->Scene->GetNodeByID((*it).c_str()) == NULL)
+            {
+              this->RemoveFindingNodeID((*it).c_str());
+              break;
+            }
+        }
+
     }
 }
 
@@ -1033,19 +932,9 @@ void vtkMRMLLongitudinalPETCTReportNode::ProcessMRMLEvents(vtkObject *caller, un
 
   bool callerIsStudy = node->IsA("vtkMRMLLongitudinalPETCTStudyNode");
   bool callerIsFinding = node->IsA("vtkMRMLLongitudinalPETCTFindingNode");
-  bool callerIsFindingTypesTable = this->FindingTypesColorTableNode && node == this->FindingTypesColorTableNode;
 
-  if(callerIsStudy || callerIsFinding || callerIsFindingTypesTable)
-    {
-      if(callerIsStudy)
-        std::cout << "STUDY MODIFIED " << std::endl;
-      else if(callerIsFinding)
-              std::cout << "FINDING MODIFIED " << std::endl;
-      else
-        std::cout << "FINDING TYPES TABLE MODIFIED " << std::endl;
-
-      this->Modified();
-    }
+  if(callerIsStudy || callerIsFinding)
+    this->Modified();
 }
 
 //----------------------------------------------------------------------------
@@ -1068,14 +957,6 @@ vtkMRMLLongitudinalPETCTReportNode::UpdateScene(vtkMRMLScene *scene)
 
   if (this->Scene && this->Scene == scene)
     {
-      vtkMRMLNode* findingsColorTableNode = this->Scene->GetNodeByID(
-          this->FindingTypesColorTableNodeID);
-
-      if (findingsColorTableNode
-          && this->FindingTypesColorTableNode != findingsColorTableNode)
-        this->SetAndObserveFindingTypesColorTableNodeID(
-            this->FindingTypesColorTableNodeID);
-
       this->UpdateStudyNodesObservation();
       this->UpdateFindingNodesObservation();
     }
@@ -1089,12 +970,8 @@ vtkMRMLLongitudinalPETCTReportNode::UpdateReferenceID(const char *oldID,
 {
   this->Superclass::UpdateReferenceID(oldID, newID);
 
-  if (this->FindingTypesColorTableNode
-      && !strcmp(oldID, this->FindingTypesColorTableNodeID))
-    this->SetAndObserveFindingTypesColorTableNodeID(newID);
-
-  else if (this->ColorNodeID && !strcmp(oldID, this->ColorNodeID))
-    this->SetColorNodeID(newID);
+  if (this->ColorTableNodeID && !strcmp(oldID, this->ColorTableNodeID))
+    this->SetColorTableNodeID(newID);
 
   else
     {

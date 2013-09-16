@@ -15,7 +15,7 @@ Version:   $Revision: 1.2 $
 // VTK includes
 #include <vtkCommand.h>
 #include <vtkObjectFactory.h>
-#
+
 
 
 // MRML includes
@@ -23,14 +23,14 @@ Version:   $Revision: 1.2 $
 
 #include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLAnnotationROINode.h>
-#include <vtkMRMLModelHierarchyNode.h>
-#include <vtkMRMLModelNode.h>
+#include <vtkMRMLVolumePropertyNode.h>
+#include <vtkMRMLVolumeRenderingDisplayNode.h>
 
 #include <vtkNew.h>
 #include <vtkMatrix4x4.h>
 #include <vtkCollection.h>
 
-#include <vtkMRMLVolumeRenderingDisplayNode.h>
+
 
 // STD includes
 
@@ -54,11 +54,8 @@ vtkMRMLLongitudinalPETCTStudyNode::vtkMRMLLongitudinalPETCTStudyNode()
   this->PETLabelVolumeNode = NULL;
   this->PETLabelVolumeNodeID = NULL;
 
-  this->SegmentationROINode = NULL;
-  this->SegmentationROINodeID = NULL;
-
-  this->CenteringTransformNode = NULL;
-  this->CenteringTransformNodeID = NULL;
+  this->RegistrationTransformNode = NULL;
+  this->RegistrationTransformNodeID = NULL;
 
   this->VolumeRenderingDisplayNode = NULL;
   this->VolumeRenderingDisplayNodeID = NULL;
@@ -72,9 +69,8 @@ vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
   this->SetAndObservePETVolumeNodeID(NULL);
   this->SetAndObserveCTVolumeNodeID(NULL);
   this->SetAndObservePETLabelVolumeNodeID(NULL);
-  this->SetAndObserveSegmentationROINodeID(NULL);
   this->SetAndObserveVolumeRenderingDisplayNodeID(NULL);
-  this->SetAndObserveCenteringTransformNodeID(NULL);
+  this->SetAndObserveRegistrationTransformNodeID(NULL);
 
   if(this->PETVolumeNodeID)
     delete [] this->PETVolumeNodeID;
@@ -85,11 +81,8 @@ vtkMRMLLongitudinalPETCTStudyNode::~vtkMRMLLongitudinalPETCTStudyNode()
   if(this->PETLabelVolumeNodeID)
     delete [] this->PETLabelVolumeNodeID;
 
-  if(this->SegmentationROINodeID)
-    delete [] this->PETLabelVolumeNodeID;
-
-  if(this->CenteringTransformNodeID)
-    delete [] this->CenteringTransformNodeID;
+  if(this->RegistrationTransformNodeID)
+    delete [] this->RegistrationTransformNodeID;
 
   if(this->VolumeRenderingDisplayNodeID)
     delete [] this->VolumeRenderingDisplayNodeID;
@@ -137,13 +130,9 @@ vtkMRMLLongitudinalPETCTStudyNode::ReadXMLAttributes(const char** atts)
         {
           this->SetAndObservePETLabelVolumeNodeID(attValue);
         }
-      else if (!strcmp(attName, "SegmentationROINodeID"))
+      else if (!strcmp(attName, "RegistrationTransformNodeID"))
         {
-          this->SetAndObserveSegmentationROINodeID(attValue);
-        }
-      else if (!strcmp(attName, "CenteringTransformNodeID"))
-        {
-          this->SetAndObserveCenteringTransformNodeID(attValue);
+          this->SetAndObserveRegistrationTransformNodeID(attValue);
         }
       else if (!strcmp(attName, "VolumeRenderingDisplayNodeID"))
         {
@@ -164,23 +153,21 @@ void vtkMRMLLongitudinalPETCTStudyNode::WriteXML(ostream& of, int nIndent)
   of << indent << " SelectedForSegmentation=\"" << (this->SelectedForSegmentation ? "true" : "false") << "\"";
   of << indent << " SelectedForAnalysis=\"" << (this->SelectedForAnalysis ? "true" : "false") << "\"";
 
-  if (this->CenteringTransformNodeID)
-      of << indent << " CenteringTransformNodeID=\"" << this->CenteringTransformNodeID << "\"";
+  if (this->RegistrationTransformNodeID)
+      of << indent << " RegistrationTransformNodeID=\"" << this->RegistrationTransformNodeID << "\"";
   if (this->PETVolumeNodeID)
       of << indent << " PETVolumeNodeID=\"" << this->PETVolumeNodeID << "\"";
   if (this->CTVolumeNodeID)
       of << indent << " CTVolumeNodeID=\"" << this->CTVolumeNodeID << "\"";
   if (this->PETLabelVolumeNodeID)
       of << indent << " PETLabelVolumeNodeID=\"" << this->PETLabelVolumeNodeID << "\"";
-  if (this->SegmentationROINodeID)
-      of << indent << " SegmentationROINodeID=\"" << this->SegmentationROINodeID << "\"";
   if (this->VolumeRenderingDisplayNodeID)
       of << indent << " VolumeRenderingDisplayNodeID=\"" << this->VolumeRenderingDisplayNodeID << "\"" << std::endl;
 }
 
 //----------------------------------------------------------------------------
 // Copy the node\"s attributes to this object.
-// Does NOT copy: ID, FilePrefix, Name, SliceID
+// Does NOT copy: ID
 void vtkMRMLLongitudinalPETCTStudyNode::Copy(vtkMRMLNode *anode)
 {
   int disabledModify = this->StartModify();
@@ -196,8 +183,7 @@ void vtkMRMLLongitudinalPETCTStudyNode::Copy(vtkMRMLNode *anode)
         this->SetAndObservePETVolumeNodeID(node->GetPETVolumeNodeID());
         this->SetAndObserveCTVolumeNodeID(node->GetCTVolumeNodeID());
         this->SetAndObservePETLabelVolumeNodeID(node->GetPETLabelVolumeNodeID());
-        this->SetAndObserveSegmentationROINodeID(node->GetSegmentationROINodeID());
-        this->SetAndObserveCenteringTransformNodeID(node->GetCenteringTransformNodeID());
+        this->SetAndObserveRegistrationTransformNodeID(node->GetRegistrationTransformNodeID());
         this->SetAndObserveVolumeRenderingDisplayNodeID(node->GetVolumeRenderingDisplayNodeID());
       }
 
@@ -215,8 +201,7 @@ void vtkMRMLLongitudinalPETCTStudyNode::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PETVolumeNodeID: " << (this->PETVolumeNodeID ? this->PETVolumeNodeID : "(none)") << "\n";
   os << indent << "CTVolumeNodeID: " << (this->CTVolumeNodeID ? this->CTVolumeNodeID : "(none)") << "\n";
   os << indent << "PETLabelVolumeNodeID: " << (this->PETLabelVolumeNodeID ? this->PETLabelVolumeNodeID : "(none)") << "\n";
-  os << indent << "SegmentationROINodeID: " << (this->SegmentationROINodeID ? this->SegmentationROINodeID : "(none)") << "\n";
-  os << indent << "CenteringTransformNodeID: " << (this->CenteringTransformNodeID ? this->CenteringTransformNodeID : "(none)") << "\n";
+  os << indent << "RegistrationTransformNodeID: " << (this->RegistrationTransformNodeID ? this->RegistrationTransformNodeID : "(none)") << "\n";
   os << indent << "VolumeRenderingDisplayNodeID: " << (this->VolumeRenderingDisplayNodeID ? this->VolumeRenderingDisplayNodeID : "(none)") << "\n";
 
 }
@@ -259,8 +244,8 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETVolumeNodeID(
   if (this->Scene && this->PETVolumeNode)
     this->Scene->AddReferencedNodeID(this->PETVolumeNodeID, this);
 
-  if(this->PETVolumeNode && this->CenteringTransformNode)
-    this->PETVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
+  if(this->PETVolumeNode && this->RegistrationTransformNode)
+    this->PETVolumeNode->SetAndObserveTransformNodeID(this->RegistrationTransformNode->GetID());
 
 }
 
@@ -306,9 +291,8 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCTVolumeNodeID(
   if (this->Scene && this->CTVolumeNode)
     this->Scene->AddReferencedNodeID(this->CTVolumeNodeID, this);
 
-  if(this->CTVolumeNode && this->CenteringTransformNode)
-    this->CTVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
-
+  if(this->CTVolumeNode && this->RegistrationTransformNode)
+    this->CTVolumeNode->SetAndObserveTransformNodeID(this->RegistrationTransformNode->GetID());
 }
 
 
@@ -352,8 +336,8 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETLabelVolumeNodeID(
   if (this->Scene && this->PETLabelVolumeNode)
     this->Scene->AddReferencedNodeID(this->PETLabelVolumeNodeID, this);
 
-  if(this->PETLabelVolumeNode && this->CenteringTransformNode)
-    this->PETLabelVolumeNode->SetAndObserveTransformNodeID(this->CenteringTransformNode->GetID());
+  if(this->PETLabelVolumeNode && this->RegistrationTransformNode)
+    this->PETLabelVolumeNode->SetAndObserveTransformNodeID(this->RegistrationTransformNode->GetID());
 }
 
 
@@ -367,45 +351,45 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETLabelVolumeNodeID(
 
 //----------------------------------------------------------------------------
 void
-vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCenteringTransformNodeID(
-    const char* centeringTransformNodeID)
+vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveRegistrationTransformNodeID(
+    const char* registrationTransformNodeID)
 {
   // first remove references and observers from old node
-  if (this->CenteringTransformNode)
+  if (this->RegistrationTransformNode)
     {
-      vtkUnObserveMRMLObjectMacro(this->CenteringTransformNode);
+      vtkUnObserveMRMLObjectMacro(this->RegistrationTransformNode);
 
       if (this->Scene
           && this->Scene->IsNodeReferencingNodeID(this,
-              this->CenteringTransformNode->GetID()))
-        this->Scene->RemoveReferencedNodeID(this->CenteringTransformNode->GetID(),
+              this->RegistrationTransformNode->GetID()))
+        this->Scene->RemoveReferencedNodeID(this->RegistrationTransformNode->GetID(),
             this);
     }
 
   vtkMRMLLinearTransformNode* tnode = NULL;
 
-  if (this->GetScene() && centeringTransformNodeID)
+  if (this->GetScene() && registrationTransformNodeID)
     {
       tnode = vtkMRMLLinearTransformNode::SafeDownCast(
-          this->GetScene()->GetNodeByID(centeringTransformNodeID));
+          this->GetScene()->GetNodeByID(registrationTransformNodeID));
     }
 
-  vtkSetAndObserveMRMLObjectMacro(this->CenteringTransformNode, tnode);
-  this->SetCenteringTransformNodeID(centeringTransformNodeID);
+  vtkSetAndObserveMRMLObjectMacro(this->RegistrationTransformNode, tnode);
+  this->SetRegistrationTransformNodeID(registrationTransformNodeID);
 
-  this->ObserveCenteringTransform(true); //this->CenteredVolumes);
+  this->ObserveRegistrationTransform(true); //this->CenteredVolumes);
 
-  if (this->Scene && this->CenteringTransformNode)
-    this->Scene->AddReferencedNodeID(this->CenteringTransformNodeID, this);
+  if (this->Scene && this->RegistrationTransformNode)
+    this->Scene->AddReferencedNodeID(this->RegistrationTransformNodeID, this);
 }
 
 
 //----------------------------------------------------------------------------
 void
-vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveCenteringTransformNodeID(
-    const std::string& centeringTransformNodeID)
+vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveRegistrationTransformNodeID(
+    const std::string& registrationTransformNodeID)
 {
-  this->SetAndObserveCenteringTransformNodeID(centeringTransformNodeID.c_str());
+  this->SetAndObserveRegistrationTransformNodeID(registrationTransformNodeID.c_str());
 }
 
 
@@ -456,109 +440,47 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveVolumeRenderingDisplayNodeID(
 }
 
 
-
 //----------------------------------------------------------------------------
 void
-vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
-    const char* segmentationROINodeID)
+vtkMRMLLongitudinalPETCTStudyNode::ObserveRegistrationTransform(bool observe)
 {
-
-  // first remove references and observers from old node
-  if (this->SegmentationROINode)
-    {
-      vtkUnObserveMRMLObjectMacro(this->SegmentationROINode);
-
-      if (this->Scene
-          && this->Scene->IsNodeReferencingNodeID(this,
-              this->SegmentationROINode->GetID()))
-        this->Scene->RemoveReferencedNodeID(this->SegmentationROINode->GetID(),
-            this);
-    }
-
-  vtkMRMLAnnotationROINode* roiNode = NULL;
-
-  if (this->GetScene() && segmentationROINodeID)
-    {
-      roiNode = vtkMRMLAnnotationROINode::SafeDownCast(
-          this->GetScene()->GetNodeByID(segmentationROINodeID));
-    }
-
-  vtkSetAndObserveMRMLObjectMacro(this->SegmentationROINode, roiNode);
-  this->SetSegmentationROINodeID(segmentationROINodeID);
-
-  if (this->SegmentationROINode)
-    {
-      if (this->CenteringTransformNode && this->SegmentationROINode->GetParentTransformNode()
-              != this->CenteringTransformNode)
-            {
-
-              this->SegmentationROINode->SetAndObserveTransformNodeID(
-                  this->CenteringTransformNode->GetID());
-              this->Modified();
-            }
-      else
-        {
-          this->SegmentationROINode->SetAndObserveTransformNodeID(NULL);
-          this->Modified();
-        }
-
-
-      if (this->Scene)
-        this->Scene->AddReferencedNodeID(this->SegmentationROINodeID, this);
-
-
-//      double xyz[3] = {0.,0.,0.};
-//      this->SegmentationROINode->GetXYZ(xyz);
-//
-//      if(this->GetCenteringTransformNode())
-//        {
-//    	  vtkSmartPointer<vtkMatrix4x4> matrix;
-//    	  matrix = this->GetCenteringTransformNode()->GetMatrixTransformToParent();
-//    	  xyz[0] = xyz[0]-matrix->GetElement(0,3);
-//    	  xyz[1] = xyz[1]-matrix->GetElement(1,3);
-//    	  xyz[2] = xyz[2]-matrix->GetElement(2,3);
-//
-//    	  this->SegmentationROINode->SetXYZ(xyz);
-//        }
-
-    }
-}
-
-//----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTStudyNode::SetAndObserveSegmentationROINodeID(
-    const std::string& segmentationROINodeID)
-{
-  this->SetAndObserveSegmentationROINodeID(segmentationROINodeID.c_str());
-}
-
-
-//----------------------------------------------------------------------------
-void
-vtkMRMLLongitudinalPETCTStudyNode::ObserveCenteringTransform(bool observe)
-{
-  if (observe && this->CenteringTransformNode != NULL)
+  if (observe && this->RegistrationTransformNode != NULL)
     {
       if (this->PETVolumeNode
           && this->PETVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode)
+              != this->RegistrationTransformNode)
         this->PETVolumeNode->SetAndObserveTransformNodeID(
-            this->CenteringTransformNode->GetID());
+            this->RegistrationTransformNode->GetID());
       if (this->CTVolumeNode
           && this->CTVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode)
+              != this->RegistrationTransformNode)
         this->CTVolumeNode->SetAndObserveTransformNodeID(
-            this->CenteringTransformNode->GetID());
+            this->RegistrationTransformNode->GetID());
       if (this->PETLabelVolumeNode
           && this->PETLabelVolumeNode->GetParentTransformNode()
-              != this->CenteringTransformNode)
+              != this->RegistrationTransformNode)
         this->PETLabelVolumeNode->SetAndObserveTransformNodeID(
-            this->CenteringTransformNode->GetID());
-      if (this->SegmentationROINode
-          && this->SegmentationROINode->GetParentTransformNode()
-              != this->CenteringTransformNode)
-        this->SegmentationROINode->SetAndObserveTransformNodeID(
-            this->CenteringTransformNode->GetID());
+            this->RegistrationTransformNode->GetID());
+      if (this->VolumeRenderingDisplayNode)
+        {
+          vtkMRMLAnnotationROINode* roiNode =
+              this->VolumeRenderingDisplayNode->GetROINode();
+          if (roiNode
+              && roiNode->GetParentTransformNode()
+                  != this->RegistrationTransformNode)
+            roiNode->SetAndObserveTransformNodeID(
+                this->RegistrationTransformNode->GetID());
+
+
+          vtkMRMLVolumePropertyNode* propNode =
+              this->VolumeRenderingDisplayNode->GetVolumePropertyNode();
+          if (propNode
+              && propNode->GetParentTransformNode()
+                  != this->RegistrationTransformNode)
+            propNode->SetAndObserveTransformNodeID(
+                this->RegistrationTransformNode->GetID());
+
+        }
     }
   else
     {
@@ -568,8 +490,18 @@ vtkMRMLLongitudinalPETCTStudyNode::ObserveCenteringTransform(bool observe)
         this->CTVolumeNode->SetAndObserveTransformNodeID(NULL);
       if (this->PETLabelVolumeNode)
         this->PETLabelVolumeNode->SetAndObserveTransformNodeID(NULL);
-      if (this->SegmentationROINode)
-        this->SegmentationROINode->SetAndObserveTransformNodeID(NULL);
+      if (this->VolumeRenderingDisplayNode)
+        {
+          vtkMRMLAnnotationROINode* roiNode =
+              this->VolumeRenderingDisplayNode->GetROINode();
+          if (roiNode)
+            roiNode->SetAndObserveTransformNodeID(NULL);
+
+          vtkMRMLVolumePropertyNode* propNode =
+              this->VolumeRenderingDisplayNode->GetVolumePropertyNode();
+          if (propNode)
+            propNode->SetAndObserveTransformNodeID(NULL);
+        }
     }
 
 
@@ -594,11 +526,8 @@ vtkMRMLLongitudinalPETCTStudyNode::UpdateReferences()
       else if(this->PETLabelVolumeNodeID && this->GetScene()->GetNodeByID(this->PETLabelVolumeNodeID) == NULL)
         this->SetAndObservePETLabelVolumeNodeID(NULL);
 
-      else if(this->SegmentationROINodeID && this->GetScene()->GetNodeByID(this->SegmentationROINodeID) == NULL)
-        this->SetAndObserveSegmentationROINodeID(NULL);
-
-      else if(this->CenteringTransformNodeID && this->GetScene()->GetNodeByID(this->CenteringTransformNodeID) == NULL)
-        this->SetAndObserveCenteringTransformNodeID(NULL);
+      else if(this->RegistrationTransformNodeID && this->GetScene()->GetNodeByID(this->RegistrationTransformNodeID) == NULL)
+        this->SetAndObserveRegistrationTransformNodeID(NULL);
 
       else if(this->VolumeRenderingDisplayNodeID && this->GetScene()->GetNodeByID(this->VolumeRenderingDisplayNodeID) == NULL)
         this->SetAndObserveVolumeRenderingDisplayNodeID(NULL);
@@ -620,11 +549,8 @@ vtkMRMLLongitudinalPETCTStudyNode::UpdateReferenceID(const char *oldID, const ch
   else if(this->PETLabelVolumeNode && !strcmp(oldID,this->PETLabelVolumeNodeID))
     this->SetAndObservePETLabelVolumeNodeID(newID);
 
-  else if(this->SegmentationROINode && !strcmp(oldID,this->SegmentationROINodeID))
-    this->SetAndObserveSegmentationROINodeID(newID);
-
-  else if(this->CenteringTransformNode && !strcmp(oldID,this->CenteringTransformNodeID))
-    this->SetAndObserveCenteringTransformNodeID(newID);
+  else if(this->RegistrationTransformNode && !strcmp(oldID,this->RegistrationTransformNodeID))
+    this->SetAndObserveRegistrationTransformNodeID(newID);
 
   else if(this->VolumeRenderingDisplayNode && !strcmp(oldID,this->VolumeRenderingDisplayNodeID))
     this->SetAndObserveVolumeRenderingDisplayNodeID(newID);
@@ -653,8 +579,7 @@ vtkMRMLLongitudinalPETCTStudyNode::UpdateScene(vtkMRMLScene *scene)
       vtkMRMLNode* petVolumeNode = this->Scene->GetNodeByID(this->PETVolumeNodeID);
       vtkMRMLNode* ctVolumeNode = this->Scene->GetNodeByID(this->CTVolumeNodeID);
       vtkMRMLNode* petLabelVolumeNode = this->Scene->GetNodeByID(this->PETLabelVolumeNodeID);
-      vtkMRMLNode* segmentationROINode = this->Scene->GetNodeByID(this->SegmentationROINodeID);
-      vtkMRMLNode* centeringTransformNode = this->Scene->GetNodeByID(this->CenteringTransformNodeID);
+      vtkMRMLNode* registrationTransformNode = this->Scene->GetNodeByID(this->RegistrationTransformNodeID);
       vtkMRMLNode* volumeRenderingDisplayNode = this->Scene->GetNodeByID(this->VolumeRenderingDisplayNodeID);
 
       if(petVolumeNode && this->PETVolumeNode != petVolumeNode)
@@ -666,11 +591,8 @@ vtkMRMLLongitudinalPETCTStudyNode::UpdateScene(vtkMRMLScene *scene)
       if(petLabelVolumeNode && this->PETLabelVolumeNode != petLabelVolumeNode)
         this->SetAndObservePETLabelVolumeNodeID(this->PETLabelVolumeNodeID);
 
-      if(segmentationROINode && this->SegmentationROINode != segmentationROINode)
-        this->SetAndObserveSegmentationROINodeID(this->SegmentationROINodeID);
-
-      if(centeringTransformNode && this->CenteringTransformNode != centeringTransformNode)
-        this->SetAndObserveCenteringTransformNodeID(this->CenteringTransformNodeID);
+      if(registrationTransformNode && this->RegistrationTransformNode != registrationTransformNode)
+        this->SetAndObserveRegistrationTransformNodeID(this->RegistrationTransformNodeID);
 
       if(volumeRenderingDisplayNode && this->VolumeRenderingDisplayNode != volumeRenderingDisplayNode)
         this->SetAndObserveVolumeRenderingDisplayNodeID(this->VolumeRenderingDisplayNodeID);

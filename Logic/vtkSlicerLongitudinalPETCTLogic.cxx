@@ -177,7 +177,7 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
   petLabelVolume->SetAndObserveTransformNodeID(translationTransform->GetID());
   */
 
-  study->SetAndObserveCenteringTransformNodeID(translationTransform->GetID());
+  study->SetAndObserveRegistrationTransformNodeID(translationTransform->GetID());
 
 
   return true;

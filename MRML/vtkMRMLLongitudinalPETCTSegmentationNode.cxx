@@ -5,10 +5,10 @@ Portions (c) Copyright 2005 Brigham and Women\"s Hospital (BWH) All Rights Reser
 See COPYRIGHT.txt
 or http://www.slicer.org/copyright/copyright.txt for details.
 
-Program:   3D Slicer
-Module:    $RCSfile: vtkMRMLReprtingSegmentationNode.cxx,v $
-Date:      $Date: 2006/03/17 15:10:10 $
-Version:   $Revision: 1.2 $
+Program: 3D Slicer
+Module: $RCSfile: vtkMRMLReprtingSegmentationNode.cxx,v $
+Date: $Date: 2006/03/17 15:10:10 $
+Version: $Revision: 1.2 $
 
 =========================================================================auto=*/
 
@@ -124,6 +124,22 @@ vtkMRMLLongitudinalPETCTSegmentationNode::ReadXMLAttributes(const char** atts)
         {
           this->SetSUVMin(atof(attValue));
         }
+      else if (!strcmp(attName, "Volcc"))
+        {
+          this->SetVolcc(atof(attValue));
+        }
+      else if (!strcmp(attName, "Volmm3"))
+        {
+          this->SetVolmm3(atof(attValue));
+        }
+      else if (!strcmp(attName, "Count"))
+        {
+          this->SetCount(atof(attValue));
+        }
+      else if (!strcmp(attName, "StdDev"))
+        {
+          this->SetStdDev(atof(attValue));
+        }
       else if (!strcmp(attName, "ROIxyz"))
         {
           std::stringstream ss;
@@ -172,13 +188,17 @@ vtkMRMLLongitudinalPETCTSegmentationNode::WriteXML(ostream& of, int nIndent)
   of << indent << " SUVMax=\"" << this->SUVMax << "\"";
   of << indent << " SUVMean=\"" << this->SUVMean << "\"";
   of << indent << " SUVMin=\"" << this->SUVMin << "\"";
+  of << indent << " Volcc=\"" << this->Volcc << "\"";
+  of << indent << " Volmm3=\"" << this->Volmm3 << "\"";
+  of << indent << " Count=\"" << this->Count << "\"";
+  of << indent << " StdDev=\"" << this->StdDev << "\"";
 
 
   of << indent << " ROIxyz=\"" << this->ROIxyz[0] << " " << this->ROIxyz[1]
       << " " << this->ROIxyz[2] << "\"";
 
   of << indent << " ROIRadius=\"" << this->ROIRadius[0] << " "
-      << this->ROIRadius[1] << " " << this->ROIRadius[2] << "\"" <<  std::endl;
+      << this->ROIRadius[1] << " " << this->ROIRadius[2] << "\"" << std::endl;
 
 }
 
@@ -200,6 +220,11 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::Copy(vtkMRMLNode *anode)
       this->SetSUVMax(node->GetSUVMax());
       this->SetSUVMean(node->GetSUVMean());
       this->SetSUVMin(node->GetSUVMin());
+      this->SetVolcc(node->GetVolcc());
+      this->SetVolmm3(node->GetVolmm3());
+      this->SetCount(node->GetCount());
+      this->SetStdDev(node->GetStdDev());
+
       node->GetROIxyz(this->ROIxyz);
       node->GetROIRadius(this->ROIRadius);
     }
@@ -217,6 +242,10 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::PrintSelf(ostream& os, vtkIndent 
   os << indent << "SUVMax: " << this->SUVMax << "\n";
   os << indent << "SUVMean: " << this->SUVMean << "\n";
   os << indent << "SUVMin: " << this->SUVMin << "\n";
+  os << indent << "Volcc: " << this->Volcc << "\n";
+  os << indent << "Volmm3: " << this->Volmm3 << "\n";
+  os << indent << "Count: " << this->Count << "\n";
+  os << indent << "StdDev: " << this->StdDev << "\n";
   os << indent << "ROIxyz: [" << this->ROIxyz[0] <<","<< this->ROIxyz[1] <<"," << this->ROIxyz[2] << "]\n";
   os << indent << "ROIRadius: [" << this->ROIRadius[0] <<","<< this->ROIRadius[1] <<"," << this->ROIRadius[2] << "]\n";
 
@@ -275,38 +304,6 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetStatistics(double suvmax, doub
 
   this->EndModify(disabledModify);
 }
-
-
-////----------------------------------------------------------------------------
-//void
-//vtkMRMLLongitudinalPETCTSegmentationNode::RemoveCurrentModelHierarchyFromScene()
-//{
-//  if (this->ModelHierarchyNode)
-//    {
-//      vtkNew<vtkCollection> cmn;
-//      this->ModelHierarchyNode->GetChildrenModelNodes(cmn.GetPointer());
-//
-//      for (int i = 0; i < cmn->GetNumberOfItems(); ++i)
-//        {
-//          vtkSmartPointer<vtkMRMLModelNode> tempModelNode =
-//              vtkMRMLModelNode::SafeDownCast(cmn->GetItemAsObject(i));
-//
-//          if (!tempModelNode)
-//            continue;
-//
-//          if (this->Scene)
-//            this->Scene->RemoveNode(tempModelNode);
-//        }
-//
-//      if (this->Scene)
-//        {
-//          vtkUnObserveMRMLObjectMacro(this->ModelHierarchyNode);
-//          this->Scene->RemoveNode(this->ModelHierarchyNode);
-//        }
-//
-//      this->ModelHierarchyNode = NULL;
-//    }
-//}
 
 
 //----------------------------------------------------------------------------
@@ -400,22 +397,21 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::SetAndObserveModelHierarchyNodeID
 void
 vtkMRMLLongitudinalPETCTSegmentationNode::AdjustModelTransformToLabelVolume()
 {
+
   if (this->ModelHierarchyNode && this->LabelVolumeNode)
     {
-
       vtkNew<vtkCollection> cmn;
       this->ModelHierarchyNode->GetChildrenModelNodes(cmn.GetPointer());
-
       for(int i=0; i < cmn->GetNumberOfItems(); ++i)
         {
           vtkMRMLModelNode* tempModelNode = vtkMRMLModelNode::SafeDownCast(cmn->GetItemAsObject(i));
-
           if(!tempModelNode)
             continue;
-
           if(this->LabelVolumeNode->GetParentTransformNode())
-            tempModelNode->SetAndObserveTransformNodeID(this->LabelVolumeNode->GetParentTransformNode()->GetID());
-          else
+            {
+              tempModelNode->SetAndObserveTransformNodeID(this->LabelVolumeNode->GetParentTransformNode()->GetID());
+            }
+            else
             tempModelNode->SetAndObserveTransformNodeID(NULL);
 
         }
@@ -519,7 +515,3 @@ void vtkMRMLLongitudinalPETCTSegmentationNode::UpdateScene(vtkMRMLScene *scene)
          this->SetAndObserveModelHierarchyNodeID(this->ModelHierarchyNodeID);
      }
 }
-
-
-
-
