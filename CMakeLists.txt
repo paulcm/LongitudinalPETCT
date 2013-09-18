@@ -28,6 +28,7 @@ add_subdirectory(MRML)
 add_subdirectory(Widgets)
 add_subdirectory(Logic)
 add_subdirectory(Py)
+add_subdirectory(Quantification)
 
 #-----------------------------------------------------------------------------
 set(MODULE_EXPORT_DIRECTIVE "Q_SLICER_QTMODULES_${MODULE_NAME_UPPER}_EXPORT")
