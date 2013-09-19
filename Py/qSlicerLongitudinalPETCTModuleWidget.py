@@ -286,7 +286,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__createReportWidget()
     self.reportsCollapsibleButton = ctk.ctkCollapsibleButton()
     self.reportsCollapsibleButton.setProperty('collapsed',False)
-    self.reportsCollapsibleButton.text = "Report Selection"
+    self.reportsCollapsibleButton.text = "1. Report Selection"
     self.collapsibleButtonsGroup.addButton(self.reportsCollapsibleButton)
     reportsLayout = qt.QVBoxLayout(self.reportsCollapsibleButton)
     reportsLayout.addWidget(self.reportWidget)
@@ -295,7 +295,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.studyWidget = None
     self.__createStudyWidget()
     self.studiesCollapsibleButton = ctk.ctkCollapsibleButton()
-    self.studiesCollapsibleButton.text = "Study Selection"
+    self.studiesCollapsibleButton.text = "2. Study Selection"
     self.studiesCollapsibleButton.setProperty('collapsed',True)
     self.collapsibleButtonsGroup.addButton(self.studiesCollapsibleButton)
     studiesLayout = qt.QVBoxLayout(self.studiesCollapsibleButton)   
@@ -305,7 +305,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.findingWidget = None
     self.__createFindingWidget()
     self.findingsCollapsibleButton = ctk.ctkCollapsibleButton()
-    self.findingsCollapsibleButton.text = "Findings"
+    self.findingsCollapsibleButton.text = "3. Findings"
     self.findingsCollapsibleButton.setProperty('collapsed',True)
     self.collapsibleButtonsGroup.addButton(self.findingsCollapsibleButton)
     findingsLayout = qt.QVBoxLayout(self.findingsCollapsibleButton)
@@ -319,7 +319,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.analysisWidget = None
     self.__createAnalysisWidget()
     self.analysisCollapsibleButton = ctk.ctkCollapsibleButton()
-    self.analysisCollapsibleButton.text = "Analysis"
+    self.analysisCollapsibleButton.text = "4. Analysis"
     self.analysisCollapsibleButton.setProperty('collapsed',True)
     self.collapsibleButtonsGroup.addButton(self.analysisCollapsibleButton)
     analysisLayout = qt.QVBoxLayout(self.analysisCollapsibleButton)
