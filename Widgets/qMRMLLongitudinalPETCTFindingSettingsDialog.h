@@ -32,7 +32,7 @@
 
 #include <ctkVTKObject.h>
 
-#include <vtkMRMLLongitudinalPETCTFindingnode.h>
+#include <vtkMRMLLongitudinalPETCTFindingNode.h>
 class vtkMRMLColorNode;
 
 
