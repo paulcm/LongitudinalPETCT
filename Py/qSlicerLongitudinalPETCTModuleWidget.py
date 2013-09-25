@@ -693,8 +693,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if selected:
       
       self.__initializeStudyVisualization(studyNode)
-        
-      if ViewHelper.getSetting('registration'): 
+      
+      if self.moduleSettingsWidget.property("registration") == True:
         if not self.activeReportNode.GetRegistrationFixedStudyNode():  
           self.activeReportNode.SetRegistrationFixedStudyNodeID(studyNode.GetID())
         
@@ -1370,7 +1370,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       seg.SetReferenceCount(seg.GetReferenceCount()-1) 
       slicer.mrmlScene.AddNode(seg)
       
-      if ViewHelper.getSetting('makeModels'):
+      if self.moduleSettingsWidget.property("makeModels") == True:
         mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
         seg.SetAndObserveModelHierarchyNodeID(mh.GetID())
                
@@ -1404,7 +1404,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     vrdn = study.GetVolumeRenderingDisplayNode()
         
-    if (ViewHelper.getSetting('makeModels') == True) & (vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode'):
+    if ((self.moduleSettingsWidget.property("makeModels") == True) & (vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode')):
       ViewHelper.makeModels(study,finding,self.activeReportNode.GetColorTableNode())     
       
     elif ViewHelper.getSetting('Models'):
