@@ -442,24 +442,23 @@ class qSlicerLongitudinalPETCTModuleWidget:
  
     vrDisplayNode = vrLogic.CreateVolumeRenderingDisplayNode()
     slicer.mrmlScene.AddNode(vrDisplayNode)
+    vrDisplayNode.UnRegister(vrLogic)
     vrDisplayNode.SetCroppingEnabled(0)
     vrDisplayNode.SetAttribute("OpacityPow",str(opacityPow))
-    vrDisplayNode.SetAndObserveVolumeNodeID(petVolume.GetID())
     vrDisplayNode.SetName(petVolume.GetName() +"_VR_Display")
     vrLogic.UpdateDisplayNodeFromVolumeNode(vrDisplayNode, petVolume)
+    petVolume.AddAndObserveDisplayNodeID(vrDisplayNode.GetID())
 
     vrDisplayNode.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
       
     propNode = vrDisplayNode.GetVolumePropertyNode()
     if propNode:
-      propNode.SetReferenceCount(propNode.GetReferenceCount()-1)
       propNode.SetName(petVolume.GetName() + "_VR_VolumeProperty")
       
       self.__updateColorFunction(vrDisplayNode)
       
     roiNode = vrDisplayNode.GetROINode()
     if roiNode:
-      roiNode.SetReferenceCount(roiNode.GetReferenceCount()-1)
       roiNode.SetName(petVolume.GetName() + "_VR_ROI")
       roiNode.SetDisplayVisibility(False)
       
