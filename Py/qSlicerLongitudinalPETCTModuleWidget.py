@@ -368,7 +368,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__chartNode = None
     self.__chartArrayNodes = []
     self.__chartArrayNodeNames = []
-    self.__saturationMultipliers = [1.0,0.85,0.75]
+    self.__saturationMultipliers = [1.0,0.75,0.6]
     
     self.__fileDialog = None
     self.__layoutBackup = None
@@ -1504,9 +1504,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
   
   
   def __updateChartArrayNodes(self):
-     
-    m = len(self.__chartArrayNodes) % 3
-    satMult = 1.0 - (m * 0.35)
     
     diff = len(self.__chartArrayNodeNames) * self.activeReportNode.GetNumberOfFindingNodeIDs() - len(self.__chartArrayNodes)
     
