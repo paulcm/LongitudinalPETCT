@@ -368,7 +368,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__chartNode = None
     self.__chartArrayNodes = []
     self.__chartArrayNodeNames = []
-    self.__saturationMultipliers = []
+    self.__saturationMultipliers = [1.0,0.85,0.75]
     
     self.__fileDialog = None
     self.__layoutBackup = None
@@ -1489,91 +1489,106 @@ class qSlicerLongitudinalPETCTModuleWidget:
              
       ViewHelper.resetThreeDViewsFocalPoints()            
 
-  def __createChartArrayNodes(self):
+  def __createChartArrayNodeNames(self):
+      
+    if not self.__chartArrayNodeNames:
+      minStr = "SUVmin"
+      meanStr = "SUVmean"
+      maxStr = "SUVmax"        
+      
+      self.__chartArrayNodeNames.append(maxStr)
+      self.__chartArrayNodeNames.append(meanStr)
+      self.__chartArrayNodeNames.append(minStr)
     
-    self.__chartArrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
-    satMult = 1.0
+    return self.__chartArrayNodeNames
+  
+  
+  def __updateChartArrayNodes(self):
+     
+    m = len(self.__chartArrayNodes) % 3
+    satMult = 1.0 - (m * 0.35)
     
-    for i in xrange(len(self.__chartArrayNodeNames)):
-      arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())          
-      arrayNode.SetSaveWithScene(False)
-      self.__chartArrayNodes.append(arrayNode)
-      self.__saturationMultipliers.append(satMult)
-      satMult = satMult - (satMult/4)
-       
+    diff = len(self.__chartArrayNodeNames) * self.activeReportNode.GetNumberOfFindingNodeIDs() - len(self.__chartArrayNodes)
+    
+    if diff < 0:
+      for i in xrange(diff*(-1)):   
+        lastidx = len(self.__chartArrayNodes)-1   
+        can = self.__chartArrayNodes[lastidx]
+        self.__chartArrayNodes.pop() # pop last entry
+        slicer.mrmlScene.RemoveNode(can)
+    
+    else:
+      for i in xrange(diff):
+        arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())          
+        arrayNode.SetSaveWithScene(False)
+        self.__chartArrayNodes.append(arrayNode)     
+
 
   def __updateQuantitativeAnalysisCharts(self):
   
     if self.__chartNode == None:
       self.__createChartNode()    
-      
+    
     self.__chartNode.ClearArrays()  
-  
-    if len(self.__chartArrayNodes) == 0:
-      self.__createChartArrayNodes()
+        
+    self.__createChartArrayNodeNames()
+      
+    if len(self.__chartArrayNodes) != (self.activeReportNode.GetNumberOfFindingNodeIDs() * len(self.__chartArrayNodeNames)):
+      self.__updateChartArrayNodes()
       
     tuples = self.activeReportNode.GetNumberOfSelectedStudiesSelectedForAnalysis()
     
-    findings = []
-    
-    for i in xrange(self.activeReportNode.GetNumberOfFindingNodeIDs()):
-      fnd = self.activeReportNode.GetFinding(i)
-      findings.append(fnd)
-    
     colorTable = self.activeReportNode.GetColorTableNode()
     lut = colorTable.GetLookupTable()    
-    
-    for finding in findings:
-    
-      rgba = lut.GetTableValue(finding.GetColorID())
-      count = 1
-      
-      
-      for i in xrange(len(self.__chartArrayNodes)):
-        can = self.__chartArrayNodes[i]
-        can.SetName(finding.GetName()+" "+self.__chartArrayNodeNames[i])
-        count += 1
-        array = can.GetArray()
-        array.SetNumberOfTuples(tuples)     
-      
-        tuple = 0
-        days = 0
-      
-        for j in xrange(tuples):
-          study = self.activeReportNode.GetSelectedStudySelectedForAnalysis(j)
-        
-          if j > 0:
-            oldstudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(j-1)
-            
-            if (study != None) & (oldstudy != None):
-              date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
-              olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
-              days += (date-olddate).days                  
-        
-          seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
-          
-          if seg:
-            stats = []
-            stats.append(seg.GetSUVMax())
-            stats.append(seg.GetSUVMean())
-            stats.append(seg.GetSUVMin())
-          
-            array.SetComponent(tuple, 0, days)
-            array.SetComponent(tuple, 1, stats[i])
-            array.SetComponent(tuple, 2, 0.)
 
-            tuple += 1
+      
+    for i in xrange(len(self.__chartArrayNodes)):
+      can = self.__chartArrayNodes[i]
+      fid = int( i / len(self.__chartArrayNodeNames) )  
+      finding = self.activeReportNode.GetFinding(fid)
+      rgba = lut.GetTableValue(finding.GetColorID())
+      can.SetName(finding.GetName()+" "+self.__chartArrayNodeNames[i % len(self.__chartArrayNodeNames)])
+      array = can.GetArray()
+      array.SetNumberOfTuples(tuples)     
+    
+      tuple = 0
+      days = 0
+      
+      for j in xrange(tuples):
+        study = self.activeReportNode.GetSelectedStudySelectedForAnalysis(j)
         
-            self.__chartNode.AddArray(can.GetName(), can.GetID())
+        if j > 0:
+          oldstudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(j-1)
+            
+          if (study != None) & (oldstudy != None):
+            date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
+            olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
+            days += (date-olddate).days                  
+        
+        seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
           
-        self.__chartNode.Modified()  
-        colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,self.__saturationMultipliers[i])
-        self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
+        if seg:
+          stats = []
+          stats.append(seg.GetSUVMax())
+          stats.append(seg.GetSUVMean())
+          stats.append(seg.GetSUVMin())
+          
+          array.SetComponent(tuple, 0, days)
+          array.SetComponent(tuple, 1, stats[i % len(self.__chartArrayNodeNames)])
+          array.SetComponent(tuple, 2, 0.)
+
+          tuple += 1
+        
+          self.__chartNode.AddArray(can.GetName(), can.GetID())
+          
+      self.__chartNode.Modified()  
+      colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,self.__saturationMultipliers[i % len(self.__chartArrayNodeNames)])
+      self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
      
-      try:
-        ViewHelper.getStandardChartViewNode().Modified()
-      except:
-        pass
+    try:
+      ViewHelper.getStandardChartViewNode().Modified()
+    except:
+      pass
 
   def onShowQuantitativeView(self, show = True):
     
@@ -1592,34 +1607,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.manageModelsVisibility()
       
       self.__hideSegmentationROINodes()
-        
-
-  def __updateQuantitativeView(self):
     
-    if len(self.__chartArrayNodes) == 0:
-      arrayNodeNames = ['SUV<span style=\"vertical-align:sub;font-size:80%;\">MAX</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MEAN</span>','SUV<span style=\"vertical-align:sub;font-size:80%;\">MIN</span>']
-      suvSaturationMultipliers = [1.0,0.75,0.5] # should be as many as different arraynodes
-      colorTable = self.activeReportNode.GetColorTableNode()
-      lut = colorTable.GetLookupTable()
-      
-      for i in xrange(len(arrayNodeNames)):
-        arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())
-        arrayNode.SetSaveWithScene(False)
-        arrayNode.SetName(finding.GetName()+" "+arrayNodeNames[i])
-        self.__chartArrayNodes.append(arrayNode)
-    
-    stats = []
-    findings = [] 
-    
-    for i in xrange(self.activeReportNode.GetNumberOfFindingNodeIDs()):
-      fnd = self.activeReportNode.GetFinding(i)
-      if fnd:
-        findings.append(fnd)
-
-    for can in self.__chartArrayNodes:
-      self.__chartNode.RemoveArray(can.GetName())
-      slicer.mrmlScene.RemoveNode(can)  
-
 
   def onStudySelectedForAnalysis(self, studyNode, selected):
       
