@@ -1032,7 +1032,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
           ViewHelper.removeModelHierarchyAndChildModelNodesFromScene(seg.GetModelHierarchyNode())
         slicer.mrmlScene.RemoveNode(seg)
           
-    self.activeReportNode.RemoveFindingNodeID(finding.GetID())    
+    self.activeReportNode.RemoveFindingNodeID(finding.GetID())   
+    self.manageCollapsibleButtonsAvailability()  
     
   def onPlaceROI(self, checked):
     
