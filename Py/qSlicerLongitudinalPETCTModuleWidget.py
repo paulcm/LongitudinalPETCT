@@ -1418,7 +1418,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     roiXYZ = ViewHelper.getROIPositionInRAS(self.getActiveSegmentationROI())
     ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
     
-    self.__updateQuantitativeAnalysisCharts()
+    #self.__updateQuantitativeAnalysisCharts()
     
     self.manageCollapsibleButtonsAvailability()
 
@@ -1506,20 +1506,28 @@ class qSlicerLongitudinalPETCTModuleWidget:
   
   def __updateChartArrayNodes(self):
     
-    diff = len(self.__chartArrayNodeNames) * self.activeReportNode.GetNumberOfFindingNodeIDs() - len(self.__chartArrayNodes)
+    diff = len(self.__chartArrayNodeNames) * self.activeReportNode.GetNumberOfFindingNodeIDs() - len(self.__chartArrayNodes)  
     
     if diff < 0:
       for i in xrange(diff*(-1)):   
         lastidx = len(self.__chartArrayNodes)-1   
         can = self.__chartArrayNodes[lastidx]
+        self.__chartNode.RemoveArray(can.GetName())
         self.__chartArrayNodes.pop() # pop last entry
         slicer.mrmlScene.RemoveNode(can)
     
     else:
       for i in xrange(diff):
-        arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())          
+        arrayNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLDoubleArrayNode())
+        
+        fid = int( len(self.__chartArrayNodes) / len(self.__chartArrayNodeNames) ) 
+        finding = self.activeReportNode.GetFinding(fid)
+        arrayNode.SetName(finding.GetName()+" "+self.__chartArrayNodeNames[i % len(self.__chartArrayNodeNames)])
+             
         arrayNode.SetSaveWithScene(False)
-        self.__chartArrayNodes.append(arrayNode)     
+        self.__chartArrayNodes.append(arrayNode) 
+        self.__chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
+            
 
 
   def __updateQuantitativeAnalysisCharts(self):
@@ -1527,9 +1535,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.__chartNode == None:
       self.__createChartNode()    
     
-    self.__chartNode.ClearArrays()  
-        
-    self.__createChartArrayNodeNames()
+    #self.__chartNode.ClearArrays()  
+    
+    if not self.__chartArrayNodeNames:    
+      self.__createChartArrayNodeNames()
       
     if len(self.__chartArrayNodes) != (self.activeReportNode.GetNumberOfFindingNodeIDs() * len(self.__chartArrayNodeNames)):
       self.__updateChartArrayNodes()
@@ -1539,54 +1548,58 @@ class qSlicerLongitudinalPETCTModuleWidget:
     colorTable = self.activeReportNode.GetColorTableNode()
     lut = colorTable.GetLookupTable()    
 
+    days = 0
       
-    for i in xrange(len(self.__chartArrayNodes)):
-      can = self.__chartArrayNodes[i]
-      fid = int( i / len(self.__chartArrayNodeNames) )  
-      finding = self.activeReportNode.GetFinding(fid)
-      rgba = lut.GetTableValue(finding.GetColorID())
-      can.SetName(finding.GetName()+" "+self.__chartArrayNodeNames[i % len(self.__chartArrayNodeNames)])
-      array = can.GetArray()
-      array.SetNumberOfTuples(tuples)     
-    
-      tuple = 0
-      days = 0
-      
-      for j in xrange(tuples):
-        study = self.activeReportNode.GetSelectedStudySelectedForAnalysis(j)
+    for i in xrange(tuples):
+
+      study = self.activeReportNode.GetSelectedStudySelectedForAnalysis(i)
         
-        if j > 0:
-          oldstudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(j-1)
+      if i > 0:
+        oldstudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(i-1)
             
-          if (study != None) & (oldstudy != None):
-            date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
-            olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
-            days += (date-olddate).days                  
+        if (study != None) & (oldstudy != None):
+          date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
+          olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
+          days += (date-olddate).days                  
+      
+      for j in xrange(self.activeReportNode.GetNumberOfFindingNodeIDs()):
         
-        seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+        finding = self.activeReportNode.GetFinding(j)
+        seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())             
+        rgba = lut.GetTableValue(finding.GetColorID())
+        
+        arrays = []
+        
+        for k in xrange(len(self.__chartArrayNodeNames)):
+          can = self.__chartArrayNodes[j * len(self.__chartArrayNodeNames) + k]
+          array = can.GetArray()
+          array.SetNumberOfTuples(tuples)
           
+          arrays.append(array)  
+          
+          colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,self.__saturationMultipliers[k % len(self.__chartArrayNodeNames)])
+          self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
+          
+        
         if seg:
           stats = []
           stats.append(seg.GetSUVMax())
           stats.append(seg.GetSUVMean())
           stats.append(seg.GetSUVMin())
           
-          array.SetComponent(tuple, 0, days)
-          array.SetComponent(tuple, 1, stats[i % len(self.__chartArrayNodeNames)])
-          array.SetComponent(tuple, 2, 0.)
-
-          tuple += 1
-        
-          self.__chartNode.AddArray(can.GetName(), can.GetID())
-          
-      self.__chartNode.Modified()  
-      colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,self.__saturationMultipliers[i % len(self.__chartArrayNodeNames)])
-      self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
-     
+          for l in xrange(len(arrays)):
+            a = arrays[l]
+            a.SetComponent(i, 0, days)
+            a.SetComponent(i, 1, stats[l])
+            a.SetComponent(i, 2, 0.)      
+                     
+    self.__chartNode.Modified()
+    
     try:
       ViewHelper.getStandardChartViewNode().Modified()
     except:
-      pass
+      pass      
+
 
   def onShowQuantitativeView(self, show = True):
     
