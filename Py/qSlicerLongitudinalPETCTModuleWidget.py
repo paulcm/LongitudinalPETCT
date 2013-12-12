@@ -5,6 +5,7 @@ from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPE
 
 import sys as SYS
 
+
 #
 # qSlicerLongitudinalPETCTModuleWidget
 #
@@ -85,7 +86,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.findingWidget.connect('placeROIChecked(bool)', self.onPlaceROI)
       self.findingWidget.connect('addSegmentationToFinding()', self.onAddSegmentationToFinding)
     
-    #self.findingWidget.setEditorWidget(self.getEditorWidget().parent)
     
     return self.findingWidget
   
@@ -403,8 +403,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     
     if self.activeReportNode:
       self.__switchReportFindingNodes(self.activeReportNode, reportNode)    
-    #if(self.activeReportNode):
-      #self.__removeInactiveReportFindingNodesFromScene(self.activeReportNode)
       
     self.activeReportNode = reportNode 
     
@@ -414,8 +412,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.analysisWidget.setReportNode(reportNode)
     self.reportOverviewWidget.setReportNode(reportNode)
     
-    #self.__addActiveReportFindingNodesToScene()
-    
+  
     actStudy = self.getActiveStudy()
     if actStudy:
       self.reportOverviewWidget.selectStudyColumn(self.activeReportNode.GetIndexOfSelectedStudy(actStudy))
@@ -602,8 +599,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
             mh = seg.GetModelHierarchyNode()
             if mh:
               mn = mh.GetModelNode()
-              if mn:
-                #visibility = seg.GetModelVisible() & (study == self.getActiveStudy())  
+              if mn: 
                 stdViewShow = self.__isStandardViewActive() & (study == self.getActiveStudy())
                 qualViewShow = self.__isQualitativeViewActive()
                 quantViewShow = self.__isQuantitativeViewActive() & ( (findingRestricted == False) | ( (findingRestricted == True) &  (finding == self.getActiveFinding()))) 
@@ -1418,7 +1414,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     roiXYZ = ViewHelper.getROIPositionInRAS(self.getActiveSegmentationROI())
     ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
     
-    #self.__updateQuantitativeAnalysisCharts()
     
     self.manageCollapsibleButtonsAvailability()
 
@@ -1535,7 +1530,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.__chartNode == None:
       self.__createChartNode()    
     
-    #self.__chartNode.ClearArrays()  
     
     if not self.__chartArrayNodeNames:    
       self.__createChartArrayNodeNames()
@@ -1577,7 +1571,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
           
           arrays.append(array)  
           
-          colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255,self.__saturationMultipliers[k % len(self.__chartArrayNodeNames)])
+          colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255)
           self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
           
         
@@ -1591,14 +1585,23 @@ class qSlicerLongitudinalPETCTModuleWidget:
             a = arrays[l]
             a.SetComponent(i, 0, days)
             a.SetComponent(i, 1, stats[l])
-            a.SetComponent(i, 2, 0.)      
+            a.SetComponent(i, 2, 0.)   
+            
+        else:
+          
+          for l in xrange(len(arrays)):  
+            a = arrays[l]
+            a.SetComponent(i, 0, days)
+            a.SetComponent(i, 1, 0)
+            a.SetComponent(i, 2, 0.)       
                      
     self.__chartNode.Modified()
     
     try:
       ViewHelper.getStandardChartViewNode().Modified()
     except:
-      pass      
+      pass     
+     
 
 
   def onShowQuantitativeView(self, show = True):
