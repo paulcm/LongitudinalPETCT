@@ -1162,7 +1162,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.__sliceWidgetsMappersAndActors[sliceWidget] = [mpr,actr]
     
     mapper = self.__sliceWidgetsMappersAndActors[sliceWidget][0]
-    mapper.SetInput(gs.GetOutput())
+    if vtk.VTK_MAJOR_VERSION <= 5:
+      mapper.SetInput(gs.GetOutput())
+    else:
+      mapper.SetInputData(gs.GetOutput())
     mapper.Update()
     
     actor = self.__sliceWidgetsMappersAndActors[sliceWidget][1]

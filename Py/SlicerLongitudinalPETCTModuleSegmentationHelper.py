@@ -115,7 +115,10 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
       if imgData:
         
         change = slicer.vtkImageLabelChange()
-        change.SetInput(imgData)
+        if vtk.VTK_MAJOR_VERSION <= 5:
+          change.SetInput(imgData)
+        else:
+          change.SetInputData(imgData)
         change.SetInputLabel(colorID)
         change.SetOutputLabel(0)
         
