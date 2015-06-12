@@ -150,12 +150,10 @@ double ConvertTimeToSeconds(const char *time )
   // --- convert to a double count of seconds.
   // ---
   std::string timeStr = time;
-  size_t      i = timeStr.find_first_of(":");
   h = timeStr.substr( 0, 2 );
   hours = atof( h.c_str() );
 
   minAndsecStr = timeStr.substr( 3 );
-  i = minAndsecStr.find_first_of( ":" );
   m = minAndsecStr.substr(0, 2 );
   minutes = atof( m.c_str() );
 
@@ -775,13 +773,10 @@ int LoadImagesAndComputeSUV( parameters & list, T )
   typedef    T                           InputPixelType;
   typedef itk::Image<InputPixelType,  3> InputImageType;
 
-  typedef itk::Image<unsigned char, 3> LabelImageType;
-
   typedef    T                           OutputPixelType;
   typedef itk::Image<OutputPixelType, 3> OutputImageType;
 
   typedef itk::ImageFileReader<InputImageType>  ReaderType;
-  typedef itk::ImageFileReader<LabelImageType>  LabelReaderType;
   typedef itk::ImageFileWriter<OutputImageType> WriterType;
 
   //vtkImageData *                    petVolume;
@@ -852,11 +847,7 @@ int LoadImagesAndComputeSUV( parameters & list, T )
   typedef short PixelValueType;
   typedef itk::Image< PixelValueType, 3 > VolumeType;
   typedef itk::ImageSeriesReader< VolumeType > VolumeReaderType;
-  typedef itk::Image< PixelValueType, 2 > SliceType;
-  typedef itk::ImageFileReader< SliceType > SliceReaderType;
-  typedef itk::GDCMImageIO ImageIOType;
   typedef itk::GDCMSeriesFileNames InputNamesGeneratorType;
-  typedef itk::VectorImage< PixelValueType, 3 > NRRDImageType;
 
   if ( !list.PETDICOMPath.compare(""))
     {
